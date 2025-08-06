@@ -181,7 +181,7 @@ const ClinicHeader = () => {
       <header className="sticky top-0 z-50 text-white px-6 py-2 flex justify-between items-center" style={{ backgroundColor: '#0331B5' }}>
         <div className="text-2xl font-bold flex items-center">
           <img
-            src="https://hfiles.in/wp-content/uploads/2022/11/hfiles.png"
+            src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
             alt="hfiles logo"
             className="w-[154px] mr-2 cursor-pointer"
             style={{ backgroundColor: '#0331B5' }}

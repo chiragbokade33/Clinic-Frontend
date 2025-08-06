@@ -1,4 +1,61 @@
 @import "tailwindcss";
+/* Poppins font weights */
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/600.css";
+
+/* Montserrat font weights */
+@import "@fontsource/montserrat/400.css";
+@import "@fontsource/montserrat/700.css";
+
+/* Red Hat Display font weights */
+@import "@fontsource/red-hat-display/400.css";
+@import "@fontsource/red-hat-display/700.css";
 
 
 
+.bg-yellow {
+  background-color: #FFD100;
+}
+
+.bg-green {
+  background-color: #238B02;
+}
+
+.primary {
+  background-image: linear-gradient(to right, #0331B5, #0B2B86);
+}
+
+
+
+/* ===== Poppins Weights (100–900) ===== */
+.font-poppins-100 { font-family: var(--font-poppins), sans-serif; font-weight: 100; }
+.font-poppins-200 { font-family: var(--font-poppins), sans-serif; font-weight: 200; }
+.font-poppins-300 { font-family: var(--font-poppins), sans-serif; font-weight: 300; }
+.font-poppins-400 { font-family: var(--font-poppins), sans-serif; font-weight: 400; }
+.font-poppins-500 { font-family: var(--font-poppins), sans-serif; font-weight: 500; }
+.font-poppins-600 { font-family: var(--font-poppins), sans-serif; font-weight: 600; }
+.font-poppins-700 { font-family: var(--font-poppins), sans-serif; font-weight: 700; }
+.font-poppins-800 { font-family: var(--font-poppins), sans-serif; font-weight: 800; }
+.font-poppins-900 { font-family: var(--font-poppins), sans-serif; font-weight: 900; }
+
+/* ===== Montserrat Weights (100–900) ===== */
+.font-montserrat-100 { font-family: var(--font-montserrat), sans-serif; font-weight: 100; }
+.font-montserrat-200 { font-family: var(--font-montserrat), sans-serif; font-weight: 200; }
+.font-montserrat-300 { font-family: var(--font-montserrat), sans-serif; font-weight: 300; }
+.font-montserrat-400 { font-family: var(--font-montserrat), sans-serif; font-weight: 400; }
+.font-montserrat-500 { font-family: var(--font-montserrat), sans-serif; font-weight: 500; }
+.font-montserrat-600 { font-family: var(--font-montserrat), sans-serif; font-weight: 600; }
+.font-montserrat-700 { font-family: var(--font-montserrat), sans-serif; font-weight: 700; }
+.font-montserrat-800 { font-family: var(--font-montserrat), sans-serif; font-weight: 800; }
+.font-montserrat-900 { font-family: var(--font-montserrat), sans-serif; font-weight: 900; }
+
+/* ===== Red Hat Display Weights (100–900) ===== */
+.font-redhat-100 { font-family: var(--font-red-hat), sans-serif; font-weight: 100; }
+.font-redhat-200 { font-family: var(--font-red-hat), sans-serif; font-weight: 200; }
+.font-redhat-300 { font-family: var(--font-red-hat), sans-serif; font-weight: 300; }
+.font-redhat-400 { font-family: var(--font-red-hat), sans-serif; font-weight: 400; }
+.font-redhat-500 { font-family: var(--font-red-hat), sans-serif; font-weight: 500; }
+.font-redhat-600 { font-family: var(--font-red-hat), sans-serif; font-weight: 600; }
+.font-redhat-700 { font-family: var(--font-red-hat), sans-serif; font-weight: 700; }
+.font-redhat-800 { font-family: var(--font-red-hat), sans-serif; font-weight: 800; }
+.font-redhat-900 { font-family: var(--font-red-hat), sans-serif; font-weight: 900; }

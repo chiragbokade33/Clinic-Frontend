@@ -164,7 +164,7 @@ const ClinicSidebar = ({ className = "" }) => {
             <img
               src="/f02ab4b2b4aeffe41f18ff4ece3c64bd20e9a0f4 (1).png"
               alt="Sidebar Logo"
-              className="w-full object-cover rounded-lg shadow-md"
+              className="w-full object-cover rounded-lg "
             />
           </div>
         )}
