@@ -9,10 +9,12 @@ import {
   faExclamationCircle,
   faXmark,
   faUserPlus,
-  faPlus,
+  faPlus
 } from '@fortawesome/free-solid-svg-icons';
 import DefaultLayout from '../components/DefaultLayout';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const HealthcareDashboard = () => {
   // Initialize with current date instead of hardcoded date
@@ -21,6 +23,9 @@ const HealthcareDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(1); // For combined component
+  const [selectedDate, setSelectedDate] = useState(new Date()) as any;
+  const [selectedTime, setSelectedTime] = useState(new Date()) as any;
+
 
   const [appointmentForm, setAppointmentForm] = useState({
     visitorName: "",
@@ -479,8 +484,8 @@ const HealthcareDashboard = () => {
         </div>
 
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-3xl w-full relative p-6 sm:p-8">
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center  justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-3xl w-full relative p-6  sm:p-8">
               {/* Close Button */}
               <h2 className="text-2xl font-bold mb-4 flex justify-center text-center space-x-2">
                     <FontAwesomeIcon icon={faPlus} className="text-white bg-blue-800 w-4 h-4 rounded-sm" />
@@ -495,71 +500,111 @@ const HealthcareDashboard = () => {
               </button>
 
               {/* Modal Header */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center mt-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6  items-center mt-3">
                 {/* Left side */}
-                <div>
-                  <div className="mb-4">
-                    <label className="block font-medium mb-2">Patient's HF ID</label>
-                    <input
-                      type="text"
-                      placeholder="Patient's HF id."
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                    />
-                  </div>
+                <div className="lg:border-r lg:border-black  lg:pr-6 ">
+         <div className="mb-4 flex items-center gap-3">
+            {/* HF Button */}
+            <button
+              type="button"
+              className="bg-blue-800 text-white px-2 py-1 rounded-md text-sm font-semibold"
+            >
+              HF
+            </button>
+
+            {/* Input Field */}
+            <input
+              type="text"
+              placeholder="Patient's HF id."
+              className="flex-1 border border-black rounded-md px-4 py-2 focus:outline-none"
+            />
+          </div>
+
+
 
                   <div className="mb-4">
-                    <p className="font-semibold mb-2 text-blue-700">Select Forms to Send</p>
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="accent-yellow-400" defaultChecked />
-                        <span>DTR Consent</span>
-                      </label>
-                      <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="accent-yellow-400" />
-                        <span>TMD Consent</span>
-                      </label>
-                      <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="accent-yellow-400" />
-                        <span>Photo Consent</span>
-                      </label>
-                      <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="accent-yellow-400" defaultChecked />
-                        <span>Arthrose Functional Screening Consent</span>
-                      </label>
-                    </div>
-                  </div>
+  {/* Header with icon and underline */}
+  <div className="flex items-center space-x-3  mb-2">
+    {/* Icon */}
+    <img
+      src="/01fe876ae4c4ba6eac80e64ee74af7bb5936c1f8.png" // Replace with your image path
+      alt="Forms"
+      className="w-8 h-8"
+    />
+    {/* Title */}
+    <h2 className="text-blue-700 text-lg font-semibold">Select Forms to Send</h2>
+  </div>
 
-                  <div className="flex space-x-4 mb-4">
-                    <div className="flex items-center border rounded-lg px-3 py-2 w-1/2">
-                      <FontAwesomeIcon icon={faCalendar} className="w-5 h-5 mr-2 text-gray-500" />
-                      <input
-                        type="date"
-                        className="w-full focus:outline-none"
-                        defaultValue="2026-07-18"
-                      />
-                    </div>
+  {/* Underline */}
+  <div className="h-[2px] bg-blue-700 w-60 mx-auto mb-3"></div>
 
-                    <div className="flex items-center border rounded-lg px-3 py-2 w-1/2">
-                      <FontAwesomeIcon icon={faClock} className="w-5 h-5 mr-2 text-gray-500" />
-                      <input
-                        type="time"
-                        className="w-full focus:outline-none"
-                        defaultValue="04:20"
-                      />
-                    </div>
-                  </div>
+  {/* Checkboxes */}
+  <div className="space-y-2 gap-3 mx-5">
+    <label className="flex items-center space-x-2">
+      <input type="checkbox" className="accent-yellow-400"  />
+      <span>DTR Consent</span>
+    </label>
+    <label className="flex items-center space-x-2">
+      <input type="checkbox" className="accent-yellow-400" />
+      <span>TMD Consent</span>
+    </label>
+    <label className="flex items-center space-x-2">
+      <input type="checkbox" className="accent-yellow-400" />
+      <span>Photo Consent</span>
+    </label>
+    <label className="flex items-center space-x-2">
+      <input type="checkbox" className="accent-yellow-400"  />
+      <span>Arthrose Functional Screening Consent</span>
+    </label>
+  </div>
+</div>
 
-                  <button className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg transition-colors">
+
+                   <div className="flex space-x-4 mb-4">
+      {/* Date Picker */}
+      <div className="flex items-center border rounded-lg px-3 py-2 w-1/2">
+        <FontAwesomeIcon icon={faCalendar} className="w-5 h-5 mr-2 text-gray-500" />
+        <DatePicker
+          selected={selectedDate}
+          onChange={(date) => setSelectedDate(date)}
+          dateFormat="yyyy-MM-dd"
+          className="w-full focus:outline-none"
+        />
+      </div>
+
+      {/* Time Picker */}
+      <div className="flex items-center border rounded-lg px-3 py-2 w-1/2">
+        <FontAwesomeIcon icon={faClock} className="w-5 h-5 mr-2 text-gray-500" />
+        <DatePicker
+          selected={selectedTime}
+          onChange={(time) => setSelectedTime(time)}
+          showTimeSelect
+          showTimeSelectOnly
+          timeIntervals={15}
+          timeCaption="Time"
+          dateFormat="HH:mm"
+          className="w-full focus:outline-none"
+        />
+      </div>
+    </div>
+
+                  <button className="w-full primary text-white font-bold py-3 rounded-lg transition-colors">
                     Save
                   </button>
                 </div>
 
                 {/* Right side: Image and Info */}
                 <div className="flex flex-col items-center space-y-4">
-                  <div className="flex items-center bg-blue-100 rounded-xl p-4 w-fit">
-                    <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full border-2 border-yellow-400 flex items-center justify-center">
-                      <FontAwesomeIcon icon={faUser} className="w-6 h-6 text-white" />
-                    </div>
+                  <div className="flex items-center bg-blue-100 rounded-xl p-4 w-full ">
+                    {/* Profile Image */}
+                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
+                  <img
+                    src="/98c4113b37688d826fc939709728223539f249dd.jpg"
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
                     <p className="font-bold text-lg ml-4">Ankit k.</p>
                   </div>
 

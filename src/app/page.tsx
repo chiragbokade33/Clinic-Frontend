@@ -1,8 +1,11 @@
 import React from 'react'
+import ClinicSignUp from './components/ClinicSignUp'
 
 const page = () => {
   return (
-    <div>Clinic page</div>
+    <div> 
+      <ClinicSignUp />
+    </div>
   )
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { faArrowLeft, faArrowRight, faFileAlt, faHome, faUser } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faFileAlt, faHome, faUser ,faListUl } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -99,7 +99,7 @@ const ClinicSidebar = ({ className = "" }) => {
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-blue-600 font-bold text-lg">{labName.labName}</span>
+            <span className="text-blue-800 font-bold text-lg">Arthrose</span>
           </div>
         )}
       </div>
@@ -142,6 +142,18 @@ const ClinicSidebar = ({ className = "" }) => {
               >
                 <FontAwesomeIcon icon={faUser} className="w-5 h-5" />
                 {!collapsed && <span className="ml-4">Profile</span>}
+              </Link>
+            </li>
+             <li>
+              <Link
+                href="/clinicpatient"
+                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${isActive("/clinicpatient")
+                    ? "text-blue-600"
+                    : "text-black hover:bg-blue-200"
+                  }`}
+              >
+                <FontAwesomeIcon icon={faListUl} className="w-5 h-5" />
+                {!collapsed && <span className="ml-4">Patient list</span>}
               </Link>
             </li>
             <li>
