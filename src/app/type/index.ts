@@ -1,8 +1,8 @@
 import * as Yup from "yup";
 
 export const SignUpValidationsSchema = Yup.object({
-      labName: Yup.string().required("Lab name is required"),
-      labEmail: Yup.string()
+      clinicName: Yup.string().required("clinc name is required"),
+      email: Yup.string()
         .matches(
           /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
           "Please enter a valid email address"

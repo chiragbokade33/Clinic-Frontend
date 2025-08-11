@@ -134,8 +134,8 @@ const ClinicSidebar = ({ className = "" }) => {
 
             <li>
               <Link
-                href="/labProfile"
-                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${isActive("/labProfile")
+                href="/clinicProfile"
+                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${isActive("/clinicProfile")
                     ? "text-blue-600"
                     : "text-black hover:bg-blue-200"
                   }`}

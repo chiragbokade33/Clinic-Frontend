@@ -1,70 +1,78 @@
-
 'use client'
 
 import React, { useEffect, useState } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
-// import { AdminCreate, HfidCheck } from '@/services/labServiceApi'
 import { toast, ToastContainer } from 'react-toastify'
 import { useRouter } from 'next/navigation'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import ClinicHome from '../components/ClinicHome'
+import { getEmailId, getToken, getUserId } from '../hooks/GetitemsLocal'
+import { CreateAdmin, HfidCheck } from '../services/ClinicServiceApi'
+import { encryptData, decryptData } from '../utils/cryptoHelpers'
+import { decodeAndStoreJWT } from '../utils/jwtHelpers'
 
-
-const getStoredUserId = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("userId");
-  }
-  return null;
-};
-
-const getStoredEmail = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("emailId");
-  }
-  return null;
-};
-
-const getStoredToken = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("authToken");
-  }
-  return null;
-};
 const AdminCreates = () => {
-  
   const router = useRouter();
-  // const userId = localStorage.getItem("userId");
-  // const email = localStorage.getItem("emailId");
   const [userInfo, setUserInfo] = useState<{ username: string; userEmail: string; } | null>(null)
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const [isHFIDValid, setIsHFIDValid] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [userId] = useState<string | null>(getStoredUserId);
-    const [email] = useState<string | null>(getStoredEmail);
-    const [token] = useState<string | null>(getStoredToken);
+  const [email, setEmail] = useState<string | null>();
+  const [token, setToken] = useState<string | null>();
+  const [currentUserId, setCurrentUserId] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+    };
+    fetchUserId();
+  }, []);
+
+  useEffect(() => {
+    const fetchemail = async () => {
+      const fetchedEmail = await getEmailId();
+      setEmail(String(fetchedEmail));
+    };
+    fetchemail();
+  }, []);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      const fetchedToken = await getToken();
+      setToken(String(fetchedToken));
+    };
+    fetchToken();
+  }, []);
+
+  // JWT Token decoding useEffect - runs when token changes
+  useEffect(() => {
+    if (token) {
+      decodeAndStoreJWT(token);
+    }
+  }, [token]); // This useEffect runs whenever token changes
 
   const validateHFID = async (hfid: string) => {
     try {
       setChecking(true);
-    //   const res = await HfidCheck({ hfid });
-    //   setUserInfo({
-    //     username: res.data.data.username,
-    //     userEmail: res.data.data.userEmail
-    //   })
-    //   if (res?.data) {
-    //     toast.success(`${res.data.message}`);
-    //     setIsHFIDValid(true);
-    //   } else {
-    //     toast.error('Invalid HFID');
-    //     setIsHFIDValid(false);
-    //   }
+      const res = await HfidCheck({ hfid });
+      setUserInfo({
+        username: res.data.data.username,
+        userEmail: res.data.data.userEmail
+      })
+      if (res?.data) {
+        toast.success(`${res.data.message}`);
+        setIsHFIDValid(true);
+      } else {
+        toast.error('Invalid HFID');
+        setIsHFIDValid(false);
+      }
     } catch (error) {
       const err = error as any;
-      toast.error(`${err.res.data.message}`);
+      toast.error(`${err.response?.data?.message || 'Error validating HFID'}`);
     } finally {
       setChecking(false);
     }
@@ -88,48 +96,33 @@ const AdminCreates = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         const payload = {
-          userId: Number(userId),
+          userId: currentUserId,
           email: email,
           hfid: values.hfid,
           role: values.role,
           password: values.password,
           confirmPassword: values.confirmPassword,
         };
-        // const response = await AdminCreate(payload);
-        // localStorage.setItem("authToken", response.data.data.token);
-        // localStorage.setItem("username", response.data.data.username);
-        // toast.success(`${response.data.message}`);
-        // router.push("/labHome");
+        const response = await CreateAdmin(payload);
+        
+        // Store the new token
+        const newToken = response.data.data.token;
+        await localStorage.setItem("authToken", await encryptData(newToken));
+        await localStorage.setItem("username", await encryptData(response.data.data.username));
+        
+        // Update the token state to trigger JWT decoding
+        setToken(newToken);
+        
+        toast.success(`${response.data.message}`);
+        router.push("/dashboard");
         resetForm();
       } catch (error) {
         console.error(error);
         const err = error as any;
-        toast.error(`${err.response.data.message}`);
+        toast.error(`${err.response?.data?.message || 'Error creating admin'}`);
       }
     },
   });
-
-
-  if (token) {
-    try {
-      // Step 2: Decode the payload
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      const data = JSON.parse(jsonPayload);
-      localStorage.setItem("LabAdminId", data.LabAdminId);
-      localStorage.setItem("role", data.role);
-    } catch (error) {
-      console.error("Failed to decode JWT token:", error);
-    }
-  } else {
-    console.log("No authToken found in localStorage.");
-  }
 
   return (
     <ClinicHome>
@@ -159,7 +152,7 @@ const AdminCreates = () => {
               Welcome to <span className="text-blue-700">HFiles!</span>
             </h3>
             <div className="w-20 sm:w-24 md:w-26 lg:w-28 h-[2px] bg-gray-500 border-b mx-auto mt-2 mb-2 sm:mb-3 md:mb-4"></div>
-            
+
             <div className="space-y-3 sm:space-y-4">
               <input
                 type="text"
@@ -185,7 +178,7 @@ const AdminCreates = () => {
                 </button>
               )}
             </div>
-            
+
             {/* Admin Form Section */}
             {isHFIDValid && (
               <div className="space-y-3 sm:space-y-4 md:space-y-6 mt-3 sm:mt-4 md:mt-6">

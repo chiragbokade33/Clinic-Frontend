@@ -1,0 +1,311 @@
+'use client';
+import React, { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes, faEye, faEyeSlash,  faLock, faSquarePlus } from '@fortawesome/free-solid-svg-icons';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+// import { CreateMemeber, HfidCheck, ListBranchData } from '@/services/labServiceApi';
+import { toast, ToastContainer } from "react-toastify";
+
+type UserInfo = {
+  name: string;
+  email: string;
+  profilePhoto: string;
+};
+
+type AddTeamMemberModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (formData: any) => void;
+};
+
+type Branch = {
+  labId: number | string;  
+  location: string;
+  pincode: string;
+  hfid: string;
+};
+
+const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose, onSubmit }) => {
+  const [showAssignPassword, setShowAssignPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [userFound, setUserFound] = useState<UserInfo | null>(null) as any;
+  const [userInfo, setUserInfo] = useState<{ username: string; userEmail: string; } | null>(null)
+  const [isHFIDValid, setIsHFIDValid] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [branchList, setBranchList] = useState([]) as any;
+
+  const validateHFID = async (hfid: string) => {
+    try {
+      setChecking(true);
+    //   const res = await HfidCheck({ hfid });
+    //   setUserInfo({
+    //     username: res.data.data.username,
+    //     userEmail: res.data.data.userEmail
+    //   })
+    //   if (res?.data) {
+    //     toast.success(`${res.data.message}`);
+    //     setIsHFIDValid(true);
+    //   } else {
+    //     toast.error('Invalid hfid');
+    //     setIsHFIDValid(false);
+    //   }
+    } catch (error) {
+      const err = error as any;
+      toast.error(`${err.res.data.message}`);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  // Formik validation schema
+  const validationSchema = Yup.object({
+    hfid: Yup.string()
+      .required('HF ID is required')
+      .min(3, 'HF ID must be at least 3 characters'),
+    branchId: Yup.string()
+      .required('branchId selection is required'),
+    password: Yup.string()
+      .required('Password is required')
+      .min(6, 'Password must be at least 6 characters')
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+      ),
+    confirmPassword: Yup.string()
+      .required('Confirm password is required')
+      .oneOf([Yup.ref('password')], 'Passwords must match'),
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      hfid: '',
+      branchId: '',
+      password: '',
+      confirmPassword: ''
+    },
+    validationSchema,
+    onSubmit: async (values) => {
+      try {
+        const payload = {
+          hfid: values.hfid,
+          branchId: parseInt(values.branchId, 10),
+          password: values.password,
+          confirmPassword: values.confirmPassword
+        };
+        // const res = await CreateMemeber(payload)
+        // toast.success(`${res.data.message}`)
+        await onSubmit(payload);
+        handleClose();
+      } catch (error) {
+        console.error('Error while submitting:', error);
+        const err = error as any;
+        toast.error(`${err.res.data.message}`);
+      }
+    }
+
+  });
+
+  const handleClose = () => {
+    formik.resetForm();
+    setUserFound(null);
+    setShowAssignPassword(false);
+    setShowConfirmPassword(false);
+    onClose();
+  };
+
+
+//   const ListBranch = async () => {
+//     const response = await ListBranchData();
+//     setBranchList(response.data.data.labs);
+//   }
+
+
+//   useEffect(() => {
+//     ListBranch();
+//   }, [])
+
+
+  if (!isOpen) return null;
+
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className='flex justify-end mx-2 mt-2'>
+
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-600 text-xl flex justify-end"
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        </div>
+        {/* Header */}
+        <div className="flex items-center justify-center p-3 border-b">
+          <div className="flex items-center gap-2">
+            <FontAwesomeIcon icon={faSquarePlus} className="text-blue-600" />
+            <h2 className="text-xl font-semibold text-blue-600">Add a Team Member</h2>
+          </div>
+
+        </div>
+
+        <form onSubmit={formik.handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 mx-3">
+            {/* HF ID Field with Icon */}
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-600 text-white px-3 py-2 rounded font-semibold text-sm cursor-pointer" onClick={() => validateHFID(formik.values.hfid)}>HF</div>
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  name="hfid"
+                  value={formik.values.hfid}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Member's HF id."
+                  className={`flex-1 w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${formik.touched.hfid && formik.errors.hfid ? 'border-red-500' : 'border-gray-300'
+                    }`}
+
+                />
+                {formik.touched.hfid && formik.errors.hfid && (
+                  <p className="text-red-500 text-sm mt-1">{formik.errors.hfid}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Branch Selection */}
+            <div className="relative">
+              <select
+                name="branchId"
+                value={formik.values.branchId}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`flex-1 w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${formik.touched.branchId && formik.errors.branchId ? 'border-red-500' : 'border-gray-300'
+                  }`}
+              >
+                <option value="">Select a branch they work from</option>
+                {branchList?.map((branch: Branch) => (
+                  <option key={branch.labId} value={branch.labId}>
+                    {`${branch.location} - ${branch.pincode} - ${branch.hfid}`}
+                  </option>
+                ))}
+              </select>
+              {formik.touched.branchId && formik.errors.branchId && (
+                <p className="text-red-500 text-sm mt-1">{formik.errors.branchId}</p>
+              )}
+            </div>
+
+            {/* Assign Password */}
+            <div className="flex items-center gap-3">
+              <FontAwesomeIcon icon={faLock} className="text-gray-600 px-3 py-2" />
+              <div className="flex-1 relative">
+                <input
+                  type={showAssignPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Assign Password"
+                  className={`flex-1 w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${formik.touched.password && formik.errors.password ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAssignPassword(!showAssignPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <FontAwesomeIcon icon={showAssignPassword ? faEye : faEyeSlash} />
+                </button>
+                {formik.touched.password && formik.errors.password && (
+                  <p className="text-red-500 text-sm mt-1">{formik.errors.password}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  value={formik.values.confirmPassword}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Confirm Password"
+                  className={`flex-1 w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500  ${formik.touched.confirmPassword && formik.errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 items-center top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <FontAwesomeIcon icon={showConfirmPassword ? faEye : faEyeSlash} />
+                </button>
+                {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+                  <p className="text-red-500 text-sm mt-1">{formik.errors.confirmPassword}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex flex-col md:flex-row justify-between items-start p-3 border-t gap-2 mx-3">
+            {/* Left Column: Profile + Add Button */}
+            <div className="flex flex-col items-center md:items-start w-full sm:w-auto max-w-lg">
+              {/* User Profile Card */}
+              <div className="bg-blue-100 rounded-lg flex flex-col sm:flex-row sm:items-center border w-full p-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden mx-auto sm:mx-0 sm:mr-4">
+                  <img
+                    src="/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 text-center sm:text-left mt-3 sm:mt-0">
+                  <h2 className="text-blue-800 text-xl font-bold">{userInfo?.username}</h2>
+                  <p className="text-black">{userInfo?.userEmail}</p>
+
+                  {/* Validation Error Message */}
+                </div>
+              </div>
+              {!formik.isValid && !isHFIDValid && (
+                <p className="text-red-600 text-sm mt-2 flex items-center gap-1">
+                  <span>⚠️</span> Please verify name and email before adding.
+                </p>
+              )}
+
+
+              {/* Add Button Below Card */}
+              <button
+                type="button"
+                  onClick={() => formik.handleSubmit()}               
+                   disabled={!isHFIDValid || formik.isSubmitting}
+                className={`mt-4 w-full sm:w-full px-6 py-2 rounded-md text-sm font-medium transition cursor-pointer ${!isHFIDValid || formik.isSubmitting
+                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                  : 'bg-blue-800 text-white hover:bg-blue-900'
+                  }`}
+              >
+                {formik.isSubmitting ? 'Adding...' : 'Add'}
+              </button>
+            </div>
+
+            {/* Right Illustration */}
+            <div className="hidden md:block">
+              <img
+                src="/f02ab4b2b4aeffe41f18ff4ece3c64bd20e9a0f4.png"
+                alt="Illustration"
+                className="w-[200px] h-[200px] object-cover"
+              />
+            </div>
+          </div>
+
+        </form>
+
+      </div>
+      <ToastContainer />
+    </div>
+  );
+};
+
+export default AddTeamMemberModal;

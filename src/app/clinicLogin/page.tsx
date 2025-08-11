@@ -2,10 +2,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-// import { ForgotPasswordReq, LoginOTP, LoginPassword, SendOTP } from "@/services/labServiceApi";
 import { toast, ToastContainer } from "react-toastify";
 import { useRouter } from "next/navigation";
 import ClinicHome from "../components/ClinicHome";
+import { LoginPassword, LoginWithOtp, PhoneLoginEmail } from "../services/ClinicServiceApi";
+import { encryptData } from "../utils/cryptoHelpers";
 
 const ClinicLogin = () => {
   const router = useRouter();
@@ -86,9 +87,9 @@ const ClinicLogin = () => {
         } else {
           payload.phoneNumber = values.emailOrPhone;
         }
-        // const res = await SendOTP(payload);
-        // toast.success(`${res.data.message}`);
-        // localStorage.setItem("emailId", values.emailOrPhone);
+        const res = await LoginWithOtp(payload);
+        toast.success(`${res.data.message}`);
+      localStorage.setItem("emailId", await encryptData(res.data.data.email));
       } catch (error) {
         const err = error as any;
         toast.error(`${err.res.data.message}`);
@@ -108,21 +109,21 @@ const ClinicLogin = () => {
     validationSchema: otpValidationSchema,
     onSubmit: async (values) => {
       try {
-        // const isEmail = emailFormik.values.emailOrPhone.includes('@');
-        // const response = await LoginOTP({
-        //   ...(isEmail
-        //     ? { email: emailFormik.values.emailOrPhone }
-        //     : { phoneNumber: emailFormik.values.emailOrPhone }),
-        //   otp: values.otp,
-        // });
-        // toast.success(`${response.data.message}`);
-        // localStorage.setItem("emailId", response?.data?.data?.email);
-        // localStorage.setItem("userId", response.data.data.userId);
-        // if (response.data.data.isSuperAdmin) {
-        //   router.push("/labAdminLogin");
-        // } else {
-        //   router.push("/labAdminCreate");
-        // }
+        const isEmail = emailFormik.values.emailOrPhone.includes('@');
+        const response = await PhoneLoginEmail({
+          ...(isEmail
+            ? { email: emailFormik.values.emailOrPhone }
+            : { phoneNumber: emailFormik.values.emailOrPhone }),
+          otp: values.otp,
+        });
+        toast.success(`${response.data.message}`);
+        localStorage.setItem("userId", await encryptData(response.data.data.userId.toString()));
+      localStorage.setItem("emailId", await encryptData(response.data.data.email));
+        if (response.data.data.isSuperAdmin) {
+          router.push("/clinicAdminLogin");
+        } else {
+          router.push("/clinicAdminCreate");
+        }
 
       } catch (error) {
         const err = error as any;
@@ -141,18 +142,18 @@ const ClinicLogin = () => {
     validationSchema: passwordLoginValidationSchema,
     onSubmit: async (values) => {
       try {
-        // const response = await LoginPassword({
-        //   email: values.email,
-        //   password: values.password,
-        // });
-        // toast.success(`${response.data.message}`);
-        // localStorage.setItem("userId", response.data.data.userId);
-        // localStorage.setItem("emailId", response.data.data.email);
-        // if (response.data.data.isSuperAdmin) {
-        //   router.push("/labAdminLogin");
-        // } else {
-        //   router.push("/labAdminCreate");
-        // }
+        const response = await LoginPassword({
+          email: values.email,
+          password: values.password,
+        });
+        toast.success(`${response.data.message}`);
+         localStorage.setItem("userId", await encryptData(response.data.data.userId.toString()));
+      localStorage.setItem("emailId", await encryptData(response.data.data.email));
+        if (response.data.data.isSuperAdmin) {
+          router.push("/clinicAdminLogin");
+        } else {
+          router.push("/clinicAdminCreate");
+        }
 
       } catch (error) {
         const err = error as any;

@@ -2,12 +2,15 @@
 import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-// import { AdminLogin, UserCardList, UserForgotPassword } from "@/services/labServiceApi";
 import { toast, ToastContainer } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import ClinicHome from "../components/ClinicHome";
+import { getEmailId, getToken, getUserId } from "../hooks/GetitemsLocal";
+import { decodeAndStoreJWT } from "../utils/jwtHelpers";
+import { LoginUser } from "../services/ClinicServiceApi";
+import { encryptData } from "../utils/cryptoHelpers";
 
 interface CardData {
   userId: string;
@@ -17,26 +20,7 @@ interface CardData {
   hfid: string;
   profilePhoto: string;
 }
-const getStoredUserId = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("userId");
-  }
-  return null;
-};
 
-const getStoredEmail = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("emailId");
-  }
-  return null;
-};
-
-const getStoredToken = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("authToken");
-  }
-  return null;
-};
 
 
 const AdminLogins = () => {
@@ -45,11 +29,41 @@ const AdminLogins = () => {
   const [cardListData, setCardListData] = useState<CardData[]>([]) as any;
   const [memberListData, setMemberListData] = useState<any[]>([]);
   const [showPassword, setShowPassword] = useState(false);
-  const [userId] = useState<string | null>(getStoredUserId);
-  const [email] = useState<string | null>(getStoredEmail);
- const [token] = useState<string | null>(getStoredToken);
-  // const userId = localStorage.getItem("userId");
-  // const email = localStorage.getItem("emailId");
+  const [email, setEmail] = useState<string | null>();
+  const [token, setToken] = useState<string | null>();
+  const [currentUserId, setCurrentUserId] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+    };
+    fetchUserId();
+  }, []);
+
+  useEffect(() => {
+    const fetchemail = async () => {
+      const fetchedEmail = await getEmailId();
+      setEmail(String(fetchedEmail));
+    };
+    fetchemail();
+  }, []);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      const fetchedToken = await getToken();
+      setToken(String(fetchedToken));
+    };
+    fetchToken();
+  }, []);
+
+  // JWT Token decoding useEffect - runs when token changes
+  useEffect(() => {
+    if (token) {
+      decodeAndStoreJWT(token);
+    }
+  }, [token]); // This useEffect runs whenever token changes
+
 
   const formik = useFormik({
     initialValues: {
@@ -67,17 +81,17 @@ const AdminLogins = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         const payload = {
-          userId: Number(userId),
+          userId: currentUserId,
           email: email,
           hfid: values.hfid,
           role: values.role,
           password: values.password,
         };
-        // const response = await AdminLogin(payload);
-        // toast.success(`${response.data.message}`);
-        // localStorage.setItem("authToken", response.data.data.token);
-        // localStorage.setItem("username", response.data.data.username);
-        router.push("/labHome");
+        const response = await LoginUser(payload);
+        toast.success(`${response.data.message}`);
+        localStorage.setItem("authToken",await encryptData(response.data.data.token));
+        localStorage.setItem("username",await encryptData(response.data.data.username));
+        router.push("/dashboard");
         resetForm();
       } catch (error) {
         console.error("Error logging in:", error);
@@ -89,25 +103,25 @@ const AdminLogins = () => {
 
   // const token = localStorage.getItem("authToken");
 
-  if (token) {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      const data = JSON.parse(jsonPayload);
-      localStorage.setItem("LabAdminId", data.LabAdminId);
-      localStorage.setItem("role", data.role);
-    } catch (error) {
-      console.error("Failed to decode JWT token:", error);
-    }
-  } else {
-    console.log("No authToken found in localStorage.");
-  }
+  // if (token) {
+  //   try {
+  //     const base64Url = token.split('.')[1];
+  //     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  //     const jsonPayload = decodeURIComponent(
+  //       atob(base64)
+  //         .split('')
+  //         .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+  //         .join('')
+  //     );
+  //     const data = JSON.parse(jsonPayload);
+  //     localStorage.setItem("LabAdminId", data.LabAdminId);
+  //     localStorage.setItem("role", data.role);
+  //   } catch (error) {
+  //     console.error("Failed to decode JWT token:", error);
+  //   }
+  // } else {
+  //   console.log("No authToken found in localStorage.");
+  // }
 
   const BASE_URL = "https://hfiles.in/upload/";
 
@@ -125,7 +139,7 @@ const AdminLogins = () => {
     try {
       const payload = {
         email,
-        labId: userId,
+        labId: currentUserId,
       };
 
     //   const response = await UserForgotPassword(payload);

@@ -1,12 +1,19 @@
 "use client";
 import React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const Header = () => {
    const router = useRouter();
+     const pathname = usePathname();
 
-  const handleSignIn = () => {
-    router.push('/');
+    const isClinicLogin = pathname === '/clinicLogin';
+
+  const handleClick = () => {
+    if (isClinicLogin) {
+      router.push('/'); // if on /clinicLogin, go to /
+    } else {
+      router.push('/clinicLogin'); // if on /, go to /clinicLogin
+    }
   };
 
   return (
@@ -21,9 +28,9 @@ const Header = () => {
         </div>
 
         <button className="bg-yellow-400 text-blue-700 text-xs sm:text-sm md:text-base font-semibold px-2 sm:px-4 lg:px-6 py-1 sm:py-2 rounded hover:bg-yellow-300 transition cursor-pointer"
-        onClick={handleSignIn}
+        onClick={handleClick}
         >
-          Sign In 
+          {isClinicLogin ? 'Sign Up' : 'Sign In'}
         </button>
       </div>
     </header>

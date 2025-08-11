@@ -35,7 +35,7 @@ const SharedReportsDashboard = () => {
 
   return (
     <DefaultLayout>
-      <div className="max-w-7xl mx-auto p-4 bg-gray-50 min-h-screen">
+      <div className=" mx-auto p-4 h-screen">
         {/* Header */}
         <div className="flex items-center mb-6">
           <h1 className="flex-1 text-center text-2xl md:text-3xl font-bold text-gray-800">
@@ -94,37 +94,48 @@ const SharedReportsDashboard = () => {
 
         {/* Reports Sections */}
         {reportsData.map((section, sectionIndex) => (
-  <div key={sectionIndex} className="mb-8">
-    {/* Date Header */}
-    <div className="flex justify-end">
-      <span className="text-gray-600 font-medium text-sm md:text-base">
-        {section.date}
-      </span>
-    </div>
-    <div className="border border-black mx-auto mb-4"></div>
+          <div key={sectionIndex} className="mb-8">
+            {/* Date Header */}
+            <div className="flex justify-end">
+              <span className="text-gray-600 font-medium text-sm md:text-base">
+                {section.date}
+              </span>
+            </div>
+            <div className="border-t border-gray-400 my-2"></div>
 
-    {/* Reports Grid */}
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-      {section.reports.map((report, reportIndex) => (
-        <div key={reportIndex} className="flex flex-col items-center">
-          {/* Card */}
-          <div className="w-50 h-60 bg-white rounded-xl border border-gray-300  flex items-center justify-center">
-            <img
-              src="/0604d10d087f97b877ea0ae85e9494b5df28b6e7.png"
-              alt="ARTHROSE icon"
-              className="w-50 h-60 object-contain"
-            />
+            {/* Reports Row */}
+            <div className="flex flex-wrap gap-6 justify-start">
+              {section.reports.map((report: any, reportIndex) => (
+                <div key={reportIndex} className="flex flex-col items-center">
+                  {/* Card */}
+                  <div className="relative w-40 h-46 bg-white rounded-lg border border-gray-300 overflow-hidden">
+                    <div className="w-full flex justify-center pt-2">
+                      <img
+                        src="/0604d10d087f97b877ea0ae85e9494b5df28b6e7.png"
+                        alt="ARTHROSE icon"
+                        className="w-36 h-16 object-contain"
+                      />
+                    </div>
+
+                    {/* Status Dot */}
+                    {report.status && (
+                      <span
+                        className={`absolute bottom-1 right-1 w-2 h-2 rounded-full ${getStatusColor(report.status)}`}
+                      ></span>
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <p className="mt-2 text-center text-sm text-gray-800">
+                    {report.name}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
+        ))}
 
-          {/* Title */}
-          <p className="mt-2 text-center font-semibold text-gray-800">
-            {report.name}
-          </p>
-        </div>
-      ))}
-    </div>
-  </div>
-))}
+
 
 
         {/* Chat/Support Button */}
