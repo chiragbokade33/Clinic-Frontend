@@ -2,11 +2,16 @@
 import React, { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import DefaultLayout from '../components/DefaultLayout';
+import { useRouter } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHistory } from '@fortawesome/free-solid-svg-icons';
 
 
 
 const page = () => {
     const [isConsentDropdownOpen, setIsConsentDropdownOpen] = useState(false);
+    const router = useRouter();
+    const [hovered, setHovered] = useState(false);
 
     return (
         <DefaultLayout>
@@ -91,7 +96,7 @@ const page = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-6 mx-4">
 
                                 {/* DTR Consent Form Card */}
-                                <div className="relative p-4 rounded-xl border border-black transition-all cursor-pointer w-full max-w-md mx-auto">
+                                <div className="relative p-4 rounded-xl border border-black transition-all cursor-pointer w-full max-w-md mx-auto" onClick={() => router.push("/consentForm")}>
                                     {/* Logo container */}
                                     <div className="w-full h-20 rounded-lg flex items-center justify-center mb-3">
                                         <img
@@ -112,23 +117,44 @@ const page = () => {
                                 </div>
 
                                 {/* Photo Consent Form - Active */}
-                                <div className="relative p-4 rounded-xl border border-black transition-all cursor-pointer w-full max-w-md mx-auto">
-                                    {/* Logo container */}
-                                    <div className="w-full h-20 rounded-lg flex items-center justify-center mb-3">
-                                        <img
-                                            src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
-                                            alt="ARTHROSE Logo"
-                                            className="max-w-full max-h-full rounded"
-                                        />
-                                    </div>
-                                    <div className="border border-gray-400 mx-auto w-full mt-3"></div>
+                                <div
+                                    className={`relative p-4 rounded-xl border border-black transition-all duration-300 cursor-pointer w-full max-w-md mx-auto ${hovered ? "bg-gray-700" : "bg-white"
+                                        }`}
+                                    onClick={() => router.push("/consentForm")}
+                                    onMouseEnter={() => setHovered(true)}
+                                    onMouseLeave={() => setHovered(false)}
+                                >
+                                    {hovered ? (
+                                        // Hover content
+                                        <div className="flex flex-col items-center justify-center text-center h-full">
+                                            <h3 className="font-semibold text-yellow-400 text-sm mb-2">
+                                                Photo Consent Form
+                                            </h3>
+                                            <span className="text-white text-xs">View</span>
+                                        </div>
+                                    ) : (
+                                        // Default content
+                                        <>
+                                            {/* Logo */}
+                                            <div className="w-full h-20 rounded-lg flex items-center justify-center mb-3">
+                                                <img
+                                                    src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                                    alt="ARTHROSE Logo"
+                                                    className="max-w-full max-h-full rounded"
+                                                />
+                                            </div>
 
-                                    {/* Title */}
-                                    <h3 className="font-semibold text-gray-800 text-md text-center mb-4 mt-4">
-                                        DTR Consent Form
-                                    </h3>
+                                            {/* Divider */}
+                                            <div className="border border-gray-400 mx-auto w-full mt-3"></div>
 
-                                    {/* Green dot bottom-right */}
+                                            {/* Title */}
+                                            <h3 className="font-semibold text-gray-800 text-md text-center mb-4 mt-4">
+                                                DTR Consent Form
+                                            </h3>
+                                        </>
+                                    )}
+
+                                    {/* Green dot */}
                                     <div className="absolute bottom-3 right-3 w-3 h-3 rounded-full bg-green-500"></div>
                                 </div>
 
@@ -168,6 +194,124 @@ const page = () => {
 
                         </div>
                     )}
+                </div>
+
+                <div className="bg-white rounded-xl border border-black mb-6 mt-4">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-black">
+                        <span className="text-lg font-medium text-black">
+                            Manage treatment plans, prescriptions, and reports effortlessly.
+                        </span>
+                        <button className="flex items-center gap-2 px-3 py-1 border border-black rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"  onClick={() => router.push("/ClinicShareReports")}>
+                            <span className="text-sm font-medium">History</span>
+                            <FontAwesomeIcon icon={faHistory} className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    <div className="p-6">
+                        {/* Patient's Treatment Plan Section */}
+                        <div className="mb-8">
+                            <h3 className="text-lg flex justify-end font-medium text-blue-800 mb-4">
+                                patient's treatment plan :
+                            </h3>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                                {/* Attach Images Card */}
+                                <div className="bg-white rounded-lg p-4">
+                                    <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+                                        <img
+                                            src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                            alt="ARTHROSE Logo"
+                                            className="max-w-20 max-h-20 rounded"
+                                        />
+                                    </div>
+                                    <button className="w-full bg-yellow text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors">
+                                        Attach Images
+                                    </button>
+                                </div>
+
+                                {/* Prescription + Share wrapper with border between */}
+                                <div className="col-span-2 flex divide-x divide-black rounded-lg overflow-hidden bg-white">
+                                    {/* Prescription */}
+                                    <div className="flex-1 p-4">
+                                        <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+                                            <img
+                                                src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                                alt="ARTHROSE Logo"
+                                                className="max-w-20 max-h-20 rounded"
+                                            />
+                                        </div>
+                                        <button className="w-full bg-yellow text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors">
+                                            Prescription
+                                        </button>
+                                    </div>
+
+                                    {/* Share */}
+                                    <div className="flex-1 p-4">
+                                        <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+                                            <img
+                                                src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                                alt="ARTHROSE Logo"
+                                                className="max-w-20 max-h-20 rounded"
+                                            />
+                                        </div>
+                                        <button className="w-full  text-white font-semibold py-2 px-4 rounded-lg primary cursor-pointer transition-colors">
+                                            Share
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        {/* Send Invoice Details Section */}
+
+                    </div>
+
+
+                </div>
+                <div className="mb-6">
+                    <h3 className="text-lg font-medium text-blue-800 mb-4">Send Invoice Details :</h3>
+
+                    <div className="flex  divide-x divide-black gap-4 mb-6">
+                        {/* Invoice Share Card */}
+                        <div className="bg-white  p-4">
+                            <div className="h-45 w-40 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+                                <img
+                                    src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                    alt="ARTHROSE Logo"
+                                    className="max-w-20 max-h-20 rounded"
+                                />
+                            </div>
+                            <button className="w-full primary text-white font-semibold py-2 px-4 rounded-lg  transition-colors">
+                                Share
+                            </button>
+                        </div>
+
+                        {/* Receipt Card */}
+                        <div className="bg-white  rounded-lg p-4">
+                            <div className="h-45 w-40 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+                                <img
+                                    src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                    alt="ARTHROSE Logo"
+                                    className="max-w-20 max-h-20 rounded"
+                                />
+                            </div>
+                            <button className="w-full bg-yellow text-black border border-black font-semibold py-2 px-4 rounded-lg  transition-colors">
+                                Receipt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bottom Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <button className="w-full sm:flex-1 bg-green text-white font-semibold py-3 px-6 rounded-lg  transition-colors">
+                        Make sure all details are correct before proceeding.
+                    </button>
+                    <button className="w-full sm:w-auto primary text-white font-semibold py-3 px-8 rounded-lg  transition-colors">
+                        Send
+                    </button>
                 </div>
             </div>
         </DefaultLayout>

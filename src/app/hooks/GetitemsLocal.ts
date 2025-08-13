@@ -44,3 +44,18 @@ export const getToken = async (): Promise<string> => {
     return "";
   }
 };
+
+
+export const getUsername = async (): Promise<string> => {
+  try {
+    const encryptedUsername = localStorage.getItem("username");
+    if (!encryptedUsername) {
+      return "";
+    }
+    const usernameStr = await decryptData(encryptedUsername);
+    return usernameStr; // keep it as string
+  } catch (error) {
+    console.error("Error getting username:", error);
+    return "";
+  }
+};

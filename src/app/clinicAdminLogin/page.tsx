@@ -9,7 +9,7 @@ import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import ClinicHome from "../components/ClinicHome";
 import { getEmailId, getToken, getUserId } from "../hooks/GetitemsLocal";
 import { decodeAndStoreJWT } from "../utils/jwtHelpers";
-import { LoginUser } from "../services/ClinicServiceApi";
+import { ListUser, LoginUser } from "../services/ClinicServiceApi";
 import { encryptData } from "../utils/cryptoHelpers";
 
 interface CardData {
@@ -21,8 +21,6 @@ interface CardData {
   profilePhoto: string;
 }
 
-
-
 const AdminLogins = () => {
   const router = useRouter();
   const [selectedHfid, setSelectedHfid] = useState<string | null>(null);
@@ -31,7 +29,7 @@ const AdminLogins = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState<string | null>();
   const [token, setToken] = useState<string | null>();
-  const [currentUserId, setCurrentUserId] = useState<number>(0);
+  const [currentUserId, setCurrentUserId] = useState<number>();
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -57,13 +55,52 @@ const AdminLogins = () => {
     fetchToken();
   }, []);
 
-  // JWT Token decoding useEffect - runs when token changes
+  // Fixed: JWT decoding logic moved to useEffect that depends on token
   useEffect(() => {
-    if (token) {
-      decodeAndStoreJWT(token);
+    if (token && token !== 'null' && token !== 'undefined') {
+      try {
+        // Method 1: Use the imported helper function (recommended)
+        // decodeAndStoreJWT(token);
+        
+        // Method 2: Manual decoding (if helper function doesn't work)
+        const base64Url = token.split('.')[1];
+        if (!base64Url) {
+          throw new Error('Invalid token format');
+        }
+        
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        
+        const data = JSON.parse(jsonPayload);
+        console.log('Decoded JWT data:', data); // Debug log
+        
+        // Store the decoded data in localStorage
+        if (data.ClinicAdminId) {
+          localStorage.setItem("ClinicAdminId", data.ClinicAdminId);
+        }
+        if (data.role) {
+          localStorage.setItem("role", data.role);
+        }
+        
+        // Alternative: If the property names are different in your JWT
+        // Check what properties are actually in your token
+        console.log('Available properties in token:', Object.keys(data));
+        
+      } catch (error) {
+        console.error("Failed to decode JWT token:", error);
+        // Clear invalid token
+        localStorage.removeItem("authToken");
+        setToken(null);
+      }
+    } else {
+      console.log("No valid authToken found in localStorage.");
     }
-  }, [token]); // This useEffect runs whenever token changes
-
+  }, [token]); // This effect runs when token changes
 
   const formik = useFormik({
     initialValues: {
@@ -89,8 +126,34 @@ const AdminLogins = () => {
         };
         const response = await LoginUser(payload);
         toast.success(`${response.data.message}`);
-        localStorage.setItem("authToken",await encryptData(response.data.data.token));
-        localStorage.setItem("username",await encryptData(response.data.data.username));
+        
+        // Store the new token and decode it
+        const newToken = response.data.data.token;
+        localStorage.setItem("authToken", await encryptData(newToken));
+        localStorage.setItem("username", await encryptData(response.data.data.username));
+        
+        // Decode and store the new token immediately
+        try {
+          const base64Url = newToken.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(
+            atob(base64)
+              .split('')
+              .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+              .join('')
+          );
+          const data = JSON.parse(jsonPayload);
+          
+          if (data.ClinicAdminId) {
+            localStorage.setItem("ClinicAdminId", data.ClinicAdminId);
+          }
+          if (data.role) {
+            localStorage.setItem("role", data.role);
+          }
+        } catch (decodeError) {
+          console.error("Failed to decode new JWT token:", decodeError);
+        }
+        
         router.push("/dashboard");
         resetForm();
       } catch (error) {
@@ -101,39 +164,18 @@ const AdminLogins = () => {
     },
   });
 
-  // const token = localStorage.getItem("authToken");
-
-  // if (token) {
-  //   try {
-  //     const base64Url = token.split('.')[1];
-  //     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  //     const jsonPayload = decodeURIComponent(
-  //       atob(base64)
-  //         .split('')
-  //         .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-  //         .join('')
-  //     );
-  //     const data = JSON.parse(jsonPayload);
-  //     localStorage.setItem("LabAdminId", data.LabAdminId);
-  //     localStorage.setItem("role", data.role);
-  //   } catch (error) {
-  //     console.error("Failed to decode JWT token:", error);
-  //   }
-  // } else {
-  //   console.log("No authToken found in localStorage.");
-  // }
-
   const BASE_URL = "https://hfiles.in/upload/";
 
-  const CardList = async () => {
-    // const res = await UserCardList(Number(userId));
-    // setCardListData(res.data.data.superAdmin);
-    // setMemberListData(res.data.data.members);
-  }
-
   useEffect(() => {
-    CardList();
-  }, [])
+    const fetchData = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+      const res = await ListUser(Number(id));
+      setCardListData(res.data.data.superAdmin);
+      setMemberListData(res.data.data.members);
+    };
+    fetchData();
+  }, []);
 
   const handleForgotPassword = async (email: string) => {
     try {
@@ -142,15 +184,14 @@ const AdminLogins = () => {
         labId: currentUserId,
       };
 
-    //   const response = await UserForgotPassword(payload);
-    //   localStorage.setItem("recipientEmail", email);
-    //   toast.success(response.data.message);
+      //   const response = await UserForgotPassword(payload);
+      //   localStorage.setItem("recipientEmail", email);
+      //   toast.success(response.data.message);
       router.push("/forgotUserPassword");
     } catch (error) {
       console.error("Error during forgot password:", error);
     }
   };
-
 
   return (
     <ClinicHome>
@@ -185,7 +226,7 @@ const AdminLogins = () => {
                   <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gray-200 rounded-full border border-gray-300 overflow-hidden mr-3 sm:mr-4 flex-shrink-0">
                     {cardListData.profilePhoto !== "No image preview available" ? (
                       <img
-                        src={`${BASE_URL}${cardListData.profilePhoto}`}
+                        src={`${cardListData.profilePhoto}`}
                         alt={cardListData.name}
                         className="w-full h-full object-cover"
                       />
@@ -276,7 +317,7 @@ const AdminLogins = () => {
                       <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gray-200 rounded-full border border-gray-300 overflow-hidden mr-3 sm:mr-4 flex-shrink-0">
                         {user.profilePhoto !== "No image preview available" ? (
                           <img
-                            src={`${BASE_URL}${user.profilePhoto}`}
+                            src={`${user.profilePhoto}`}
                             alt={user.name}
                             className="w-full h-full object-cover"
                           />

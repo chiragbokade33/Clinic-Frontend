@@ -1,7 +1,7 @@
 // utils/jwtHelpers.ts
 
 export interface DecodedTokenData {
-  LabAdminId?: string;
+  ClinicAdminId?: string;  // ✅ Fixed: Changed from LabAdminId to ClinicAdminId
   role?: string;
   exp?: number;
   iat?: number;
@@ -67,8 +67,9 @@ export const decodeAndStoreJWT = async (token: string): Promise<boolean> => {
 
   try {
     // Store the decoded data in localStorage
-    if (decodedData.LabAdminId) {
-      localStorage.setItem("LabAdminId", decodedData.LabAdminId);
+    // ✅ Fixed: Use ClinicAdminId (matches the token payload)
+    if (decodedData.ClinicAdminId) {
+      localStorage.setItem("ClinicAdminId", decodedData.ClinicAdminId);
     }
     
     if (decodedData.role) {
@@ -76,7 +77,7 @@ export const decodeAndStoreJWT = async (token: string): Promise<boolean> => {
     }
     
     console.log("JWT data stored successfully:", {
-      LabAdminId: decodedData.LabAdminId,
+      ClinicAdminId: decodedData.ClinicAdminId,
       role: decodedData.role
     });
     

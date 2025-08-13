@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast, ToastContainer } from 'react-toastify';
 import { faBell, faCalendarAlt, faLessThan } from '@fortawesome/free-solid-svg-icons';
 import { LogOut, RotateCcw } from 'lucide-react';
+import { getUsername } from '../hooks/GetitemsLocal';
 
 const getStoredUserId = () => {
   if (typeof window !== "undefined") {
@@ -49,10 +50,19 @@ const ClinicHeader = () => {
   // const [userId, setUserId] = useState<string | null>(null);
   const [userId] = useState<string | null>(getStoredUserId);
   const [Role] = useState<string | null>(getStoredRole);
-  const [username] = useState<string | null>(getStoredUserName);
+  // const [username] = useState<string | null>(getStoredUserName);
+  const [userName, setUserName] = useState('');
 
-   
-  
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const Name = await getUsername();
+      setUserName(Name);
+    };
+    fetchUserId();
+  }, []);
+
+
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: any) => {
@@ -66,12 +76,12 @@ const ClinicHeader = () => {
 
   const handleLogout = () => {
     setDropdownAnimating(true);
-    window.location.href = '/labLogin';
+    window.location.href = '/clinicLogin';
     localStorage.removeItem("authToken");
     localStorage.removeItem("userId");
     localStorage.removeItem("emailId");
     localStorage.removeItem("username");
-    localStorage.removeItem("LabAdminId");
+    localStorage.removeItem("ClinicAdminId");
     localStorage.removeItem("switch");
     localStorage.removeItem("role");
   };
@@ -185,7 +195,7 @@ const ClinicHeader = () => {
             alt="hfiles logo"
             className="w-[154px] mr-2 cursor-pointer"
             style={{ backgroundColor: '#0331B5' }}
-            onClick={() => (window.location.href = '/labHome')}
+            onClick={() => (window.location.href = '/dashboard')}
           />
         </div>
         <div className="relative flex items-center space-x-3" ref={dropdownRef}>
@@ -205,7 +215,7 @@ const ClinicHeader = () => {
             )}
           </div>
 
-          <p className="text-white font-medium">{username}</p>
+          <p className="text-white font-medium">{userName}</p>
           <img
             src="/0e7f5f4a77770635e93d82998df96f869b6624bf.png"
             alt="Profile"
@@ -217,14 +227,14 @@ const ClinicHeader = () => {
               className={`absolute right-0 top-3 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 transition-all duration-200 ${dropdownAnimating ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
                 }`}
             >
-              {Role !== "Member" && 
-              <button
-                onClick={handleRevert}
-                className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
-              >
-                <RotateCcw size={14} className="mr-3 text-gray-500" />
-                Restore
-              </button>
+              {Role !== "Member" &&
+                <button
+                  onClick={handleRevert}
+                  className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                >
+                  <RotateCcw size={14} className="mr-3 text-gray-500" />
+                  Restore
+                </button>
               }
 
               <hr className="my-1 border-gray-100" />

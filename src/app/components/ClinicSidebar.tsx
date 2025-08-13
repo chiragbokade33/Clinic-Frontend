@@ -1,32 +1,33 @@
 "use client";
 
-import { faArrowLeft, faArrowRight, faFileAlt, faHome, faUser ,faListUl } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faFileAlt, faHome, faUser, faListUl } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState, useEffect } from "react";
+import { HfidSidebar } from "../services/ClinicServiceApi";
+import { getEmailId } from "../hooks/GetitemsLocal";
 
 
 type LabInfo = {
   hfid: number;
   labName: string;
 };
-// This works immediately on client
-const getStoredEmail = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("emailId");
-  }
-  return null;
-};
 
 const ClinicSidebar = ({ className = "" }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
-  // const emailId =localStorage.getItem('emailId');
   const [labName, setLabName] = useState<LabInfo[]>([]) as any;
-  const [email] = useState<string | null>(getStoredEmail);
+  const [email, setEmail] = useState<string | null>();
 
+  useEffect(() => {
+    const fetchemail = async () => {
+      const fetchedEmail = await getEmailId();
+      setEmail(fetchedEmail ? String(fetchedEmail) : null);
+    };
+    fetchemail();
+  }, []);
 
 
   // Handle responsive behavior
@@ -57,14 +58,15 @@ const ClinicSidebar = ({ className = "" }) => {
     return pathname === path;
   };
 
-  // const ListData = async () => {
-  //   const res = await SidebarData(String(email));
-  //   setLabName(res.data.data)
-  // }
-
-  // useEffect(() => {
-  //   ListData();
-  // }, [])
+  useEffect(() => {
+    if (email) {
+      const ListData = async () => {
+        const res = await HfidSidebar(email);
+        setLabName(res.data.data);
+      };
+      ListData();
+    }
+  }, [email]);
 
   return (
     <div
@@ -121,10 +123,10 @@ const ClinicSidebar = ({ className = "" }) => {
           <ul className="space-y-2">
             <li>
               <Link
-                href="/labHome"
-                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${isActive("/labHome")
-                    ? "text-blue-600"
-                    : "text-black hover:bg-blue-200"
+                href="/dashboard"
+                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${isActive("/dashboard")
+                  ? "text-blue-600"
+                  : "text-black hover:bg-blue-200"
                   }`}
               >
                 <FontAwesomeIcon icon={faHome} className="w-5 h-5" />
@@ -136,20 +138,20 @@ const ClinicSidebar = ({ className = "" }) => {
               <Link
                 href="/clinicProfile"
                 className={`flex items-center px-4 py-2 rounded-lg transition-colors ${isActive("/clinicProfile")
-                    ? "text-blue-600"
-                    : "text-black hover:bg-blue-200"
+                  ? "text-blue-600"
+                  : "text-black hover:bg-blue-200"
                   }`}
               >
                 <FontAwesomeIcon icon={faUser} className="w-5 h-5" />
                 {!collapsed && <span className="ml-4">Profile</span>}
               </Link>
             </li>
-             <li>
+            <li>
               <Link
                 href="/clinicpatient"
                 className={`flex items-center px-4 py-2 rounded-lg transition-colors ${isActive("/clinicpatient")
-                    ? "text-blue-600"
-                    : "text-black hover:bg-blue-200"
+                  ? "text-blue-600"
+                  : "text-black hover:bg-blue-200"
                   }`}
               >
                 <FontAwesomeIcon icon={faListUl} className="w-5 h-5" />
@@ -160,8 +162,8 @@ const ClinicSidebar = ({ className = "" }) => {
               <Link
                 href="/labForms"
                 className={`flex items-center px-4 py-2 rounded-lg transition-colors ${isActive("/labForms")
-                    ? "text-blue-600"
-                    : "text-black hover:bg-blue-200"
+                  ? "text-blue-600"
+                  : "text-black hover:bg-blue-200"
                   }`}
               >
                 <FontAwesomeIcon icon={faFileAlt} className="w-5 h-5" />

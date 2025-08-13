@@ -20,6 +20,7 @@ import Drawer from "../components/clinicInfoDrawer";
 import ProfileEditModal from "../components/ProfileEditModal";
 import GenericConfirmModal from "../components/GenericConfirmModal";
 import AddTeamMemberModal from "../components/AddTeamMemberModal";
+import { ListUser } from "../services/ClinicServiceApi";
 
 
 interface Admin {
@@ -51,7 +52,7 @@ const page = () => {
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState('branches');
-    // const [adminsList, setAdminsList] = useState<Admin[]>([]) as any;
+    const [adminsList, setAdminsList] = useState<Admin[]>([]) as any;
     const [memberList, setMemberList] = useState<Member[]>([]);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [branchCount, setBranchCount] = useState() as any;
@@ -67,12 +68,6 @@ const page = () => {
     const [isModalOpens, setIsModalOpens] = useState(false);
     const [submitType, setSubmitType] = useState<'admin' | 'superAdmin' | null>(null);
     const [superCheckBox, setSuperCheckBox] = useState(false)
-
-
-
-
-
-
 
 
 
@@ -189,8 +184,10 @@ const page = () => {
 
 
     const CardList = async () => {
-        //   const res = await UserCardList(Number(userId));
-        //   setAdminsList(res?.data?.data?.superAdmin);
+        const res = await ListUser(Number(3));
+        console.log(res.data.data);
+
+        setAdminsList(res?.data?.data?.superAdmin);
         //   setMemberList(res?.data?.data?.members);
         //   setUserCount(res?.data?.data?.userCounts);
     };
@@ -270,17 +267,7 @@ const page = () => {
     ];
 
 
-    const adminsList = [
-        {
-            adminId: 1,
-            name: "Ankit Hfiles",
-            email: "ankithfiles@gmail.com",
-            hfid: "HF120624RAN1097",
-            profilePhoto: "/98c4113b37688d826fc939709728223539f249dd.jpg",
-            status: "active",
-            role: "Admin",
-        }
-    ];
+
 
     const handleAddTeamMember = async (formData: any) => {
         try {
@@ -341,102 +328,107 @@ const page = () => {
                 </div>
 
 
-                {/* Info Icon */}
-                <div className="  ml-2 bg-green-700 text-white rounded-sm w-8 h-8 flex items-center justify-center cursor-pointer mt-3">
-                    <Tooltip content="Information about this page" position="bottom right-2">
-                        <FontAwesomeIcon icon={faInfoCircle} onClick={() => setIsDrawerOpen(true)} />
-                    </Tooltip>
-                </div>
-
-
-                <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
-                    {/* { <MemberInformation />} */}hii
-                </Drawer>
 
                 {/* Profile Card */}
-                <div className="w-full lg:max-w-2xl p-2 sm:p-4">
-                    {branchList
-                        .filter((lab) => lab.labId === 1) // or just remove filter if showing all
-                        .map((lab) => (
-                            <div key={lab.labId}>
-                                <div className="mb-2 px-2 text-blue-800 font-semibold text-lg sm:text-base">
-                                    Account:{" "}
-                                    <span className="text-gray-800">
-                                        {lab.address || "Address not available"}
-                                    </span>
-                                </div>
+                <div className="flex justify-between w-full gap-4">
+                    {/* Left section - Account Details */}
+                    <div className="w-full lg:max-w-2xl p-2 sm:p-4">
+                        {branchList
+                            .filter((lab) => lab.labId === 1)
+                            .map((lab) => (
+                                <div key={lab.labId}>
+                                    <div className="mb-2 px-2 text-blue-800 font-semibold text-lg sm:text-base">
+                                        Account:{" "}
+                                        <span className="text-gray-800">
+                                            {lab.address || "Address not available"}
+                                        </span>
+                                    </div>
 
-                                <div className="bg-white rounded-3xl shadow-md flex flex-col sm:flex-row border mb-2">
-                                    {/* Profile Image */}
-                                    <div className="relative mb-3 mt-3 mx-3 flex justify-center">
-                                        <img
-                                            src={
-                                                lab.profilePhoto ||
-                                                "/98c4113b37688d826fc939709728223539f249dd.jpg"
-                                            }
-                                            alt={lab.labName}
-                                            className="w-32 h-32 sm:w-[224px] sm:h-[180px] rounded-full object-cover"
-                                        />
-                                        <div
-                                            className="absolute bottom-2 right-4 p-2 bg-blue-900 w-[30px] h-[30px] rounded-full cursor-pointer"
-                                            onClick={() => {
-                                                setSelectedLab(lab);
-                                                setIsProfileModalOpen(true);
-                                            }}
-                                        >
-                                            <FontAwesomeIcon
-                                                icon={faPencil}
-                                                size="sm"
-                                                className="text-white mb-1"
+                                    <div className="bg-white rounded-3xl shadow-md flex flex-col sm:flex-row border mb-2">
+                                        {/* Profile Image */}
+                                        <div className="relative mb-3 mt-3 mx-3 flex justify-center">
+                                            <img
+                                                src={
+                                                    lab.profilePhoto ||
+                                                    "/98c4113b37688d826fc939709728223539f249dd.jpg"
+                                                }
+                                                alt={lab.labName}
+                                                className="w-32 h-32 sm:w-[224px] sm:h-[180px] rounded-full object-cover"
                                             />
+                                            <div
+                                                className="absolute bottom-2 right-4 p-2 bg-blue-900 w-[30px] h-[30px] rounded-full cursor-pointer"
+                                                onClick={() => {
+                                                    setSelectedLab(lab);
+                                                    setIsProfileModalOpen(true);
+                                                }}
+                                            >
+                                                <FontAwesomeIcon
+                                                    icon={faPencil}
+                                                    size="sm"
+                                                    className="text-white mb-1"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Details */}
+                                        <div className="ml-6 mb-5 flex flex-col justify-between">
+                                            <div className="text-sm bg-gray-800 text-white px-2 py-2 rounded-bl-md rounded-tr-2xl sm:ml-[220px] mb-2">
+                                                HF_id: {lab.hfId}
+                                            </div>
+                                            <div className="text-sm sm:text-base">
+                                                <h2 className="text-lg sm:text-xl font-bold text-blue-800">
+                                                    {lab.labName}
+                                                </h2>
+                                                <p>
+                                                    <span className="font-semibold">E-mail:</span> {lab.emails[0]}
+                                                </p>
+                                                {lab.emails[1] && (
+                                                    <ul className="list-disc ml-13">
+                                                        <li>{lab.emails[1]}</li>
+                                                    </ul>
+                                                )}
+                                                <p>
+                                                    <span className="font-semibold">Phone:</span> {lab.phone}
+                                                </p>
+                                                <p className="break-words">
+                                                    <span className="font-semibold">Address:</span> {lab.fullAddress}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Details */}
-                                    <div className="ml-6 mb-5 flex flex-col justify-between ">
-                                        <div className="text-sm bg-gray-800 text-white px-2 py-2 rounded-bl-md rounded-tr-2xl  sm:ml-[220px] mb-2">
-                                            HF_id: {lab.hfId}
-                                        </div>
-                                        <div className="text-sm sm:text-base">
-                                            <h2 className="text-lg sm:text-xl font-bold text-blue-800">
-                                                {lab.labName}
-                                            </h2>
-                                            <p>
-                                                <span className="font-semibold">E-mail:</span> {lab.emails[0]}
-                                            </p>
-                                            {lab.emails[1] && (
-                                                <ul className="list-disc ml-13">
-                                                    <li>{lab.emails[1]}</li>
-                                                </ul>
-                                            )}
-
-
-                                            <p>
-                                                <span className="font-semibold">Phone:</span> {lab.phone}
-                                            </p>
-                                            <p className="break-words">
-                                                <span className="font-semibold">Address:</span> {lab.fullAddress}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    <ProfileEditModal
+                                        isOpen={isProfileModalOpen}
+                                        onClose={() => setIsProfileModalOpen(false)}
+                                        lab={selectedLab}
+                                        onSave={async (formData: FormData) => {
+                                            try {
+                                                await ListBranch();
+                                            } catch (error) {
+                                                console.error("Update failed:", error);
+                                            }
+                                        }}
+                                        BASE_URL={""}
+                                    />
                                 </div>
+                            ))}
+                    </div>
 
-                                <ProfileEditModal
-                                    isOpen={isProfileModalOpen}
-                                    onClose={() => setIsProfileModalOpen(false)}
-                                    lab={selectedLab}
-                                    onSave={async (formData: FormData) => {
-                                        try {
-                                            //   const response = await UpdateProfile(formData);
-                                            //   toast.success(`${response.data.message}`);
-                                            await ListBranch();
-                                        } catch (error) {
-                                            console.error("Update failed:", error);
-                                        }
-                                    }} BASE_URL={""} />
-                            </div>
-                        ))}
+                    {/* Right section - Info Icon */}
+                    <div className="flex items-start mt-3">
+                        <div className="ml-2 bg-green-700 text-white rounded-sm w-8 h-8 flex items-center justify-center cursor-pointer">
+                            <Tooltip content="Information about this page" position="bottom right-2">
+                                <FontAwesomeIcon icon={faInfoCircle} onClick={() => setIsDrawerOpen(true)} />
+                            </Tooltip>
+                        </div>
+
+                        <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
+                            hii
+                        </Drawer>
+                    </div>
                 </div>
+
+
 
                 <div className="p-2 sm:p-4">
 
@@ -445,21 +437,21 @@ const page = () => {
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="w-full md:w-1/2 space-y-4">
                                 {adminsList && (
-                                    <div key={adminsList[0].adminId} className="relative flex items-start gap-4 border rounded-lg p-4 bg-white">
+                                    <div key={adminsList.memberId} className="relative flex items-start gap-4 border rounded-lg p-4 bg-white">
                                         <img
                                             src={
-                                                // adminsList[0].profilePhoto && adminsList[0].profilePhoto !== "No image preview available"
-                                                //     ? `${BASE_URL}${adminsList[0].profilePhoto}`
-                                                //     : 
-                                                "/98c4113b37688d826fc939709728223539f249dd.jpg"
+                                                adminsList.profilePhoto && adminsList.profilePhoto !== "No image preview available"
+                                                    ? `${adminsList.profilePhoto}`
+                                                    :
+                                                    "/98c4113b37688d826fc939709728223539f249dd.jpg"
                                             }
-                                            alt={adminsList[0].name}
+                                            alt={adminsList.name}
                                             className="w-20 h-20 rounded-sm object-cover"
                                         />
                                         <div className="gap-3 p-2">
-                                            <p className="text-sm"><span className="font-semibold">Name:</span> {adminsList[0].name}</p>
-                                            <p className="text-sm"><span className="font-semibold">E-mail:</span> {adminsList[0].email}</p>
-                                            <p className="text-sm"><span className="font-semibold">HF_id:</span> {adminsList[0].hfid}</p>
+                                            <p className="text-sm"><span className="font-semibold">Name:</span> {adminsList.name}</p>
+                                            <p className="text-sm"><span className="font-semibold">E-mail:</span> {adminsList.email}</p>
+                                            <p className="text-sm"><span className="font-semibold">HF_id:</span> {adminsList.hfid}</p>
                                         </div>
                                         <span className="absolute top-0 right-0 text-xs text-white px-2 py-1 rounded bg-green-600">
                                             Main

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { endPoints } from "../apiEndPoints";
 import { Asul } from "next/font/google";
+import axiosInstance from "../utils/axiosClient";
 
 
 // SignUp Clinic 
@@ -39,4 +40,22 @@ export const HfidCheck = async (hfid:any) =>{
 
 export const LoginUser = async (payloade:any) =>{
     return axios.post(`${endPoints.SuperAdminCreate.UserLogin}`, payloade)
+}
+
+export const ListUser = async (userId:number) =>{
+    return axios.get(endPoints.SuperAdminCreate.ClinicUserList(userId))
+}
+
+
+
+// HFID Sidebar 
+
+export const HfidSidebar = async (email:string) =>{
+    return axiosInstance.get(`${endPoints.ClinicHFid.SideHfid}?email=${email}`)
+}
+
+// Member add 
+
+export const AddMember = async (payloade:any) =>{
+    return axiosInstance.post(`${endPoints.ADDMember.CreateMember}`, payloade)
 }

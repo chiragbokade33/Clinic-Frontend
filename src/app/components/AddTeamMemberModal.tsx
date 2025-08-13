@@ -1,17 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faEye, faEyeSlash,  faLock, faSquarePlus } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faEye, faEyeSlash, faLock, faSquarePlus } from '@fortawesome/free-solid-svg-icons';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-// import { CreateMemeber, HfidCheck, ListBranchData } from '@/services/labServiceApi';
 import { toast, ToastContainer } from "react-toastify";
-
-type UserInfo = {
-  name: string;
-  email: string;
-  profilePhoto: string;
-};
+import { AddMember, HfidCheck } from '../services/ClinicServiceApi';
+import { getUserId } from '../hooks/GetitemsLocal';
 
 type AddTeamMemberModalProps = {
   isOpen: boolean;
@@ -19,42 +14,47 @@ type AddTeamMemberModalProps = {
   onSubmit: (formData: any) => void;
 };
 
-type Branch = {
-  labId: number | string;  
-  location: string;
-  pincode: string;
-  hfid: string;
-};
 
 const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [showAssignPassword, setShowAssignPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [userFound, setUserFound] = useState<UserInfo | null>(null) as any;
   const [userInfo, setUserInfo] = useState<{ username: string; userEmail: string; } | null>(null)
   const [isHFIDValid, setIsHFIDValid] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [branchList, setBranchList] = useState([]) as any;
+
+  const [currentUserId, setCurrentUserId] = useState<number>();
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+    };
+    fetchUserId();
+  }, []);
+
+  useEffect(() => {
+    if (currentUserId) {
+      formik.setFieldValue('branchId', currentUserId.toString());
+    }
+  }, [currentUserId]);
 
   const validateHFID = async (hfid: string) => {
     try {
-      setChecking(true);
-    //   const res = await HfidCheck({ hfid });
-    //   setUserInfo({
-    //     username: res.data.data.username,
-    //     userEmail: res.data.data.userEmail
-    //   })
-    //   if (res?.data) {
-    //     toast.success(`${res.data.message}`);
-    //     setIsHFIDValid(true);
-    //   } else {
-    //     toast.error('Invalid hfid');
-    //     setIsHFIDValid(false);
-    //   }
+      const res = await HfidCheck({ hfid });
+      setUserInfo({
+        username: res.data.data.username,
+        userEmail: res.data.data.userEmail
+      })
+      if (res?.data) {
+        toast.success(`${res.data.message}`);
+        setIsHFIDValid(true);
+      } else {
+        toast.error('Invalid hfid');
+        setIsHFIDValid(false);
+      }
     } catch (error) {
       const err = error as any;
       toast.error(`${err.res.data.message}`);
     } finally {
-      setChecking(false);
     }
   };
 
@@ -64,7 +64,7 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
       .required('HF ID is required')
       .min(3, 'HF ID must be at least 3 characters'),
     branchId: Yup.string()
-      .required('branchId selection is required'),
+      .required('branchId  is required'),
     password: Yup.string()
       .required('Password is required')
       .min(6, 'Password must be at least 6 characters')
@@ -80,7 +80,7 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
   const formik = useFormik({
     initialValues: {
       hfid: '',
-      branchId: '',
+      branchId: currentUserId ? currentUserId.toString() : '',
       password: '',
       confirmPassword: ''
     },
@@ -93,8 +93,8 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
           password: values.password,
           confirmPassword: values.confirmPassword
         };
-        // const res = await CreateMemeber(payload)
-        // toast.success(`${res.data.message}`)
+        const res = await AddMember(payload)
+        toast.success(`${res.data.message}`)
         await onSubmit(payload);
         handleClose();
       } catch (error) {
@@ -108,23 +108,10 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
 
   const handleClose = () => {
     formik.resetForm();
-    setUserFound(null);
     setShowAssignPassword(false);
     setShowConfirmPassword(false);
     onClose();
   };
-
-
-//   const ListBranch = async () => {
-//     const response = await ListBranchData();
-//     setBranchList(response.data.data.labs);
-//   }
-
-
-//   useEffect(() => {
-//     ListBranch();
-//   }, [])
-
 
   if (!isOpen) return null;
 
@@ -175,25 +162,22 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
 
             {/* Branch Selection */}
             <div className="relative">
-              <select
+              <input
+                type="text"
                 name="branchId"
-                value={formik.values.branchId}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                className={`flex-1 w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${formik.touched.branchId && formik.errors.branchId ? 'border-red-500' : 'border-gray-300'
+                value={currentUserId ? currentUserId.toString() : formik.values.branchId}
+                readOnly
+                className={`flex-1 w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${formik.touched.branchId && formik.errors.branchId
+                  ? 'border-red-500'
+                  : 'border-gray-300'
                   }`}
-              >
-                <option value="">Select a branch they work from</option>
-                {branchList?.map((branch: Branch) => (
-                  <option key={branch.labId} value={branch.labId}>
-                    {`${branch.location} - ${branch.pincode} - ${branch.hfid}`}
-                  </option>
-                ))}
-              </select>
+              />
+
               {formik.touched.branchId && formik.errors.branchId && (
                 <p className="text-red-500 text-sm mt-1">{formik.errors.branchId}</p>
               )}
             </div>
+
 
             {/* Assign Password */}
             <div className="flex items-center gap-3">
@@ -279,8 +263,8 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
               {/* Add Button Below Card */}
               <button
                 type="button"
-                  onClick={() => formik.handleSubmit()}               
-                   disabled={!isHFIDValid || formik.isSubmitting}
+                onClick={() => formik.handleSubmit()}
+                disabled={!isHFIDValid || formik.isSubmitting}
                 className={`mt-4 w-full sm:w-full px-6 py-2 rounded-md text-sm font-medium transition cursor-pointer ${!isHFIDValid || formik.isSubmitting
                   ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                   : 'bg-blue-800 text-white hover:bg-blue-900'
