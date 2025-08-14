@@ -241,7 +241,7 @@ const page = () => {
                                                 className="max-w-20 max-h-20 rounded"
                                             />
                                         </div>
-                                        <button className="w-full bg-yellow text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors">
+                                        <button className="w-full bg-yellow text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors" onClick={() => router.push("/prescription")}>
                                             Prescription
                                         </button>
                                     </div>
