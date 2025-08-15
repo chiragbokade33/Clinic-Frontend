@@ -17,6 +17,7 @@
     "@fortawesome/free-solid-svg-icons": "^7.0.0",
     "@fortawesome/react-fontawesome": "^0.2.3",
     "@headlessui/react": "^2.2.7",
+    "@heroicons/react": "^2.2.0",
     "animate.css": "^4.1.1",
     "axios": "^1.11.0",
     "canvas-confetti": "^1.9.3",
