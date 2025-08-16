@@ -123,7 +123,7 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
               <img
                 src={
                   adminsList.profilePhoto && adminsList.profilePhoto !== "No image preview available"
-                    ? `${BASE_URL}${adminsList.profilePhoto}`
+                    ? `${adminsList.profilePhoto}`
                     : "/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
                 }
                 alt={adminsList.name}

@@ -21,6 +21,7 @@ import MemberInformation from "../components/pageInfomations/MemberInformation";
 import ProfileEditModal from "../components/ProfileEditModal";
 import BranchData from "../components/BranchData";
 import LabAllMemberPage from "../components/LabAllMemberPage";
+import { ListUser } from "../services/ClinicServiceApi";
 
 
 interface Admin {
@@ -180,8 +181,8 @@ const [userId] = useState<string | null>(getStoredUserId);
 
 
     const CardList = async () => {
-    //   const res = await UserCardList(Number(userId));
-    //   setAdminsList(res?.data?.data?.superAdmin);
+      const res = await ListUser(Number(userId));
+      setAdminsList(res?.data?.data?.superAdmin);
     //   setMemberList(res?.data?.data?.members);
     //   setUserCount(res?.data?.data?.userCounts);
     };
@@ -195,7 +196,8 @@ const filteredData = activeTab === 'branches'
       branch.hfid.toLowerCase().includes(searchQuery.toLowerCase()) ||
       branch.labName.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  : memberList?.filter((member: any) =>
+  :
+   memberList?.filter((member: any) =>
       member.hfid.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
