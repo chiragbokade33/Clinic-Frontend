@@ -7,13 +7,10 @@ import {
   faSearch,
   faInfoCircle
 } from "@fortawesome/free-solid-svg-icons";
-
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
-// import { ListBranchData, CreateBranch, DeleteBranch, UpdateProfile, UserCardList } from "@/services/labServiceApi";
 import { toast, ToastContainer } from "react-toastify";
-
 import Tooltip from './../components/Tooltip';
 import Drawer from "../components/clinicInfoDrawer";
 import BranchInformation from "../components/pageInfomations/BranchInformation";
@@ -21,7 +18,8 @@ import MemberInformation from "../components/pageInfomations/MemberInformation";
 import ProfileEditModal from "../components/ProfileEditModal";
 import BranchData from "../components/BranchData";
 import LabAllMemberPage from "../components/LabAllMemberPage";
-import { ListUser } from "../services/ClinicServiceApi";
+import { CreateBranch, DeleteBranch, ListBranchData, ListUser, UpdateProfile } from "../services/ClinicServiceApi";
+import { getUserId } from "../hooks/GetitemsLocal";
 
 
 interface Admin {
@@ -43,45 +41,45 @@ interface Member {
   promotedByName: string;
 }
 
-const getStoredUserId = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("userId");
-  }
-  return null;
-};
 
 const page = () => {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [branchList, setBranchList] = useState([]) as any;
+  const [branchList, setBranchList] = useState([]) as any;
   const [hasSwitched, setHasSwitched] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedAddress, setEditedAddress] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState('branches');
-    const [adminsList, setAdminsList] = useState<Admin[]>([]) as any;
-    const [memberList, setMemberList] = useState<Member[]>([]);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [branchCount , setBranchCount] = useState()as any;
-    const [userCount, setUserCount] = useState() as any;
-    const [selectedLab, setSelectedLab] = useState<any>(null);
-const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [adminsList, setAdminsList] = useState<Admin[]>([]) as any;
+  const [memberList, setMemberList] = useState<Member[]>([]);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [branchCount, setBranchCount] = useState() as any;
+  const [userCount, setUserCount] = useState() as any;
+  const [selectedLab, setSelectedLab] = useState<any>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number>();
 
-const [userId] = useState<string | null>(getStoredUserId);
-    // const userId = localStorage.getItem("userId");
-  
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+    };
+    fetchUserId();
+  }, []);
 
   // Formik & Yup schema
   const formik = useFormik({
     initialValues: {
-      labName: "North Star",
+      clinicName: "North Star",
       email: "",
       phoneNumber: "",
       pincode: "",
     },
     validationSchema: Yup.object({
-      labName: Yup.string().required("Branch Name is required"),
+      clinicName: Yup.string().required("Clinic Name is required"),
       email: Yup.string()
         .matches(
           /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
@@ -89,40 +87,41 @@ const [userId] = useState<string | null>(getStoredUserId);
         )
         .required("Email is required"),
       phoneNumber: Yup.string()
-        .matches(
-          /^[0-9]{10}$/,
-          "Phone number must be exactly 10 digits and contain only numbers"
-        )
+        .matches(/^[0-9]{10}$/, "Phone number must be exactly 10 digits")
         .required("Phone number is required"),
       pincode: Yup.string()
-        .matches(/^\d{6}$/, "Pin-code must be exactly 6 digits and contain only numbers")
+        .matches(/^\d{6}$/, "Pin-code must be exactly 6 digits")
         .required("Pin-code is required"),
     }),
     onSubmit: async (values) => {
       try {
         const payload = {
-          labName: values.labName,
+          clinicName: values.clinicName,
           email: values.email,
           phoneNumber: values.phoneNumber,
           pincode: values.pincode,
         };
 
-        // const response = await CreateBranch(payload);
-        // toast.success(`${response.data.message}`)
-        // setIsModalOpen(false);
-        // formik.resetForm();
+        const response = await CreateBranch(payload);
+        toast.success(`${response.data.message}`);
+        setIsModalOpen(false);
+        formik.resetForm();
         await ListBranch();
-      } catch (error) {
-        console.error("Error creating branch:", error);
+      } catch (error: any) {
+        console.error("❌ Error creating branch:", error);
+        toast.error(
+          error?.response?.data?.message || "Failed to create branch"
+        );
       }
     },
   });
 
 
+
   const ListBranch = async () => {
-    // const res = await ListBranchData();
-    // setBranchList(res?.data?.data?.labs);
-    // setBranchCount(res.data.data.labCounts)
+    const res = await ListBranchData();
+    setBranchList(res?.data?.data?.clinics);
+    setBranchCount(res.data.data.clinicCounts)
   }
 
 
@@ -138,12 +137,12 @@ const [userId] = useState<string | null>(getStoredUserId);
     }
   }, [hasSwitched]);
 
-  const handleRemoveBranch = async (labId: number) => {
+  const handleRemoveBranch = async (clinicId: number) => {
     try {
-    //   const response = await DeleteBranch(Number(labId))
-    //   toast.success(`${response.data.message}`);
-    //   await ListBranch();
-    //   formik.resetForm();
+      const response = await DeleteBranch(Number(clinicId))
+      toast.success(`${response.data.message}`);
+      await ListBranch();
+      formik.resetForm();
     } catch (error) {
       console.error(error);
     }
@@ -164,59 +163,47 @@ const [userId] = useState<string | null>(getStoredUserId);
 
   const handleSave = async (lab: any) => {
     const formData = new FormData();
-    formData.append("Id", lab.labId);
+    formData.append("ClinicId", lab.ClinicId);
     formData.append("Address", editedAddress);
     if (uploadedFile) {
       formData.append("ProfilePhoto", uploadedFile);
     }
     try {
-    //   const response = await UpdateProfile(formData);
-    //   toast.success(`${response.data.message}`);
-    //   setIsEditing(false);
-    //   await ListBranch();
+      const response = await UpdateProfile(formData);
+      toast.success(`${response.data.message}`);
+      setIsEditing(false);
+      await ListBranch();
     } catch (error) {
       console.error("Update failed:", error);
     }
   };
 
 
-    const CardList = async () => {
-      const res = await ListUser(Number(userId));
-      setAdminsList(res?.data?.data?.superAdmin);
-    //   setMemberList(res?.data?.data?.members);
-    //   setUserCount(res?.data?.data?.userCounts);
-    };
-  
-    useEffect(() => {
-      CardList();
-    }, []);
+  const CardList = async () => {
+    const id = await getUserId();
+    setCurrentUserId(id);
+    const res = await ListUser(Number(id));
+    setAdminsList(res?.data?.data?.superAdmin);
+    setMemberList(res?.data?.data?.members);
+    setUserCount(res?.data?.data?.userCounts);
+  };
 
-const filteredData = activeTab === 'branches'
-  ? branchList?.filter((branch: any) =>
+  useEffect(() => {
+    CardList();
+  }, [currentUserId]);
+
+
+
+  const filteredData = activeTab === 'branches'
+    ? branchList?.filter((branch: any) =>
       branch.hfid.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      branch.labName.toLowerCase().includes(searchQuery.toLowerCase())
+      branch.clinicName.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  :
-   memberList?.filter((member: any) =>
+    :
+    memberList?.filter((member: any) =>
       member.hfid.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
-
-    			    const branchList = [
-        {
-            labId: 1,
-            address: "Arthrose, Mumbai-400007.",
-            profilePhoto: "/98c4113b37688d826fc939709728223539f249dd.jpg", // Replace with a real path or leave empty for default
-            labName: "Arthrose",
-            emails: ["ankithfiles@gmail.com", "xyzxyz@gmail.com"],
-            phone: "123456789012",
-            fullAddress: "5-A, Ravi Pushp Apartment, Ahmedabad - 380052, Gujarat",
-            hfId: "HF120624RAN1097",
-        },
-    ];
-
-
 
   return (
     <DefaultLayout>
@@ -242,7 +229,7 @@ const filteredData = activeTab === 'branches'
           <div className="border-b mx-3"></div>
         </div>
 
-      
+
 
         {/*Tabs */}
         <div className="relative flex items-center justify-between w-full">
@@ -267,100 +254,104 @@ const filteredData = activeTab === 'branches'
           </div>
 
           {/* Info Icon */}
-         <div className="absolute right-0 ml-2 bg-green-700 text-white rounded-sm w-8 h-8 flex items-center justify-center cursor-pointer">
+          <div className="absolute right-0 ml-2 bg-green-700 text-white rounded-sm w-8 h-8 flex items-center justify-center cursor-pointer">
             <Tooltip content="Information about this page" position="bottom right-2">
               <FontAwesomeIcon icon={faInfoCircle} onClick={() => setIsDrawerOpen(true)} />
             </Tooltip>
           </div>
 
 
-           <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
-               {activeTab === 'branches' ? <BranchInformation /> : <MemberInformation />}
-              </Drawer>
+          <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
+            {activeTab === 'branches' ? <BranchInformation /> : <MemberInformation />}
+          </Drawer>
         </div>
 
         {/* Profile Card */}
-       <div className="w-full lg:max-w-2xl p-2 sm:p-4">
-                        {branchList
-                            .filter((lab) => lab.labId === 1)
-                            .map((lab) => (
-                                <div key={lab.labId}>
-                                    <div className="mb-2 px-2 text-blue-800 font-semibold text-lg sm:text-base">
-                                        Account:{" "}
-                                        <span className="text-gray-800">
-                                            {lab.address || "Address not available"}
-                                        </span>
-                                    </div>
+        <div className="w-full lg:max-w-2xl p-2 sm:p-4">
+          {branchList
+            .filter((clinic: any) => clinic.clinicId == currentUserId)
+            .map((clinic: any) => (
+              <div key={clinic.clinicId}>
+                <div className="mb-2 px-2 text-blue-800 font-semibold text-lg sm:text-base">
+                  Account:{" "}
+                  <span className="text-gray-800">
+                    {clinic.clinicaddress || "Address not available"}
+                  </span>
+                </div>
 
-                                    <div className="bg-white rounded-3xl shadow-md flex flex-col sm:flex-row border mb-2">
-                                        {/* Profile Image */}
-                                        <div className="relative mb-3 mt-3 mx-3 flex justify-center">
-                                            <img
-                                                src={
-                                                    lab.profilePhoto ||
-                                                    "/98c4113b37688d826fc939709728223539f249dd.jpg"
-                                                }
-                                                alt={lab.labName}
-                                                className="w-32 h-32 sm:w-[224px] sm:h-[180px] rounded-full object-cover"
-                                            />
-                                            <div
-                                                className="absolute bottom-2 right-4 p-2 bg-blue-900 w-[30px] h-[30px] rounded-full cursor-pointer"
-                                                onClick={() => {
-                                                    setSelectedLab(lab);
-                                                    setIsProfileModalOpen(true);
-                                                }}
-                                            >
-                                                <FontAwesomeIcon
-                                                    icon={faPencil}
-                                                    size="sm"
-                                                    className="text-white mb-1"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Details */}
-                                        <div className="ml-6 mb-5 flex flex-col justify-between">
-                                            <div className="text-sm bg-gray-800 text-white px-2 py-2 rounded-bl-md rounded-tr-2xl sm:ml-[220px] mb-2">
-                                                HF_id: {lab.hfId}
-                                            </div>
-                                            <div className="text-sm sm:text-base">
-                                                <h2 className="text-lg sm:text-xl font-bold text-blue-800">
-                                                    {lab.labName}
-                                                </h2>
-                                                <p>
-                                                    <span className="font-semibold">E-mail:</span> {lab.emails[0]}
-                                                </p>
-                                                {lab.emails[1] && (
-                                                    <ul className="list-disc ml-13">
-                                                        <li>{lab.emails[1]}</li>
-                                                    </ul>
-                                                )}
-                                                <p>
-                                                    <span className="font-semibold">Phone:</span> {lab.phone}
-                                                </p>
-                                                <p className="break-words">
-                                                    <span className="font-semibold">Address:</span> {lab.fullAddress}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <ProfileEditModal
-                                        isOpen={isProfileModalOpen}
-                                        onClose={() => setIsProfileModalOpen(false)}
-                                        lab={selectedLab}
-                                        onSave={async (formData: FormData) => {
-                                            try {
-                                                await ListBranch();
-                                            } catch (error) {
-                                                console.error("Update failed:", error);
-                                            }
-                                        }}
-                                        BASE_URL={""}
-                                    />
-                                </div>
-                            ))}
+                <div className="bg-white rounded-2xl shadow-md flex flex-col sm:flex-row border mb-2">
+                  {/* Profile Image */}
+                  <div className="relative mb-3 mt-3 mx-3 flex justify-center">
+                    <img
+                      src={
+                        clinic.profilePhoto &&
+                          clinic.profilePhoto !== "No image preview available"
+                          ? clinic.profilePhoto
+                          : "/98c4113b37688d826fc939709728223539f249dd.jpg"
+                      }
+                      alt="Clinic Profile"
+                      className="w-32 h-32 sm:w-[224px] sm:h-[180px] rounded-full object-cover"
+                    />
+                    <div
+                      className="absolute bottom-2 right-4 p-2 bg-blue-900 w-[30px] h-[30px] rounded-full cursor-pointer"
+                      onClick={() => {
+                        setSelectedLab(clinic);
+                        setIsProfileModalOpen(true);
+                      }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faPencil}
+                        size="sm"
+                        className="text-white mb-1"
+                      />
                     </div>
+                  </div>
+
+                  {/* Details */}
+                  <div className="ml-4 mb-5 flex flex-col justify-between">
+                    <div className="text-xs bg-gray-800 text-white px-2 py-2 rounded-bl-md rounded-tr-2xl sm:ml-[222px] mb-2">
+                      HF_id: {clinic.hfid}
+                    </div>
+                    <div className="text-sm sm:text-base">
+                      <h2 className="text-lg sm:text-xl font-bold text-blue-800">
+                        {clinic.clinicName}
+                      </h2>
+                      <p>
+                        <span className="font-semibold">E-mail:</span> {clinic.email}
+                      </p>
+                      {clinic?.email && (
+                        <ul className="list-disc ml-13">
+                          <li>{clinic?.email}</li>
+                        </ul>
+                      )}
+                      <p>
+                        <span className="font-semibold">Phone:</span> {clinic.phoneNumber}
+                      </p>
+                      <p className="break-words">
+                        <span className="font-semibold">Address:</span> {clinic.location}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <ProfileEditModal
+                  isOpen={isProfileModalOpen}
+                  onClose={() => setIsProfileModalOpen(false)}
+                  clinic={selectedLab}
+                  onSave={async (formData: FormData) => {
+                    try {
+                      const response = await UpdateProfile(formData);
+                      toast.success(`${response.data.message}`);
+                      await ListBranch();
+                    } catch (error) {
+                      console.error("Update failed:", error);
+                    }
+                  }}
+                  BASE_URL={""}
+                />
+              </div>
+            ))}
+        </div>
         <div className="flex justify-end mx-4 mb-2">
           <p className="text-base">
             <span className="font-bold">
@@ -380,10 +371,10 @@ const filteredData = activeTab === 'branches'
             hasSwitched={hasSwitched}
             handleRemoveBranch={handleRemoveBranch}
             isModalOpen={isModalOpen}
-            formik={formik} BASE_URL={""}          />
+            formik={formik} BASE_URL={""} />
         )}
 
-        {activeTab === 'members' && <LabAllMemberPage  filteredData={filteredData} CardList={CardList} adminsList={adminsList}/>}
+        {activeTab === 'members' && <LabAllMemberPage filteredData={filteredData} CardList={CardList} adminsList={adminsList} />}
         <ToastContainer />
       </div>
     </DefaultLayout>

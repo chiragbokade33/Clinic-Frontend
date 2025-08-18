@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleMinus, faUserPlus, faUsers } from '@fortawesome/free-solid-svg-icons';
-// import { AddMember, DeleteMember, PromoteSuperAdmin } from "@/services/labServiceApi";
 import { useFormik } from "formik";
 import * as Yup from 'yup';
 import { toast, ToastContainer } from "react-toastify";
 import GenericConfirmModal from "../components/GenericConfirmModal";
 import AddTeamMemberModal from "./AddTeamMemberModal";
+import { DeleteMember, PromoteAdmin, PromoteSuperAdmin } from "../services/ClinicServiceApi";
 
 
 interface PageProps {
@@ -35,7 +35,7 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
   const [selectedMemberIds, setSelectedMemberIds] = useState<Number | null>(null);
   const [isModalOpens, setIsModalOpens] = useState(false);
   // const [role, setRole] = useState<string | null>(null);
-    const [Role] = useState<string | null>(getStoredRole);
+  const [Role] = useState<string | null>(getStoredRole);
 
 
   //   useEffect(() => {
@@ -44,7 +44,6 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
   // }, []);
 
 
-  const BASE_URL = "https://hfiles.in/upload/";
 
   const formik = useFormik({
     initialValues: {
@@ -59,16 +58,16 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
       try {
         if (submitType === 'admin') {
           const payload = { ids: values.selectedMembers };
-        //   const response = await AddMember(payload);
-        //   toast.success(`${response.data.message}`);
+          const response = await PromoteAdmin(payload);
+          toast.success(`${response.data.message}`);
         } else if (submitType === 'superAdmin') {
           if (values.selectedMembers.length !== 1) {
             toast.error("Please select exactly one member to promote as Super Admin.");
             return;
           }
           const memberId = values.selectedMembers[0];
-        //   const response = await PromoteSuperAdmin(memberId);
-        //   toast.success(`${response.data.message}`);
+          const response = await PromoteSuperAdmin(memberId);
+          toast.success(`${response.data.message}`);
         }
         await CardList();
         formik.resetForm();
@@ -85,8 +84,8 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
 
   const handleRemoveMember = async (memberId: number) => {
     try {
-    //   const response = await DeleteMember(memberId)
-    //   toast.success(`${response.data.message}`);
+      const response = await DeleteMember(memberId)
+      toast.success(`${response.data.message}`);
       await CardList();
       formik.resetForm();
       setManageMode(false);
@@ -152,7 +151,7 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
                         <img
                           src={
                             member.profilePhoto && member.profilePhoto !== "No image preview available"
-                              ? `${BASE_URL}${member.profilePhoto}`
+                              ? `${member.profilePhoto}`
                               : "/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
                           }
                           alt={member.name}
@@ -300,7 +299,7 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
                         <img
                           src={
                             member.profilePhoto && member.profilePhoto !== "No image preview available"
-                              ? `${BASE_URL}${member.profilePhoto}`
+                              ? `${member.profilePhoto}`
                               : "/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
                           }
                           alt={member.name}
@@ -311,20 +310,6 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              // onChange={() => {
-                              //   const selected = formik.values.selectedMembers;
-                              //   if (selected.includes(member.memberId)) {
-                              //     formik.setFieldValue(
-                              //       'selectedMembers',
-                              //       selected.filter(id => id !== member.memberId)
-                              //     );
-                              //   } else {
-                              //     formik.setFieldValue(
-                              //       'selectedMembers',
-                              //       [...selected, member.memberId]
-                              //     );
-                              //   }
-                              // }}
                               onChange={() => {
                                 if (superCheckBox) {
                                   // When superCheckBox is active, only select one member (replace selectedMembers)
@@ -371,7 +356,6 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
                       <div className="flex justify-end mt-2">
                         <button
                           type="button"
-                          // onClick={() => handleRemoveMember(member.memberId)}
                           onClick={() => {
                             setSelectedMemberIds(member.memberId);
                             setIsModalOpens(true);

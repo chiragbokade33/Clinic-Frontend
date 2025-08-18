@@ -1,6 +1,5 @@
 import axios from "axios";
 import { endPoints } from "../apiEndPoints";
-import { Asul } from "next/font/google";
 import axiosInstance from "../utils/axiosClient";
 
 
@@ -58,4 +57,43 @@ export const HfidSidebar = async (email:string) =>{
 
 export const AddMember = async (payloade:any) =>{
     return axiosInstance.post(`${endPoints.ADDMember.CreateMember}`, payloade)
+}
+
+export const PromoteSuperAdmin = async (memberId: number) =>{
+    return axiosInstance.post(`${endPoints.ADDMember.SuperAdminPromote}`, { memberId })
+}
+
+export const PromoteAdmin = async (data:any) => {
+    return axiosInstance.post(`${endPoints.ADDMember.AdminPromote}`,data)
+}
+
+export const DeleteMember = async (memberId:number) => {
+    return axiosInstance.put(`${endPoints.ADDMember.RemoveMemberAdmin}/${memberId}`)
+}
+// profile Update 
+
+export const UpdateProfile = async (formData: FormData) =>{
+    return axiosInstance.patch(`${endPoints.ClinicProfile.ProfileUpdate}`,formData)
+}
+
+// Clinic Branches 
+
+export const ListBranchData = async () =>{
+    return axiosInstance.get(`${endPoints.ClinicBranch.Clinics}`)
+}
+
+export const Pincode = async (pincode:string) => {
+  return axiosInstance.get(`${endPoints.ClinicBranch.PINCODE}/${pincode}`);
+}
+
+export const CreateBranch = async (data:any) => {
+ return axiosInstance.post(`${endPoints.ClinicBranch.BranchCreate}`, data)
+}
+
+export const DeleteBranch = async (branchId:number) => {
+  return axiosInstance.put(`${endPoints.ClinicBranch.DeleteBranch}/${branchId}`);
+}
+
+export const OTpVeirfyBranch = async (payloade:any) => {
+    return axiosInstance.post(`${endPoints.ClinicBranch.BranchOTPVerify}`,payloade)
 }

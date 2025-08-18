@@ -25,6 +25,19 @@ export const endPoints = {
     },
 
     ADDMember: {
-        CreateMember: API_CLINIC_DATA + "clinics/members"
+        CreateMember: API_CLINIC_DATA + "clinics/members",
+        SuperAdminPromote :API_CLINIC_DATA +"clinics/admin/promote",
+        AdminPromote :API_CLINIC_DATA + "clinics/members/promote",
+        RemoveMemberAdmin : API_CLINIC_DATA +"clinics/members"
+    },
+    ClinicProfile :{
+        ProfileUpdate : API_CLINIC_DATA +"clinics/update"
+    },
+    ClinicBranch :{
+        Clinics : API_CLINIC_DATA +"clinics",
+        PINCODE : API_CLINIC_DATA + "labs/branches",
+        BranchCreate : API_CLINIC_DATA + "clinics/branches",
+        DeleteBranch : API_CLINIC_DATA +"clinics/branches",
+        BranchOTPVerify : API_CLINIC_DATA + "clinics/branches/verify/otp"
     }
 };

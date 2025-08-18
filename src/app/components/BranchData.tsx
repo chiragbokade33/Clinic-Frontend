@@ -1,11 +1,13 @@
 import { faArrowRightArrowLeft, faBuilding, faCircleMinus, faEnvelope, faLocationDot, faPhone, faTimes, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { toast } from 'react-toastify';
-// import { CreateBranch, LoginOTP, otpGenerate, Pincode, BranchOTP } from "@/services/labServiceApi";
 import React, { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import GenericConfirmModal from '../components/GenericConfirmModal';
+import { OTPSignUp, OTpVeirfyBranch, Pincode } from '../services/ClinicServiceApi';
+import { getUserId } from '../hooks/GetitemsLocal';
+import { encryptData } from '../utils/cryptoHelpers';
 
 interface BranchDataProps {
   setIsModalOpen: (open: boolean) => void;
@@ -18,13 +20,13 @@ interface BranchDataProps {
   isModalOpen: boolean;
   formik: any;
 }
+
 const getStoredRole = () => {
   if (typeof window !== "undefined") {
     return localStorage.getItem("role");
   }
   return null;
 };
-
 
 const BranchData: React.FC<BranchDataProps> = ({
   setIsModalOpen,
@@ -46,11 +48,28 @@ const BranchData: React.FC<BranchDataProps> = ({
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isModalOpens, setIsModalOpens] = useState(false);
   const [selectedLabId, setSelectedLabId] = useState<string | null>(null);
-  // const Role = localStorage.getItem("role");
   const [Role] = useState<string | null>(getStoredRole);
+  const [currentUserId, setCurrentUserId] = useState<number>();
 
+  // NEW: Add state to track active branch
+  const [activeBranchId, setActiveBranchId] = useState<string | null>(null);
+  const [isSwitching, setIsSwitching] = useState<string | null>(null); // Track which branch is being switched
 
-
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const id = await getUserId();
+        setCurrentUserId(id);
+        // Set the active branch ID based on current user
+        if (id) {
+          setActiveBranchId(id.toString());
+        }
+      } catch (error) {
+        console.error("Error fetching user ID:", error);
+      }
+    };
+    fetchUserId();
+  }, []);
 
   // OTP Formik setup
   const otpFormik = useFormik({
@@ -66,11 +85,12 @@ const BranchData: React.FC<BranchDataProps> = ({
     onSubmit: async (values) => {
       try {
         setIsVerifyingOtp(true);
-        // const response = await BranchOTP({
-        //   email: formik.values.email,
-        //   otp: values.otp,
-        // });
-        // toast.success(`${response.data.message}`);
+        const response = await OTpVeirfyBranch({
+          email: formik.values.email,
+          otp: values.otp,
+          phoneNumber: formik.values.phoneNumber,
+        });
+        toast.success(`${response.data.message}`);
         setIsOtpVerified(true);
       } catch (error) {
         const err = error as any;
@@ -87,24 +107,24 @@ const BranchData: React.FC<BranchDataProps> = ({
   const handleGetOtp = async () => {
     const errors = await formik.validateForm();
     formik.setTouched({
-      labName: true,
+      clinicName: true,
       email: true,
       phoneNumber: true,
     });
 
-    const requiredFieldsValid = !errors.labName && !errors.email && !errors.phoneNumber;
+    const requiredFieldsValid = !errors.clinicName && !errors.email && !errors.phoneNumber;
 
-    if (requiredFieldsValid && formik.values.labName && formik.values.email && formik.values.phoneNumber) {
+    if (requiredFieldsValid && formik.values.clinicName && formik.values.email && formik.values.phoneNumber) {
       try {
         setIsOtpSending(true);
-        // const response = await otpGenerate({
-        //   labName: formik.values.labName,
-        //   email: formik.values.email,
-        //   phoneNumber: formik.values.phoneNumber,
-        // });
-        // setOtpVisible(true);
-        // setIsOtpVerified(false);
-        // toast.success(`${response.data.message}`);
+        const response = await OTPSignUp({
+          clinicName: formik.values.clinicName,
+          email: formik.values.email,
+          phoneNumber: formik.values.phoneNumber,
+        });
+        setOtpVisible(true);
+        setIsOtpVerified(false);
+        toast.success(`${response.data.message}`);
       } catch (error) {
         console.error("OTP Error:", error);
         const err = error as any;
@@ -122,10 +142,10 @@ const BranchData: React.FC<BranchDataProps> = ({
     if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
       try {
         setIsPincodeLoading(true);
-        // const response = await Pincode(pincode);
-        // setPincodeData(
-        //   `${response.data.data.location}-${pincode}`
-        // );
+        const response = await Pincode(pincode);
+        setPincodeData(
+          `${response.data.data.location}-${pincode}`
+        );
       } catch (error) {
         console.error("Pincode fetch error:", error);
         setPincodeData("");
@@ -135,6 +155,63 @@ const BranchData: React.FC<BranchDataProps> = ({
       }
     } else {
       setPincodeData("");
+    }
+  };
+
+  // IMPROVED: Handle branch switching
+  const handleBranchSwitch = async (branch: any) => {
+    console.log("Switching to branch:", branch);
+
+    // Check if already on this branch
+    if (activeBranchId === branch.clinicId?.toString()) {
+      toast.info("You are already on this branch");
+      return;
+    }
+
+    // Validate required data - use clinicId instead of currentUserId
+    if (!branch?.clinicId || !branch?.email) {
+      toast.error("Branch data not available");
+      console.error("Missing branch data:", {
+        clinicId: branch?.clinicId,
+        email: branch?.email,
+        fullBranch: branch
+      });
+      return;
+    }
+
+    try {
+      setIsSwitching(branch.clinicId.toString());
+
+      // Encrypt and store - use clinicId as the user ID
+      const encryptedId = await encryptData(branch.clinicId.toString());
+      const encryptedEmail = await encryptData(branch.email);
+
+      console.log("Encrypted values created successfully");
+
+      // Store in localStorage
+      localStorage.setItem("userId", encryptedId);
+      localStorage.setItem("emailId", encryptedEmail);
+      localStorage.setItem("switch", "true");
+
+      // Update component state
+      setActiveBranchId(branch.clinicId.toString());
+      setHasSwitched(true);
+
+      // Refresh branch list if function is available
+      if (typeof ListBranch === 'function') {
+        await ListBranch();
+      }
+
+      toast.success(`Successfully switched to ${branch.clinicName}!`);
+
+    } catch (error) {
+      console.error("Error switching branch:", error);
+      toast.error("Failed to switch branch. Please try again.");
+
+      // Reset state on error
+      setHasSwitched(false);
+    } finally {
+      setIsSwitching(null);
     }
   };
 
@@ -174,34 +251,40 @@ const BranchData: React.FC<BranchDataProps> = ({
         </div>
       </div>
 
-      {/* Branch Card */}
+      {/* Branch Cards */}
       {filteredData.map((branch: any, index: number) => (
         <div
-          key={branch.labId || index}
+          key={branch.clinicId || index}
           className="group flex flex-col md:flex-row justify-between items-start md:items-center px-2 md:px-4 py-2 gap-4 relative"
         >
           <div className="w-full md:max-w-2xl lg:max-w-2xl p-2 md:p-4">
-            <div className="bg-white rounded-3xl shadow-md flex flex-col md:flex-row border mb-2">
+            <div className={`bg-white rounded-3xl shadow-md flex flex-col md:flex-row border mb-2 ${activeBranchId === branch.clinicId?.toString()
+                ? 'border-green-400 shadow-green-200 shadow-lg'
+                : 'border-gray-300'
+              }`}>
               <div className="border border-gray-300 rounded w-32 h-32 flex flex-col items-center gap-4 mb-5 relative mx-auto md:mx-3 mt-3">
                 <img
                   src={
                     branch.profilePhoto && branch.profilePhoto !== "No image preview available"
-                      ? `${BASE_URL}${branch.profilePhoto}`
+                      ? `${branch.profilePhoto}`
                       : "/c320115f6850bb4e112784af2aaf059259d7bfe9.jpg"
                   }
-                  alt={branch.labName}
+                  alt={branch.clinicName}
                   className="w-full h-full rounded-full object-cover"
                 />
               </div>
               <div className="ml-0 md:ml-6 mb-5 flex flex-col justify-between">
-                <div className="text-sm bg-yellow-300 text-black px-2 py-2 rounded-full w-fit md:ml-[160px] lg:ml-[282px] mb-2">
-                  HF_id: {branch.hfid}
+                <div className="flex items-center gap-2">
+                  <div className="text-sm bg-yellow-300 text-black px-2 py-2 rounded-full w-fit md:ml-[160px] lg:ml-[282px] mb-2">
+                    HF_id: {branch.hfid}
+                  </div>
+
                 </div>
                 <div className="text-sm md:text-base px-2 md:px-0">
-                  <p><span className="font-semibold">Name:</span> {branch.labName}</p>
+                  <p><span className="font-semibold">Name:</span> {branch.clinicName}</p>
                   <p><span className="font-semibold">E-mail:</span> {branch.email}</p>
                   <p className="break-words">
-                    <span className="font-semibold">Address:</span> {branch.address || "Address not available"}
+                    <span className="font-semibold">Address:</span> {branch.location || "Address not available"}
                   </p>
                 </div>
               </div>
@@ -210,22 +293,27 @@ const BranchData: React.FC<BranchDataProps> = ({
 
           <div className="w-full md:w-auto px-2 md:px-0">
             <button
-              className="bg-gradient-to-r from-white to-blue-300 px-4 py-2 rounded flex items-center gap-2 border w-full md:w-auto justify-center cursor-pointer"
-              onClick={() => {
-                localStorage.removeItem("userId");
-                localStorage.removeItem("emailId");
-
-                localStorage.setItem("userId", branch.labId);
-                localStorage.setItem("emailId", branch.email);
-                localStorage.setItem("switch", "true");
-
-                toast.success("Switched to selected branch!");
-                setHasSwitched(true);
-                ListBranch();
-              }}
+              className={`px-4 py-2 rounded flex items-center gap-2 border w-full md:w-auto justify-center transition-all duration-200 ${activeBranchId === branch.clinicId?.toString()
+                  ? "bg-green-400 text-white border-green-500 cursor-default"
+                  : isSwitching === branch.clinicId?.toString()
+                    ? "bg-gray-400 text-white border-gray-500 cursor-not-allowed"
+                    : "bg-gradient-to-r from-white to-blue-300 border-gray-300 hover:from-blue-50 hover:to-blue-400 cursor-pointer"
+                }`}
+              onClick={() => handleBranchSwitch(branch)}
+              disabled={
+                activeBranchId === branch.clinicId?.toString() ||
+                isSwitching === branch.clinicId?.toString()
+              }
             >
               <FontAwesomeIcon icon={faArrowRightArrowLeft} size="sm" />
-              <span>{hasSwitched ? "You have changed the branch" : "Switch Branch"}</span>
+              <span>
+                {activeBranchId === branch.clinicId?.toString()
+                  ? "Current Branch"
+                  : isSwitching === branch.clinicId?.toString()
+                    ? "Switching..."
+                    : "Switch Branch"
+                }
+              </span>
             </button>
           </div>
 
@@ -234,7 +322,7 @@ const BranchData: React.FC<BranchDataProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedLabId(String(branch.labId));
+                  setSelectedLabId(String(branch.clinicId)); // Changed from currentUserId to clinicId
                   setIsModalOpens(true);
                 }}
                 className="text-red-500 text-sm font-medium hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer"
@@ -262,7 +350,6 @@ const BranchData: React.FC<BranchDataProps> = ({
           setIsModalOpens(false);
         }}
       />
-
 
       {/* Modal */}
       {isModalOpen && (
@@ -302,20 +389,20 @@ const BranchData: React.FC<BranchDataProps> = ({
                     <div className="flex-1">
                       <input
                         type="text"
-                        id="labName"
-                        name="labName"
-                        value={formik.values.labName}
+                        id="clinicName"
+                        name="clinicName"
+                        value={formik.values.clinicName}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
                         placeholder="Enter Branch Name"
-                        className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 ${formik.touched.labName && formik.errors.labName
+                        className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 ${formik.touched.clinicName && formik.errors.clinicName
                           ? "focus:ring-red-500 border-red-500"
                           : "focus:ring-blue-500 border-gray-300"
                           }`}
                         required
                       />
-                      {formik.touched.labName && formik.errors.labName && (
-                        <p className="text-red-500 text-sm mt-1">{formik.errors.labName}</p>
+                      {formik.touched.clinicName && formik.errors.clinicName && (
+                        <p className="text-red-500 text-sm mt-1">{formik.errors.clinicName}</p>
                       )}
                     </div>
                   </div>
@@ -413,7 +500,6 @@ const BranchData: React.FC<BranchDataProps> = ({
                               onBlur={otpFormik.handleBlur}
                             />
                           ))}
-
                         </div>
                       </div>
 
@@ -438,9 +524,7 @@ const BranchData: React.FC<BranchDataProps> = ({
                       >
                         {isVerifyingOtp ? "Verifying..." : "Verify"}
                       </button>
-
                     </>
-                   
                   )}
 
                   {/* Pin Code - Only show after OTP is verified */}

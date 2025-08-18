@@ -220,16 +220,12 @@ const page = () => {
         }
     ]);
 
-    const updateTreatment = (id, field, value) => {
+    const updateTreatment = (id: number, field: string, value: string) => {
         setTreatments(treatments.map(treatment =>
             treatment.id === id
                 ? { ...treatment, [field]: field === 'cost' ? parseFloat(value) || 0 : value }
                 : treatment
         ));
-    };
-
-    const removeTreatment = (id) => {
-        setTreatments(treatments.filter(treatment => treatment.id !== id));
     };
 
     const totalCost = treatments.reduce((sum, treatment) => sum + treatment.cost, 0);
@@ -238,7 +234,7 @@ const page = () => {
         setIsTreatmentDrawerOpen(true);
     };
 
-    const selectTreatment = (selectedTreatment) => {
+    const selectTreatment = (selectedTreatment: { name: any; cost: any }) => {
         const newTreatment = {
             id: Math.max(...treatments.map(t => t.id), 0) + 1,
             name: selectedTreatment.name,
@@ -250,7 +246,7 @@ const page = () => {
         setIsTreatmentDrawerOpen(false);
     };
 
-    const addNewTreatment = (newTreatmentData) => {
+    const addNewTreatment = (newTreatmentData: { name: any; cost: any }) => {
         const newTreatment = {
             id: Math.max(...treatments.map(t => t.id), 0) + 1,
             name: newTreatmentData.name,
@@ -425,7 +421,7 @@ const page = () => {
                                                     />
                                                 </td>
                                                 <td className="border-l border-gray-700 px-2 py-2 text-sm">
-                                                  {treatment.qty}
+                                                    {treatment.qty}
                                                 </td>
                                                 <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <input

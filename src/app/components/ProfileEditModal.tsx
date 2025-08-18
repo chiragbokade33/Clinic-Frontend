@@ -8,7 +8,7 @@ import { Dialog } from '@headlessui/react';
 interface ProfileEditModalProps {
     isOpen: boolean;
     onClose: () => void;
-    lab: any;
+    clinic: any;
     BASE_URL: string;
     onSave: (formData: FormData) => Promise<void>;
 }
@@ -16,17 +16,17 @@ interface ProfileEditModalProps {
 const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
     isOpen,
     onClose,
-    lab,
+    clinic,
     BASE_URL,
     onSave,
 }) => {
-    const [editedAddress, setEditedAddress] = useState(lab?.address || "");
+    const [editedAddress, setEditedAddress] = useState(clinic?.location || "");
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
     useEffect(() => {
-        setEditedAddress(lab?.address || "");
+        setEditedAddress(clinic?.location || "");
         setUploadedFile(null);
-    }, [lab]);
+    }, [clinic]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -36,7 +36,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
     const handleSubmit = async () => {
         const formData = new FormData();
-        formData.append("Id", lab.labId);
+        formData.append("ClinicId", clinic.clinicId);
         formData.append("Address", editedAddress);
         if (uploadedFile) {
             formData.append("ProfilePhoto", uploadedFile);
@@ -66,8 +66,8 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                                 src={
                                     uploadedFile
                                         ? URL.createObjectURL(uploadedFile)
-                                        : lab?.profilePhoto
-                                            ? `${BASE_URL}${lab.profilePhoto}`
+                                        : clinic?.profilePhoto
+                                            ? `${BASE_URL}${clinic.profilePhoto}`
                                             : "/250bd3d11edb6cfc8add2600b5bb25c75b95d560.jpg"
                                 }
                                 alt="Profile"
@@ -85,12 +85,12 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                         </div>
 
                     </div>
-                    <p className="text-blue-800 text-center">HF_id:{lab?.hfid}</p>
+                    <p className="text-blue-800 text-center">HF_id:{clinic?.hfid}</p>
                     <div>
-                        <label className="block text-sm font-medium">Branch Name:</label>
+                        <label className="block text-sm font-medium">Clinic Name:</label>
                         <input
                             type="text"
-                            value={lab?.labType}
+                            value={clinic?.clinicName}
                             disabled={true}
                             className="w-full border px-2 py-1 rounded mt-1 cursor-not-allowed"
                         />
@@ -99,7 +99,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                         <label className="block text-sm font-medium">Email:</label>
                         <input
                             type="text"
-                            value={lab?.email}
+                            value={clinic?.email}
                             disabled={true}
                             className="w-full border px-2 py-1 rounded mt-1 cursor-not-allowed"
                         />
@@ -108,12 +108,12 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                         <label className="block text-sm font-medium">Pincode:</label>
                         <input
                             type="text"
-                            value={lab?.pincode}
+                            value={clinic?.pincode}
                             disabled={true}
                             className="w-full border px-2 py-1 rounded mt-1 cursor-not-allowed"
                         />
 
-                        <p className="text-blue-800 text-sm text-end">{lab?.location}</p>
+                        <p className="text-blue-800 text-sm text-end">{clinic?.location}</p>
                     </div>
 
                     <div>
