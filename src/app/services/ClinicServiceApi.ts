@@ -151,3 +151,7 @@ export const RemoveUserList = async (data:any) =>{
 export const CreateAppointments = async (payloade:any) =>{
     return axiosInstance.post(`${endPoints.Appointments.Addappointments}`, payloade)
 }
+
+export const ListAppointment = async (clinicId:number) =>{
+    return axiosInstance.get(`${endPoints.Appointments.AppointmentList}/${clinicId}`)
+}

@@ -58,6 +58,7 @@ export const endPoints = {
     },
 
     Appointments :{
-        Addappointments : API_CLINIC_DATA + "appointments"
+        Addappointments : API_CLINIC_DATA + "appointments",
+        AppointmentList : API_CLINIC_DATA + "appointments/clinic"
     }
 };

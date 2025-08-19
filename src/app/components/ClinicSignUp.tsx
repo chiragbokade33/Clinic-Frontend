@@ -115,7 +115,7 @@ const ClinicSignUp = () => {
 
   return (
     <ClinicHome>
-      <div className="w-full  h-[calc(100vh-80px)] sm:h-[calc(100vh-90px)]  md:h-[calc(100vh-100px)] lg:h-[calc(100vh-139px)] flex flex-col items-center justify-center " style={{
+      <div className="w-full  h-[calc(100vh-80px)] sm:h-[calc(100vh-90px)]  md:h-[calc(100vh-100px)] lg:h-[calc(100vh-140px)] flex flex-col items-center justify-center " style={{
         background: 'linear-gradient(to bottom, white 70%, #67e8f9 100%)'
       }}>
         <div className="text-center">

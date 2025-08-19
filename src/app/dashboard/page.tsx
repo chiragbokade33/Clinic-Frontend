@@ -17,7 +17,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { CreateAppointments } from '../services/ClinicServiceApi';
+import { CreateAppointments, ListAppointment } from '../services/ClinicServiceApi';
 import { getUserId } from '../hooks/GetitemsLocal';
 import CustomTimePicker from '../components/CustomTimePicker';
 import { toast } from 'react-toastify';
@@ -29,6 +29,7 @@ const HealthcareDashboard = () => {
   const [showYearPicker, setShowYearPicker] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(1);
   const [currentUserId, setCurrentUserId] = useState<number>();
+  const [appointments ,setAppointments] = useState() as any;
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -178,64 +179,74 @@ const HealthcareDashboard = () => {
     return formik.touched[fieldName] && formik.errors[fieldName];
   };
 
-  // Enhanced appointments with complete patient data
-  const appointments = [
-    {
-      id: 1,
-      patient: "Ankit k.",
-      patientId: "HF120624RANI097",
-      time: "8:12 AM",
-      type: "morning",
-      lastVisit: "15 / 02 / 2024",
-      status: "Scheduled",
-      treatment: "Facial, Jaw Pain",
-      phone: "9845624873"
-    },
-    {
-      id: 2,
-      patient: "Ankit k.",
-      patientId: "HF120624RANI097",
-      time: "3:10 AM",
-      type: "morning",
-      lastVisit: "15 / 02 / 2024",
-      status: "Scheduled",
-      treatment: "Facial, Jaw Pain",
-      phone: "9845624873"
-    },
-    {
-      id: 3,
-      patient: "Ankit k.",
-      patientId: "HF120624RANI097",
-      time: "3:01 AM",
-      type: "morning",
-      lastVisit: "15 / 02 / 2024",
-      status: "Scheduled",
-      treatment: "Facial, Jaw Pain",
-      phone: "9845624873"
-    },
-    {
-      id: 4,
-      patient: "Ankit k.",
-      patientId: "HF120624RANI097",
-      time: "1:00 AM",
-      type: "early",
-      lastVisit: "15 / 02 / 2024",
-      status: "Scheduled",
-      treatment: "Facial, Jaw Pain",
-      phone: "9845624873"
-    },
-    {
-      id: 5,
-      patient: "Ankit k.",
-      patientId: "HF120624RANI097",
-      time: "09:20 AM",
-      type: "morning",
-      lastVisit: "15 / 02 / 2024",
-      status: "Scheduled",
-      treatment: "Facial, Jaw Pain",
-      phone: "9845624873"
-    }
-  ];
+  const appoinmentData = async () =>{
+     const id = await getUserId();
+      setCurrentUserId(id);
+    const  response = await ListAppointment(id);
+    setAppointments(response.data.data);
+  }
+
+  useEffect(() =>{
+    appoinmentData();
+  },[])
+  // // Enhanced appointments with complete patient data
+  // const appointments = [
+  //   {
+  //     id: 1,
+  //     patient: "Ankit k.",
+  //     patientId: "HF120624RANI097",
+  //     time: "8:12 AM",
+  //     type: "morning",
+  //     lastVisit: "15 / 02 / 2024",
+  //     status: "Scheduled",
+  //     treatment: "Facial, Jaw Pain",
+  //     phone: "9845624873"
+  //   },
+  //   {
+  //     id: 2,
+  //     patient: "Ankit k.",
+  //     patientId: "HF120624RANI097",
+  //     time: "3:10 AM",
+  //     type: "morning",
+  //     lastVisit: "15 / 02 / 2024",
+  //     status: "Scheduled",
+  //     treatment: "Facial, Jaw Pain",
+  //     phone: "9845624873"
+  //   },
+  //   {
+  //     id: 3,
+  //     patient: "Ankit k.",
+  //     patientId: "HF120624RANI097",
+  //     time: "3:01 AM",
+  //     type: "morning",
+  //     lastVisit: "15 / 02 / 2024",
+  //     status: "Scheduled",
+  //     treatment: "Facial, Jaw Pain",
+  //     phone: "9845624873"
+  //   },
+  //   {
+  //     id: 4,
+  //     patient: "Ankit k.",
+  //     patientId: "HF120624RANI097",
+  //     time: "1:00 AM",
+  //     type: "early",
+  //     lastVisit: "15 / 02 / 2024",
+  //     status: "Scheduled",
+  //     treatment: "Facial, Jaw Pain",
+  //     phone: "9845624873"
+  //   },
+  //   {
+  //     id: 5,
+  //     patient: "Ankit k.",
+  //     patientId: "HF120624RANI097",
+  //     time: "09:20 AM",
+  //     type: "morning",
+  //     lastVisit: "15 / 02 / 2024",
+  //     status: "Scheduled",
+  //     treatment: "Facial, Jaw Pain",
+  //     phone: "9845624873"
+  //   }
+  // ];
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -322,26 +333,32 @@ const HealthcareDashboard = () => {
   };
 
   // Get selected patient data
-  const selectedPatient = appointments.find(apt => apt.id === selectedAppointment) || appointments[0];
+  
+// Add this right before your CombinedAppointmentPatient component
+// Get selected patient data based on selectedAppointment ID
+const selectedPatient = appointments && appointments.length > 0 
+  ? appointments.find((appointment:any) => appointment.id === selectedAppointment) 
+  : null;
 
   // Combined Appointment List & Patient Details Component
   const CombinedAppointmentPatient = () => (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border">
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left Side - Appointment List */}
-        <div className="w-full lg:w-[60%] lg:border-r lg:border-black lg:pr-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-blue-800 font-poppins-600">Appointment List :</h3>
-            <select className=" px-3 py-2 text-md font-montserrat-600 font-semibold">
-              <option>All</option>
-              <option>Today</option>
-              <option>This Week</option>
-            </select>
-          </div>
-          <div className='border border-black '></div>
+  <div className="bg-white rounded-2xl p-4 shadow-sm border">
+    <div className="flex flex-col lg:flex-row gap-8">
+      {/* Left Side - Appointment List */}
+      <div className="w-full lg:w-[60%] lg:border-r lg:border-black lg:pr-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold text-blue-800 font-poppins-600">Appointment List :</h3>
+          <select className=" px-3 py-2 text-md font-montserrat-600 font-semibold">
+            <option>All</option>
+            <option>Today</option>
+            <option>This Week</option>
+          </select>
+        </div>
+        <div className='border border-black '></div>
 
-          <div className="space-y-3 mt-3">
-            {appointments.map((appointment) => (
+        <div className="space-y-3 mt-3">
+          {appointments && appointments.length > 0 ? (
+            appointments.map((appointment: any) => (
               <div
                 key={appointment.id}
                 className={`flex items-center space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${selectedAppointment === appointment.id
@@ -361,68 +378,80 @@ const HealthcareDashboard = () => {
 
                 {/* Patient Info */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-800 truncate font-poppins-600">{appointment.patient}</h4>
-                  <p className="text-sm text-gray-600 truncate font-medium font-poppins-500">{appointment.patientId}</p>
+                  <h4 className="font-medium text-gray-800 truncate font-poppins-600">{appointment.visitorUsername}</h4>
+                  <p className="text-sm text-gray-600 truncate font-medium font-poppins-500">{appointment.visitorPhoneNumber}</p>
                 </div>
 
                 {/* Time Badge */}
-                <div className={`px-3 py-1 rounded-lg text-sm font-semibold flex-shrink-0 font-poppins-600 ${getTimeColor(appointment.type)}`}>
-                  {appointment.time}
+                <div className={`px-3 py-1 rounded-lg text-sm font-semibold flex-shrink-0 font-poppins-600 ${getTimeColor(appointment.status || 'morning')}`}>
+                  {appointment.appointmentTime}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Side - Patient Details */}
-        <div className="w-full lg:w-[30%] p-6 lg:pl-0 mx-auto ">
-          <div className="text-center mb-6">
-            <div className="w-25 h-25 rounded-full mx-auto mb-4 overflow-hidden border">
-              <img
-                src="/98c4113b37688d826fc939709728223539f249dd.jpg"
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No appointments available
             </div>
-
-            <h3 className="text-xl font-medium font-poppins-500 text-gray-800">{selectedPatient.patient}</h3>
-            <p className="text-sm text-gray-600 font-poppins-600 font-medium mt-1">{selectedPatient.patientId}</p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 py-2">
-              <span className="text-black font-semibold font-poppins-600">Last Visit :</span>
-              <div className="flex items-center space-x-2">
-                <span className="font-medium text-gray-700 font-montserrat-500">{selectedPatient.lastVisit}</span>
-                <span className="text-[#C20C25] text-xs font-semibold font-montserrat-500 ">● Canceled</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 py-2">
-              <span className="text-black font-semibold font-poppins-600">Status :</span>
-              <span className="text-blue-800 font-bold font-montserrat-700">{selectedPatient.status}</span>
-            </div>
-
-            <div className="flex items-center gap-4 py-2">
-              <span className="text-black font-semibold font-poppins-600">Treatment :</span>
-              <span className="font-semibold text-gray-700 text-right  font-montserrat-500 ">{selectedPatient.treatment}</span>
-            </div>
-
-            <div className="flex items-center gap-4 py-2">
-              <span className="text-black font-semibold font-poppins-600">Phone :</span>
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold text-gray-700  font-montserrat-500 ">{selectedPatient.phone}</span>
-              </div>
-            </div>
-          </div>
-
-          <button className="w-full primary text-white font-semibold py-3 px-4 rounded-lg mt-6 transition-colors">
-            Edit
-          </button>
+          )}
         </div>
       </div>
+
+      {/* Right Side - Patient Details */}
+      <div className="w-full lg:w-[30%] p-6 lg:pl-0 mx-auto ">
+        {selectedPatient ? (
+          <>
+            <div className="text-center mb-6">
+              <div className="w-25 h-25 rounded-full mx-auto mb-4 overflow-hidden border">
+                <img
+                  src="/98c4113b37688d826fc939709728223539f249dd.jpg"
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <h3 className="text-xl font-medium font-poppins-500 text-gray-800">{selectedPatient.visitorUsername}</h3>
+              <p className="text-sm text-gray-600 font-poppins-600 font-medium mt-1">{selectedPatient.id || 'N/A'}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 py-2">
+                <span className="text-black font-semibold font-poppins-600">Last Visit : :</span>
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium text-gray-700 font-montserrat-500">{selectedPatient.appointmentDate || 'N/A'}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 py-2">
+                <span className="text-black font-semibold font-poppins-600">Status :</span>
+                <span className="text-blue-800 font-bold font-montserrat-700">{selectedPatient.status || 'Scheduled'}</span>
+              </div>
+
+              <div className="flex items-center gap-4 py-2">
+                <span className="text-black font-semibold font-poppins-600">Treatment :</span>
+                <span className="font-semibold text-gray-700 text-right  font-montserrat-500 ">{selectedPatient.appointmentTime || 'N/A'}</span>
+              </div>
+
+              <div className="flex items-center gap-4 py-2">
+                <span className="text-black font-semibold font-poppins-600">Phone :</span>
+                <div className="flex items-center space-x-2">
+                  <span className="font-semibold text-gray-700  font-montserrat-500 ">{selectedPatient.visitorPhoneNumber}</span>
+                </div>
+              </div>
+            </div>
+
+            <button className="w-full primary text-white font-semibold py-3 px-4 rounded-lg mt-6 transition-colors">
+              Edit
+            </button>
+          </>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>Select an appointment to view patient details</p>
+          </div>
+        )}
+      </div>
     </div>
-  );
+  </div>
+);
 
   return (
     <DefaultLayout>

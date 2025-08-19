@@ -197,7 +197,7 @@ const AdminLogins = () => {
 
   return (
     <ClinicHome>
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-80px)] sm:h-[calc(100vh-90px)]  md:h-[calc(100vh-100px)] lg:h-[calc(100vh-139px)]" style={{ background: 'linear-gradient(to bottom, white 70%, #67e8f9 100%)' }}>
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-80px)] sm:h-[calc(100vh-90px)]  md:h-[calc(100vh-100px)] lg:h-[calc(100vh-140px)]" style={{ background: 'linear-gradient(to bottom, white 70%, #67e8f9 100%)' }}>
         <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 sm:p-4 md:p-4 lg:p-4 2xl:p-4 order-first lg:order-last h-full">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl 2xl:max-w-2xl border p-4 sm:p-4 md:p-4 h-full overflow-y-auto custom-scrollbar">
 
