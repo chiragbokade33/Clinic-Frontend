@@ -97,3 +97,57 @@ export const DeleteBranch = async (branchId:number) => {
 export const OTpVeirfyBranch = async (payloade:any) => {
     return axiosInstance.post(`${endPoints.ClinicBranch.BranchOTPVerify}`,payloade)
 }
+
+// Forgot password
+
+export const ForgotPasswordReq = async (data:any) =>{
+    return axiosInstance.post(`${endPoints.ForgotPassword.AdminForgot}`,data)
+}
+
+export const UserOTPVerify = async (data:any) =>{
+    return axiosInstance.post(`${endPoints.ForgotPassword.OTPVerify}`,data)
+}
+
+export const passwordForgot = async (data:any) =>{
+    return axiosInstance.put(`${endPoints.ForgotPassword.ResetPassword}`,data)
+}
+
+export const UserForgotPassword = async (data:any) =>{
+    return axiosInstance.post(`${endPoints.ForgotPassword.UserForgot}`,data)
+}
+
+export const ForgotPasswordUser = async (data:any) =>{
+    return axiosInstance.put(`${endPoints.ForgotPassword.UserPassword}`,data)
+}
+
+
+// Revert Branch ANd MEmber
+
+export const DeleteBrnaches = async () =>{
+    return axiosInstance.get(`${endPoints.RevertBranchMember.DeleteBranch}`)
+}
+
+export const RevertBranch = async (data:any) =>{
+    return axiosInstance.patch(`${endPoints.RevertBranchMember.revertBranch}`,data)
+}
+
+export const GetMemberList = async (clinicId: number) =>{
+return axiosInstance.get(`${endPoints.RevertBranchMember.MemberList(clinicId)}`);
+}
+
+export const RevertUser = async (data: any) =>{
+return axiosInstance.patch(`${endPoints.RevertBranchMember.Revertmember}`,data);
+}
+
+export const RemoveUserList = async (data:any) =>{
+    return axiosInstance.delete(`${endPoints.RevertBranchMember.ParmanetDelete}`, {
+    data: data, 
+  });
+}
+
+
+// Appointments 
+
+export const CreateAppointments = async (payloade:any) =>{
+    return axiosInstance.post(`${endPoints.Appointments.Addappointments}`, payloade)
+}

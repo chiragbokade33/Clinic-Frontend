@@ -5,7 +5,7 @@ import * as Yup from "yup";
 import { toast, ToastContainer } from "react-toastify";
 import { useRouter } from "next/navigation";
 import ClinicHome from "../components/ClinicHome";
-import { LoginPassword, LoginWithOtp, PhoneLoginEmail } from "../services/ClinicServiceApi";
+import { ForgotPasswordReq, LoginPassword, LoginWithOtp, PhoneLoginEmail } from "../services/ClinicServiceApi";
 import { encryptData } from "../utils/cryptoHelpers";
 
 const ClinicLogin = () => {
@@ -89,7 +89,7 @@ const ClinicLogin = () => {
         }
         const res = await LoginWithOtp(payload);
         toast.success(`${res.data.message}`);
-      localStorage.setItem("emailId", await encryptData(res.data.data.email));
+        localStorage.setItem("emailId", await encryptData(res.data.data.email));
       } catch (error) {
         const err = error as any;
         toast.error(`${err.res.data.message}`);
@@ -118,7 +118,7 @@ const ClinicLogin = () => {
         });
         toast.success(`${response.data.message}`);
         localStorage.setItem("userId", await encryptData(response.data.data.userId.toString()));
-      localStorage.setItem("emailId", await encryptData(response.data.data.email));
+        localStorage.setItem("emailId", await encryptData(response.data.data.email));
         if (response.data.data.isSuperAdmin) {
           router.push("/clinicAdminLogin");
         } else {
@@ -147,8 +147,8 @@ const ClinicLogin = () => {
           password: values.password,
         });
         toast.success(`${response.data.message}`);
-         localStorage.setItem("userId", await encryptData(response.data.data.userId.toString()));
-      localStorage.setItem("emailId", await encryptData(response.data.data.email));
+        localStorage.setItem("userId", await encryptData(response.data.data.userId.toString()));
+        localStorage.setItem("emailId", await encryptData(response.data.data.email));
         if (response.data.data.isSuperAdmin) {
           router.push("/clinicAdminLogin");
         } else {
@@ -228,9 +228,9 @@ const ClinicLogin = () => {
     try {
       await emailSchema.validate(email);
       const payload = { email };
-      // const res = await ForgotPasswordReq(payload);
-      // toast.success(`${res.data.message}`);
-      // localStorage.setItem("recipientEmail", res.data.data.recipientEmail);
+      const res = await ForgotPasswordReq(payload);
+      toast.success(`${res.data.message}`);
+      localStorage.setItem("recipientEmail", res.data.data.recipientEmail);
       router.push("/forgotPassword");
     } catch (error) {
       const err = error as any;

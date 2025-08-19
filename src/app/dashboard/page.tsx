@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCalendar,
@@ -15,25 +15,168 @@ import DefaultLayout from '../components/DefaultLayout';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { CreateAppointments } from '../services/ClinicServiceApi';
+import { getUserId } from '../hooks/GetitemsLocal';
+import CustomTimePicker from '../components/CustomTimePicker';
+import { toast } from 'react-toastify';
 
 const HealthcareDashboard = () => {
-  // Initialize with current date instead of hardcoded date
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState(1); // For combined component
-  const [selectedDate, setSelectedDate] = useState(new Date()) as any;
-  const [selectedTime, setSelectedTime] = useState(new Date()) as any;
+  const [selectedAppointment, setSelectedAppointment] = useState(1);
+  const [currentUserId, setCurrentUserId] = useState<number>();
 
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+    };
+    fetchUserId();
+  }, []);
 
-  const [appointmentForm, setAppointmentForm] = useState({
-    visitorName: "",
-    phone: "",
-    date: "",
-    time: "",
-    period: ""
+  // Validation Schema for Appointment Form
+  const appointmentValidationSchema = Yup.object({
+    visitorName: Yup.string()
+      .min(2, 'Name must be at least 2 characters')
+      .max(50, 'Name must be less than 50 characters')
+      .required('Visitor name is required'),
+
+    phone: Yup.string()
+      .matches(
+        /^[\+]?[1-9][\d]{0,15}$/,
+        'Please enter a valid phone number'
+      )
+      .min(10, 'Phone number must be at least 10 digits')
+      .required('Phone number is required'),
+
+    date: Yup.string()
+      .matches(
+        /^(0[1-9]|[12][0-9]|3[01]) - (0[1-9]|1[012]) - (19|20)\d\d$/,
+        'Date must be in DD - MM - YYYY format'
+      )
+      .required('Date is required'),
+
+    time: Yup.date()
+      .required('Time is required')
+      .nullable(),
   });
+  // Validation Schema for Patient Form
+  const patientValidationSchema = Yup.object({
+    patientId: Yup.string()
+      .min(5, 'Patient ID must be at least 5 characters')
+      .required('Patient ID is required'),
+    appointmentDate: Yup.date()
+      .required('Appointment date is required')
+      .nullable(),
+    appointmentTime: Yup.date()
+      .required('Appointment time is required')
+      .nullable(),
+    dtrConsent: Yup.boolean(),
+    tmdConsent: Yup.boolean(),
+    photoConsent: Yup.boolean(),
+    arthroseConsent: Yup.boolean(),
+  });
+
+  const handleDateClick = (day: number | null) => {
+    if (day) {
+      const formattedDate = `${day.toString().padStart(2, '0')} - ${(currentDate.getMonth() + 1).toString().padStart(2, '0')} - ${currentDate.getFullYear()}`;
+
+      appointmentFormik.setFieldValue('date', formattedDate);
+      setShowModal(true);
+    }
+  };
+  // Formik setup for Appointment Form
+  const appointmentFormik = useFormik({
+    initialValues: {
+      visitorName: "",
+      phone: "",
+      date: "",
+      time: new Date(),
+      period: "",
+    },
+    validationSchema: appointmentValidationSchema,
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+      try {
+        // Convert date format from "DD - MM - YYYY" to "dd-MM-yyyy"
+        const convertDateFormat = (dateString: string) => {
+          if (!dateString) return "";
+          // Remove spaces and replace with hyphens
+          return dateString.replace(/\s/g, '');
+        };
+
+        // Transform Formik values into required payload
+        const payload = {
+          visitorUsername: values.visitorName,
+          visitorPhoneNumber: values.phone,
+          appointmentDate: convertDateFormat(values.date), // Convert format
+          appointmentTime: values.time
+            ? `${values.time.getHours().toString().padStart(2, "0")}:${values.time
+              .getMinutes()
+              .toString()
+              .padStart(2, "0")}`
+            : "",
+          clinicId: id,
+        };
+        const response = await CreateAppointments(payload);
+        toast.success(`${response.data.message}`)
+        resetForm();
+        setShowModal(false);
+      } catch (error) {
+        console.error("Error saving appointment:", error);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
+
+  // Formik setup for Patient Form
+  const patientFormik = useFormik({
+    initialValues: {
+      patientId: "",
+      appointmentDate: new Date(),
+      appointmentTime: new Date(),
+      dtrConsent: false,
+      tmdConsent: false,
+      photoConsent: false,
+      arthroseConsent: false,
+    },
+    validationSchema: patientValidationSchema,
+    onSubmit: (values, { setSubmitting, resetForm }) => {
+      try {
+        console.log('Saving patient:', values);
+
+        // Simulate API call
+        setTimeout(() => {
+          alert('Patient added successfully!');
+          resetForm();
+          setIsModalOpen(false);
+          setSubmitting(false);
+        }, 1000);
+
+      } catch (error) {
+        console.error('Error saving patient:', error);
+        setSubmitting(false);
+      }
+    },
+  });
+
+  // Helper function to get error message
+  const getErrorMessage = (formik: any, fieldName: string) => {
+    return formik.touched[fieldName] && formik.errors[fieldName]
+      ? formik.errors[fieldName]
+      : null;
+  };
+
+  // Helper function to check if field has error
+  const hasError = (formik: any, fieldName: string) => {
+    return formik.touched[fieldName] && formik.errors[fieldName];
+  };
 
   // Enhanced appointments with complete patient data
   const appointments = [
@@ -171,19 +314,7 @@ const HealthcareDashboard = () => {
       currentDate.getFullYear() === today.getFullYear();
   };
 
-  // Function to handle calendar date click
-  const handleDateClick = (day: number | null | undefined) => {
-    if (day) {
-      const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-      const formattedDate = `${day.toString().padStart(2, '0')} - ${(currentDate.getMonth() + 1).toString().padStart(2, '0')} - ${currentDate.getFullYear()}`;
 
-      setAppointmentForm({
-        ...appointmentForm,
-        date: formattedDate
-      });
-      setShowModal(true);
-    }
-  };
 
   // Go to current month function
   const goToCurrentMonth = () => {
@@ -197,8 +328,6 @@ const HealthcareDashboard = () => {
   const CombinedAppointmentPatient = () => (
     <div className="bg-white rounded-2xl p-4 shadow-sm border">
       <div className="flex flex-col lg:flex-row gap-8">
-
-
         {/* Left Side - Appointment List */}
         <div className="w-full lg:w-[60%] lg:border-r lg:border-black lg:pr-6">
           <div className="flex items-center justify-between mb-4">
@@ -229,7 +358,6 @@ const HealthcareDashboard = () => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-
 
                 {/* Patient Info */}
                 <div className="flex-1 min-w-0">
@@ -294,13 +422,12 @@ const HealthcareDashboard = () => {
         </div>
       </div>
     </div>
-
   );
+
   return (
     <DefaultLayout>
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Calendar Section */}
             <div className="lg:col-span-2">
@@ -483,132 +610,366 @@ const HealthcareDashboard = () => {
           <CombinedAppointmentPatient />
         </div>
 
+        {/* Add Patient Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center  justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-3xl w-full relative p-6  sm:p-8">
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-3xl w-full relative p-6 sm:p-8">
               {/* Close Button */}
               <h2 className="text-2xl font-bold mb-4 flex justify-center text-center space-x-2">
-                    <FontAwesomeIcon icon={faPlus} className="text-white bg-blue-800 w-4 h-4 rounded-sm" />
-                    <span className='text-blue-800 font-poppins-600 font-semibold'>Add a New Patient</span>
-                  </h2>
-                  <div className='border border-blue-800 mx-auto w-40'></div>
+                <FontAwesomeIcon icon={faPlus} className="text-white bg-blue-800 w-4 h-4 rounded-sm" />
+                <span className='text-blue-800 font-poppins-600 font-semibold'>Add a New Patient</span>
+              </h2>
+              <div className='border border-blue-800 mx-auto w-40'></div>
               <button
                 className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  patientFormik.resetForm();
+                  setIsModalOpen(false);
+                }}
               >
                 &times;
               </button>
 
-              {/* Modal Header */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6  items-center mt-3">
-                {/* Left side */}
-                <div className="lg:border-r lg:border-black  lg:pr-6 ">
-         <div className="mb-4 flex items-center gap-3">
-            {/* HF Button */}
-            <button
-              type="button"
-              className="bg-blue-800 text-white px-2 py-1 rounded-md text-sm font-semibold"
-            >
-              HF
-            </button>
+              {/* Modal Content */}
+              <form onSubmit={patientFormik.handleSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center mt-3">
+                  {/* Left side */}
+                  <div className="lg:border-r lg:border-black lg:pr-6">
+                    {/* Patient ID */}
+                    <div className="mb-4 flex items-center gap-3">
+                      <button
+                        type="button"
+                        className="bg-blue-800 text-white px-2 py-1 rounded-md text-sm font-semibold"
+                      >
+                        HF
+                      </button>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          name="patientId"
+                          value={patientFormik.values.patientId}
+                          onChange={patientFormik.handleChange}
+                          onBlur={patientFormik.handleBlur}
+                          placeholder="Patient's HF id."
+                          className={`w-full border rounded-md px-4 py-2 focus:outline-none ${hasError(patientFormik, 'patientId')
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-black'
+                            }`}
+                        />
+                        {getErrorMessage(patientFormik, 'patientId') && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {getErrorMessage(patientFormik, 'patientId')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-            {/* Input Field */}
-            <input
-              type="text"
-              placeholder="Patient's HF id."
-              className="flex-1 border border-black rounded-md px-4 py-2 focus:outline-none"
-            />
-          </div>
+                    {/* Forms Section */}
+                    <div className="mb-4">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <img
+                          src="/01fe876ae4c4ba6eac80e64ee74af7bb5936c1f8.png"
+                          alt="Forms"
+                          className="w-8 h-8"
+                        />
+                        <h2 className="text-blue-700 text-lg font-semibold">Select Forms to Send</h2>
+                      </div>
+                      <div className="h-[2px] bg-blue-700 w-60 mx-auto mb-3"></div>
 
+                      <div className="space-y-2 gap-3 mx-5">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            name="dtrConsent"
+                            checked={patientFormik.values.dtrConsent}
+                            onChange={patientFormik.handleChange}
+                            className="accent-yellow-400"
+                          />
+                          <span>DTR Consent</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            name="tmdConsent"
+                            checked={patientFormik.values.tmdConsent}
+                            onChange={patientFormik.handleChange}
+                            className="accent-yellow-400"
+                          />
+                          <span>TMD Consent</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            name="photoConsent"
+                            checked={patientFormik.values.photoConsent}
+                            onChange={patientFormik.handleChange}
+                            className="accent-yellow-400"
+                          />
+                          <span>Photo Consent</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            name="arthroseConsent"
+                            checked={patientFormik.values.arthroseConsent}
+                            onChange={patientFormik.handleChange}
+                            className="accent-yellow-400"
+                          />
+                          <span>Arthrose Functional Screening Consent</span>
+                        </label>
+                      </div>
+                    </div>
 
+                    {/* Date and Time Pickers */}
+                    <div className="flex space-x-4 mb-4">
+                      {/* Date Picker */}
+                      <div className="w-1/2">
+                        <div className="flex items-center border rounded-lg px-3 py-2">
+                          <FontAwesomeIcon icon={faCalendar} className="w-5 h-5 mr-2 text-gray-500" />
+                          <DatePicker
+                            selected={patientFormik.values.appointmentDate}
+                            onChange={(date) => patientFormik.setFieldValue('appointmentDate', date)}
+                            onBlur={() => patientFormik.setFieldTouched('appointmentDate', true)}
+                            dateFormat="yyyy-MM-dd"
+                            className="w-full focus:outline-none"
+                          />
+                        </div>
+                        {getErrorMessage(patientFormik, 'appointmentDate') && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {getErrorMessage(patientFormik, 'appointmentDate')}
+                          </p>
+                        )}
+                      </div>
 
-                  <div className="mb-4">
-  {/* Header with icon and underline */}
-  <div className="flex items-center space-x-3  mb-2">
-    {/* Icon */}
-    <img
-      src="/01fe876ae4c4ba6eac80e64ee74af7bb5936c1f8.png" // Replace with your image path
-      alt="Forms"
-      className="w-8 h-8"
-    />
-    {/* Title */}
-    <h2 className="text-blue-700 text-lg font-semibold">Select Forms to Send</h2>
-  </div>
+                      {/* Time Picker */}
+                      <div className="w-1/2">
+                        <div className="flex items-center border rounded-lg px-3 py-2">
+                          <FontAwesomeIcon icon={faClock} className="w-5 h-5 mr-2 text-gray-500" />
+                          <DatePicker
+                            selected={patientFormik.values.appointmentTime}
+                            onChange={(time) => patientFormik.setFieldValue('appointmentTime', time)}
+                            onBlur={() => patientFormik.setFieldTouched('appointmentTime', true)}
+                            showTimeSelect
+                            showTimeSelectOnly
+                            timeIntervals={15}
+                            timeCaption="Time"
+                            dateFormat="HH:mm"
+                            className="w-full focus:outline-none"
+                          />
+                        </div>
+                        {getErrorMessage(patientFormik, 'appointmentTime') && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {getErrorMessage(patientFormik, 'appointmentTime')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-  {/* Underline */}
-  <div className="h-[2px] bg-blue-700 w-60 mx-auto mb-3"></div>
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={patientFormik.isSubmitting || !patientFormik.isValid}
+                      className={`w-full font-bold py-3 rounded-lg transition-colors ${patientFormik.isSubmitting || !patientFormik.isValid
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                    >
+                      {patientFormik.isSubmitting ? 'Saving...' : 'Save Patient'}
+                    </button>
 
-  {/* Checkboxes */}
-  <div className="space-y-2 gap-3 mx-5">
-    <label className="flex items-center space-x-2">
-      <input type="checkbox" className="accent-yellow-400"  />
-      <span>DTR Consent</span>
-    </label>
-    <label className="flex items-center space-x-2">
-      <input type="checkbox" className="accent-yellow-400" />
-      <span>TMD Consent</span>
-    </label>
-    <label className="flex items-center space-x-2">
-      <input type="checkbox" className="accent-yellow-400" />
-      <span>Photo Consent</span>
-    </label>
-    <label className="flex items-center space-x-2">
-      <input type="checkbox" className="accent-yellow-400"  />
-      <span>Arthrose Functional Screening Consent</span>
-    </label>
-  </div>
-</div>
-
-
-                   <div className="flex space-x-4 mb-4">
-      {/* Date Picker */}
-      <div className="flex items-center border rounded-lg px-3 py-2 w-1/2">
-        <FontAwesomeIcon icon={faCalendar} className="w-5 h-5 mr-2 text-gray-500" />
-        <DatePicker
-          selected={selectedDate}
-          onChange={(date) => setSelectedDate(date)}
-          dateFormat="yyyy-MM-dd"
-          className="w-full focus:outline-none"
-        />
-      </div>
-
-      {/* Time Picker */}
-      <div className="flex items-center border rounded-lg px-3 py-2 w-1/2">
-        <FontAwesomeIcon icon={faClock} className="w-5 h-5 mr-2 text-gray-500" />
-        <DatePicker
-          selected={selectedTime}
-          onChange={(time) => setSelectedTime(time)}
-          showTimeSelect
-          showTimeSelectOnly
-          timeIntervals={15}
-          timeCaption="Time"
-          dateFormat="HH:mm"
-          className="w-full focus:outline-none"
-        />
-      </div>
-    </div>
-
-                  <button className="w-full primary text-white font-bold py-3 rounded-lg transition-colors">
-                    Save
-                  </button>
-                </div>
-
-                {/* Right side: Image and Info */}
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="flex items-center bg-blue-100 rounded-xl p-4 w-full ">
-                    {/* Profile Image */}
-                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
-                  <img
-                    src="/98c4113b37688d826fc939709728223539f249dd.jpg"
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                    <p className="font-bold text-lg ml-4">Ankit k.</p>
+                    {/* Form Status */}
+                    {Object.keys(patientFormik.errors).length > 0 && patientFormik.submitCount > 0 && (
+                      <div className="bg-red-50 border border-red-200 rounded-md p-3 mt-3">
+                        <p className="text-red-700 text-sm font-medium">
+                          Please fix the errors above before submitting.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex justify-center">
+                  {/* Right side: Image and Info */}
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="flex items-center bg-blue-100 rounded-xl p-4 w-full">
+                      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
+                        <img
+                          src="/98c4113b37688d826fc939709728223539f249dd.jpg"
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <p className="font-bold text-lg ml-4">Ankit k.</p>
+                    </div>
+
+                    <div className="flex justify-center">
+                      <div className="w-full max-w-sm">
+                        <img
+                          src="f02ab4b2b4aeffe41f18ff4ece3c64bd20e9a0f4 (1).png"
+                          alt="Add Appointment"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Add New Appointment Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-5xl w-full relative">
+              {/* Modal Header */}
+              <div className="relative mb-8">
+                <div className="flex items-center justify-center space-x-3">
+                  <FontAwesomeIcon icon={faCalendar} className="w-7 h-7 text-blue-800" />
+                  <h2 className="text-2xl font-bold text-blue-800">Add New Appointment</h2>
+                </div>
+                <div className='border border-blue-800 mx-auto w-40 mt-2'></div>
+
+                <button
+                  onClick={() => {
+                    appointmentFormik.resetForm();
+                    setShowModal(false);
+                  }}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <FontAwesomeIcon icon={faXmark} className="w-6 h-6 text-gray-600" />
+                </button>
+              </div>
+
+              <form onSubmit={appointmentFormik.handleSubmit}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Form Section */}
+                  <div className="space-y-6 lg:border-r lg:border-black lg:pr-6">
+                    {/* Visitor Name */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-3">
+                        <FontAwesomeIcon icon={faUser} className="w-8 h-8 text-black" />
+                        <div className="w-full">
+                          <input
+                            type="text"
+                            name="visitorName"
+                            value={appointmentFormik.values.visitorName}
+                            onChange={appointmentFormik.handleChange}
+                            onBlur={appointmentFormik.handleBlur}
+                            className={`w-full border rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${hasError(appointmentFormik, 'visitorName')
+                              ? 'border-red-500 bg-red-50'
+                              : 'border-gray-700'
+                              }`}
+                            placeholder="Enter visitor name"
+                          />
+                          {getErrorMessage(appointmentFormik, 'visitorName') && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {getErrorMessage(appointmentFormik, 'visitorName')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Phone */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-3">
+                        <FontAwesomeIcon icon={faPhone} className="w-5 h-5 text-black" />
+                        <div className="w-full">
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={appointmentFormik.values.phone}
+                            onChange={appointmentFormik.handleChange}
+                            onBlur={appointmentFormik.handleBlur}
+                            className={`w-full border rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${hasError(appointmentFormik, 'phone')
+                              ? 'border-red-500 bg-red-50'
+                              : 'border-gray-700'
+                              }`}
+                            placeholder="Enter phone number"
+                          />
+                          {getErrorMessage(appointmentFormik, 'phone') && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {getErrorMessage(appointmentFormik, 'phone')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Date and Time */}
+                    <div className="flex items-center space-x-6">
+                      {/* Date */}
+                      <div className="flex items-center space-x-3">
+                        <FontAwesomeIcon icon={faCalendar} className="w-5 h-5 text-black" />
+                        <div>
+                          <input
+                            type="text"
+                            name="date"
+                            value={appointmentFormik.values.date}
+                            onChange={appointmentFormik.handleChange}
+                            onBlur={appointmentFormik.handleBlur}
+                            className={`w-full border rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${hasError(appointmentFormik, 'date')
+                              ? 'border-red-500 bg-red-50'
+                              : 'border-gray-700'
+                              }`}
+                            placeholder="DD-MM-YYYY"
+                          />
+                          {getErrorMessage(appointmentFormik, 'date') && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {getErrorMessage(appointmentFormik, 'date')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="w-px h-10 bg-gray-300"></div>
+
+                      {/* Time */}
+                      <div className="flex items-center space-x-3">
+                        <FontAwesomeIcon icon={faClock} className="w-5 h-5 text-black" />
+                        <div>
+                          <CustomTimePicker
+                            value={appointmentFormik.values.time}
+                            onChange={(time) => appointmentFormik.setFieldValue('time', time)}
+                            onBlur={() => appointmentFormik.setFieldTouched('time', true)}
+                            hasError={hasError(appointmentFormik, 'time')}
+                            placeholder="Select time"
+                            className="border-gray-300"
+                          />
+                          {getErrorMessage(appointmentFormik, 'time') && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {getErrorMessage(appointmentFormik, 'time')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+
+                    {/* Save Button */}
+                    <button
+                      type="submit"
+                      disabled={appointmentFormik.isSubmitting || !appointmentFormik.isValid}
+                      className={`w-full font-bold py-4 px-6 rounded-lg transition-colors ${appointmentFormik.isSubmitting || !appointmentFormik.isValid
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                    >
+                      {appointmentFormik.isSubmitting ? 'Saving...' : 'Save Appointment'}
+                    </button>
+
+                    {/* Form Status */}
+                    {Object.keys(appointmentFormik.errors).length > 0 && appointmentFormik.submitCount > 0 && (
+                      <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                        <p className="text-red-700 text-sm font-medium">
+                          Please fix the errors above before submitting.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Illustration Section */}
+                  <div className="flex items-center justify-center">
                     <div className="w-full max-w-sm">
                       <img
                         src="f02ab4b2b4aeffe41f18ff4ece3c64bd20e9a0f4 (1).png"
@@ -618,126 +979,7 @@ const HealthcareDashboard = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal for Add New Appointment */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-8 max-w-5xl w-full relative ">
-              {/* Modal Header */}
-              <div className="relative mb-8">
-                {/* Title Centered */}
-                <div className="flex items-center justify-center space-x-3">
-                  <FontAwesomeIcon icon={faCalendar} className="w-7 h-7 text-blue-800" />
-                  <h2 className="text-2xl font-bold text-blue-800">Add New Appointment</h2>
-                </div>
-                <div className='border border-blue-800 mx-auto w-40 mt-2'></div>
-
-                {/* Close Button on Right */}
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full"
-                >
-                  <FontAwesomeIcon icon={faXmark} className="w-6 h-6 text-gray-600" />
-                </button>
-              </div>
-
-
-              <div className="grid grid-cols-1 lg:grid-cols-2  gap-8">
-                {/* Form Section */}
-                <div className="space-y-6 lg:border-r lg:border-black  lg:pr-6">
-                  {/* Visitor Name */}
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-3">
-                      <FontAwesomeIcon icon={faUser} className="w-8 h-8 text-black" />
-
-                      <input
-                        type="text"
-                        value={appointmentForm.visitorName}
-                        onChange={(e) => setAppointmentForm({ ...appointmentForm, visitorName: e.target.value })}
-                        className="w-full border border-gray-700 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter visitor name"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Phone */}
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-3">
-                      <FontAwesomeIcon icon={faPhone} className="w-5 h-5 text-black" />
-
-                      <input
-                        type="tel"
-                        value={appointmentForm.phone}
-                        onChange={(e) => setAppointmentForm({ ...appointmentForm, phone: e.target.value })}
-                        className="w-full border border-gray-700 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter phone number"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Date and Time */}
-                  <div className="space-y-2 ">
-                    <div className="flex items-center space-x-3">
-                      <FontAwesomeIcon icon={faCalendar} className="w-5 h-5 text-black" />
-
-                      <div className="flex items-center lg:border-r lg:border-gray-400 lg:pr-6">
-                        <input
-                          type="text"
-                          value={appointmentForm.date}
-                          onChange={(e) => setAppointmentForm({ ...appointmentForm, date: e.target.value })}
-                          className="flex-1 w-[190px] border border-gray-700 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="DD - MM - YYYY"
-                        />
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <FontAwesomeIcon icon={faClock} className="w-5 h-5 text-black" />
-                        <input
-                          type="text"
-                          value={appointmentForm.time}
-                          onChange={(e) => setAppointmentForm({ ...appointmentForm, time: e.target.value })}
-                          className="w-16 border border-gray-700 rounded-md px-3 py-3 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="4"
-                        />
-                        <span className="text-2xl font-bold text-gray-400">:</span>
-                        <input
-                          type="text"
-                          value={appointmentForm.period}
-                          onChange={(e) => setAppointmentForm({ ...appointmentForm, period: e.target.value })}
-                          className="w-16 border border-gray-700 rounded-md px-3 py-3 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="20"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Save Button */}
-                  <button
-                    onClick={() => {
-                      // Handle save logic here
-                      console.log('Saving appointment:', appointmentForm);
-                      setShowModal(false);
-                    }}
-                    className="w-full primary text-white font-bold py-4 px-6 rounded-lg transition-colors"
-                  >
-                    Save
-                  </button>
-                </div>
-
-                {/* Illustration Section */}
-                <div className="flex items-center justify-center">
-                  <div className="w-full max-w-sm">
-                    <img
-                      src="f02ab4b2b4aeffe41f18ff4ece3c64bd20e9a0f4 (1).png"
-                      alt="Add Appointment"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              </div>
+              </form>
             </div>
           </div>
         )}

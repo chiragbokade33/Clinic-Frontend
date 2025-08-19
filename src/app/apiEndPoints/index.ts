@@ -39,5 +39,25 @@ export const endPoints = {
         BranchCreate : API_CLINIC_DATA + "clinics/branches",
         DeleteBranch : API_CLINIC_DATA +"clinics/branches",
         BranchOTPVerify : API_CLINIC_DATA + "clinics/branches/verify/otp"
+    },
+
+    ForgotPassword : {
+        AdminForgot: API_CLINIC_DATA +"clinics/password-reset/request",
+        OTPVerify: API_CLINIC_DATA +"clinics/password-reset/verify/otp",
+        ResetPassword :  API_CLINIC_DATA + "clinics/password-reset",
+        UserForgot : API_CLINIC_DATA + "clinics/users/password-reset/request",
+        UserPassword : API_CLINIC_DATA + "clinics/users/password-reset"
+    },
+
+    RevertBranchMember : {
+        DeleteBranch : API_CLINIC_DATA + "clinics/deleted-branches",
+        revertBranch : API_CLINIC_DATA + "clinics/revert-branch",
+        MemberList : (clinicId:number) => `${API_CLINIC_DATA}clinics/${clinicId}/deleted-users`,
+        Revertmember: API_CLINIC_DATA + "clinics/revert-user",
+        ParmanetDelete: API_CLINIC_DATA +"clinics/remove-user"
+    },
+
+    Appointments :{
+        Addappointments : API_CLINIC_DATA + "appointments"
     }
 };

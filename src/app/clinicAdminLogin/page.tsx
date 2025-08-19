@@ -9,11 +9,11 @@ import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import ClinicHome from "../components/ClinicHome";
 import { getEmailId, getToken, getUserId } from "../hooks/GetitemsLocal";
 import { decodeAndStoreJWT } from "../utils/jwtHelpers";
-import { ListUser, LoginUser } from "../services/ClinicServiceApi";
+import { ListUser, LoginUser, UserForgotPassword } from "../services/ClinicServiceApi";
 import { encryptData } from "../utils/cryptoHelpers";
 
 interface CardData {
-  userId: string;
+  memberId: number;
   name: string;
   email: string;
   role: string;
@@ -24,7 +24,7 @@ interface CardData {
 const AdminLogins = () => {
   const router = useRouter();
   const [selectedHfid, setSelectedHfid] = useState<string | null>(null);
-  const [cardListData, setCardListData] = useState<CardData[]>([]) as any;
+  const [cardListData, setCardListData] = useState<CardData>({} as CardData);
   const [memberListData, setMemberListData] = useState<any[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState<string | null>();
@@ -61,13 +61,13 @@ const AdminLogins = () => {
       try {
         // Method 1: Use the imported helper function (recommended)
         // decodeAndStoreJWT(token);
-        
+
         // Method 2: Manual decoding (if helper function doesn't work)
         const base64Url = token.split('.')[1];
         if (!base64Url) {
           throw new Error('Invalid token format');
         }
-        
+
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(
           atob(base64)
@@ -75,10 +75,10 @@ const AdminLogins = () => {
             .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
             .join('')
         );
-        
+
         const data = JSON.parse(jsonPayload);
         console.log('Decoded JWT data:', data); // Debug log
-        
+
         // Store the decoded data in localStorage
         if (data.ClinicAdminId) {
           localStorage.setItem("ClinicAdminId", data.ClinicAdminId);
@@ -86,11 +86,11 @@ const AdminLogins = () => {
         if (data.role) {
           localStorage.setItem("role", data.role);
         }
-        
+
         // Alternative: If the property names are different in your JWT
         // Check what properties are actually in your token
         console.log('Available properties in token:', Object.keys(data));
-        
+
       } catch (error) {
         console.error("Failed to decode JWT token:", error);
         // Clear invalid token
@@ -126,12 +126,12 @@ const AdminLogins = () => {
         };
         const response = await LoginUser(payload);
         toast.success(`${response.data.message}`);
-        
+
         // Store the new token and decode it
         const newToken = response.data.data.token;
         localStorage.setItem("authToken", await encryptData(newToken));
         localStorage.setItem("username", await encryptData(response.data.data.username));
-        
+
         // Decode and store the new token immediately
         try {
           const base64Url = newToken.split('.')[1];
@@ -143,7 +143,7 @@ const AdminLogins = () => {
               .join('')
           );
           const data = JSON.parse(jsonPayload);
-          
+
           if (data.ClinicAdminId) {
             localStorage.setItem("ClinicAdminId", data.ClinicAdminId);
           }
@@ -153,7 +153,7 @@ const AdminLogins = () => {
         } catch (decodeError) {
           console.error("Failed to decode new JWT token:", decodeError);
         }
-        
+
         router.push("/dashboard");
         resetForm();
       } catch (error) {
@@ -177,16 +177,18 @@ const AdminLogins = () => {
     fetchData();
   }, []);
 
-  const handleForgotPassword = async (email: string) => {
+  const handleForgotPassword = async (email: string, ) => {
+    const id = await getUserId();
+      setCurrentUserId(id);
     try {
       const payload = {
         email,
-        labId: currentUserId,
+        clinicId: id, // Pass the selected member's memberId as clinicId
       };
 
-      //   const response = await UserForgotPassword(payload);
-      //   localStorage.setItem("recipientEmail", email);
-      //   toast.success(response.data.message);
+      const response = await UserForgotPassword(payload);
+      localStorage.setItem("recipientEmail", email);
+      toast.success(response.data.message);
       router.push("/forgotUserPassword");
     } catch (error) {
       console.error("Error during forgot password:", error);
@@ -214,12 +216,13 @@ const AdminLogins = () => {
 
             <div className="space-y-3 sm:space-y-4">
               <div
-                key={cardListData.userId}
+                key={cardListData.memberId}
                 className={`rounded-lg flex flex-col border p-3 sm:p-4 cursor-pointer transition-all duration-200 ${selectedHfid === cardListData.hfid ? 'border-gray-300 bg-blue-200' : 'border-gray-200 hover:border-gray-300'}`}
                 onClick={() => {
                   setSelectedHfid(cardListData.hfid);
                   formik.setFieldValue("hfid", cardListData.hfid);
                   formik.setFieldValue("role", cardListData.role);
+                  // Store the selected admin's memberId in localStorage
                 }}
               >
                 <div className="flex items-center">
@@ -289,6 +292,7 @@ const AdminLogins = () => {
                       toast.error("Email not found for this user.");
                       return;
                     }
+                    // Pass the admin's memberId to the forgot password function
                     handleForgotPassword(cardListData.email);
                   }}
                 >
@@ -304,13 +308,14 @@ const AdminLogins = () => {
 
             <div className="space-y-3 sm:space-y-4">
               {memberListData.map((user) => (
-                <div key={user.userId}>
+                <div key={user.memberId}>
                   <div
                     className={`rounded-lg flex flex-col border p-3 sm:p-4 cursor-pointer transition-all duration-200 ${selectedHfid === user.hfid ? 'border-gray-300 bg-blue-200' : 'border-gray-200 hover:border-gray-300'}`}
                     onClick={() => {
                       setSelectedHfid(user.hfid);
                       formik.setFieldValue("hfid", user.hfid);
                       formik.setFieldValue("role", user.role);
+                      // Store the selected member's memberId in localStorage
                     }}
                   >
                     <div className="flex items-center">
@@ -379,6 +384,7 @@ const AdminLogins = () => {
                           toast.error("Email not found for this user.");
                           return;
                         }
+                        // Pass the member's memberId to the forgot password function
                         handleForgotPassword(user.email);
                       }}>
                       Forgot password

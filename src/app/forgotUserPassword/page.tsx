@@ -9,7 +9,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash, faLock } from '@fortawesome/free-solid-svg-icons';
 import { useRouter } from 'next/navigation';
 import ClinicHome from '../components/ClinicHome';
-// import {  LoginOTP,  UserForgotPassword , ForgotPasswordUser , UserOTPVerify} from '@/services/labServiceApi';
+import { ForgotPasswordUser, UserForgotPassword, UserOTPVerify } from '../services/ClinicServiceApi';
+import { getUserId } from '../hooks/GetitemsLocal';
 
 const getStoredUserId = () => {
   if (typeof window !== "undefined") {
@@ -28,24 +29,25 @@ const ForgotPasswordUserPage = () => {
   const [step, setStep] = useState(1);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  // const [email, setEmail] = useState('') as any; 
   const [isLoading, setIsLoading] = useState(false);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const inputRefs = useRef<HTMLInputElement[]>([]);
-    // const userId = localStorage.getItem("userId");
      const [userId] = useState<string | null>(getStoredUserId);
      const [email] = useState<string | null>(getStoredRecipientEmail);
+       const [currentUserId, setCurrentUserId] = useState<number>();
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+    };
+    fetchUserId();
+  }, []);
 
   const [timer, setTimer] = useState(300);
   const router = useRouter();
 
-  // useEffect(() => {
-  //   const storedEmail = localStorage.getItem('recipientEmail');
-  //   if (storedEmail) {
-  //     setEmail(storedEmail);
-  //   }
-  // }, []);
 
   const otpFormik = useFormik({
     initialValues: {
@@ -60,10 +62,10 @@ const ForgotPasswordUserPage = () => {
     onSubmit: async (values) => {
       try {
         setIsVerifyingOtp(true);
-        // const response = await UserOTPVerify({
-        //   email: email,
-        //   otp: values.otp,
-        // });
+        const response = await UserOTPVerify({
+          email: email,
+          otp: values.otp,
+        });
         toast.success(`OTP Verify successfully...`);
         setStep(2);
         setIsOtpVerified(true);
@@ -93,12 +95,14 @@ const ForgotPasswordUserPage = () => {
         .required('Confirm password required')
     }),
     onSubmit: async (values) => {
+       const id = await getUserId();
+      setCurrentUserId(id);
       try {
         setIsLoading(true);
-        // const res = await ForgotPasswordUser({ email: email, labId:userId , newPassword: values.newPassword, confirmPassword: values.confirmPassword });
-        // toast.success(`${res.data.message}`);
-        // router.push('/labAdminLogin');
-        // localStorage.removeItem("recipientEmail");
+        const res = await ForgotPasswordUser({ email: email, clinicId:id , newPassword: values.newPassword, confirmPassword: values.confirmPassword });
+        toast.success(`${res.data.message}`);
+        router.push('/clinicAdminLogin');
+        localStorage.removeItem("recipientEmail");
       } catch (error) {
         const err = error as any;
         toast.error(`${err.response?.data?.message}`);
@@ -155,15 +159,17 @@ const ForgotPasswordUserPage = () => {
   };
 
     const handleForgotPassword = async () => {
+       const id = await getUserId();
+      setCurrentUserId(id);
        try {
           const payload = {
             email,
-            labId: userId,
+            clinicId: id,
           };
       
-        //   const response = await UserForgotPassword(payload);
-        //     localStorage.setItem("recipientEmail", email || ""); 
-        //     toast.success(response.data.message);
+          const response = await UserForgotPassword(payload);
+            localStorage.setItem("recipientEmail", email || ""); 
+            toast.success(response.data.message);
         } catch (error) {
           console.error("Error during forgot password:", error);
         }
