@@ -56,7 +56,9 @@ const errorHandler = (error: any) => {
       localStorage.removeItem("userId");
       localStorage.removeItem("emailId");
       localStorage.removeItem("username");
-         // window.location.href = "/clinicLogin";
+      localStorage.removeItem("role");
+      localStorage.removeItem("ClinicAdminId");
+         window.location.href = "/clinicLogin";
     }
   } else {
     toast.error(message);

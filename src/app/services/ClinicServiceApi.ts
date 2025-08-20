@@ -155,3 +155,35 @@ export const CreateAppointments = async (payloade:any) =>{
 export const ListAppointment = async (clinicId:number) =>{
     return axiosInstance.get(`${endPoints.Appointments.AppointmentList}/${clinicId}`)
 }
+
+export const AddFolllowUp = async (clinicId:number,payloade:any) =>{
+    return axiosInstance.post(`${endPoints.Appointments.FollowUp(clinicId)}`,payloade)
+}
+
+export const HFID = async (paylaode:any) =>{
+    return axiosInstance.post(`${endPoints.Appointments.VerifyHFID}`, paylaode)
+}
+
+export const AppoinmentUpdate =async (clinicId:number ,appointmentId:number,payloade:any) =>{
+    return axiosInstance.put(`${endPoints.Appointments.UpdateAppoinment(clinicId,appointmentId)}`, payloade)
+}
+
+export const ListPatients = async (clinicId: number, startDate?: string, endDate?: string) => {
+    const params: any = {};
+    
+    if (startDate) {
+        params.startDate = startDate;
+    }
+    
+    if (endDate) {
+        params.endDate = endDate;
+    }
+    
+    return axiosInstance.get(`${endPoints.Appointments.PatientList(clinicId)}`, {
+        params
+    });
+}
+
+export const BookFolllowUp = async (clinicId:number,payloade:any) =>{
+    return axiosInstance.post(`${endPoints.Appointments.BookAppoinment(clinicId)}`,payloade)
+}

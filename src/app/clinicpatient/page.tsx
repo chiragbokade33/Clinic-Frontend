@@ -1,76 +1,223 @@
 'use client'
-import React, { useState } from 'react';
-import { Search, Calendar, User } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { Search, Calendar, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import DefaultLayout from '../components/DefaultLayout';
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useRouter } from 'next/navigation';
+import { getUserId } from '../hooks/GetitemsLocal';
+import { ListPatients } from '../services/ClinicServiceApi';
 
+// Debounce hook
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 const PatientListInterface = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [startDate, setStartDate] = useState() as any;
-  const [endDate, setEndDate] = useState() as any;
+
+  // Separate states for selected dates vs applied dates
+  const [startDate, setStartDate] = useState<Date | null>(null); // For date picker display
+  const [endDate, setEndDate] = useState<Date | null>(null); // For date picker display
+  const [appliedStartDate, setAppliedStartDate] = useState<Date | null>(null); // For API calls
+  const [appliedEndDate, setAppliedEndDate] = useState<Date | null>(null); // For API calls
+
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [totalPatients, setTotalPatients] = useState(0);
+  const [filteredPatients, setFilteredPatients] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [itemsPerPage] = useState(10); // You can make this configurable
+
   const router = useRouter();
 
+  // Debounce search query to avoid too many API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Dummy patient data matching the screenshot
-  const patients = [
-    {
-      id: 1,
-      name: "Aarav Mehta",
-      hfId: "HF120624RAN1097",
-      lastVisit: "March 5, 2023",
-      payment: "Cash",
-      paymentColor: "text-gray-700"
-    },
-    {
-      id: 2,
-      name: "Aarav Mehta",
-      hfId: "HF120624RAN1097",
-      lastVisit: "July 18, 2022",
-      payment: "UPI",
-      paymentColor: "text-gray-700"
-    },
-    {
-      id: 3,
-      name: "Aarav Mehta",
-      hfId: "HF120624RAN1097",
-      lastVisit: "November 30, 2021",
-      payment: "Cash",
-      paymentColor: "text-gray-700",
-      highlighted: true
-    },
-    {
-      id: 4,
-      name: "Aarav Mehta",
-      hfId: "HF120624RAN1097",
-      lastVisit: "July 18, 2022",
-      payment: "Pending",
-      paymentColor: "text-red-500"
-    },
-    {
-      id: 5,
-      name: "Aarav Mehta",
-      hfId: "HF120624RAN1097",
-      lastVisit: "July 18, 2022",
-      payment: "Credit Card",
-      paymentColor: "text-gray-700"
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+    };
+    fetchUserId();
+  }, []);
+
+  // Format date to dd-MM-yyyy
+  const formatDateForAPI = (date: Date): string => {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  // Fetch patients from API - only depends on appliedStartDate and appliedEndDate
+  const fetchPatients = useCallback(async () => {
+    if (!currentUserId) return;
+
+    setLoading(true);
+    try {
+      // Format dates to dd-MM-yyyy format if they exist
+      const formattedStartDate = appliedStartDate ? formatDateForAPI(appliedStartDate) : undefined;
+      const formattedEndDate = appliedEndDate ? formatDateForAPI(appliedEndDate) : undefined;
+
+      console.log('API Call with dates:', { formattedStartDate, formattedEndDate }); // Debug log
+
+      const response = await ListPatients(currentUserId, formattedStartDate, formattedEndDate);
+      const patientsData = response?.data?.data?.patients || [];
+      const total = response?.data?.data?.totalPatients || 0;
+
+      setPatients(patientsData);
+      setTotalPatients(total);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+      setPatients([]);
+      setTotalPatients(0);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [currentUserId, appliedStartDate, appliedEndDate]); // Only depends on applied dates
 
-  const totalPatients = 420;
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  // Filter patients based on search query only (dates handled by API)
+  const filterPatients = useCallback(() => {
+    let filtered = [...patients];
+
+    // Search filter (name and hfid) - keep client-side
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
+      filtered = filtered.filter(patient =>
+        patient.patientName?.toLowerCase().includes(query) ||
+        patient.hfid?.toLowerCase().includes(query)
+      );
+    }
+
+    // Remove client-side date filtering since API handles it now
+    setFilteredPatients(filtered);
+    setCurrentPage(1); // Reset to first page when filtering
+  }, [patients, debouncedSearchQuery]); // Removed startDate and endDate dependencies
+
+  useEffect(() => {
+    filterPatients();
+  }, [filterPatients]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPatients = filteredPatients.slice(startIndex, endIndex);
+
+  // Pagination helpers
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const goToPrevious = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNext = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Generate pagination numbers
+  const getPaginationNumbers = () => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++) {
+      range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages);
+    } else if (totalPages > 1) {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
+  };
+
+  // Handle search input
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Handle date range selection (no API call)
+  const handleDateRangeChange = (dates: [Date | null, Date | null]) => {
+    const [start, end] = dates;
+    setStartDate(start);
+    setEndDate(end);
+    // Don't call API here - only when Done is clicked
+  };
+
+  // Handle Done button click - apply the selected dates and call API
+  const handleDatePickerDone = () => {
+    setAppliedStartDate(startDate);
+    setAppliedEndDate(endDate);
+    setShowDatePicker(false);
+    // API will be called automatically due to useEffect dependency on appliedStartDate/appliedEndDate
+  };
+
+  // Clear date filter
+  const clearDateFilter = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setAppliedStartDate(null);
+    setAppliedEndDate(null);
+    // API will be called automatically due to applied dates changing
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setStartDate(null);
+    setEndDate(null);
+    setAppliedStartDate(null);
+    setAppliedEndDate(null);
+  };
 
   return (
     <DefaultLayout>
-      <div className="h-[80vh]  p-6">
+      <div className="h-[80vh] p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}
-          <div className="flex items-center justify-between ">
+          <div className="flex items-center justify-between">
             <h1 className="text-4xl font-semibold text-gray-900 mx-5">Patient's list:</h1>
 
             {/* Search Bar */}
@@ -80,48 +227,50 @@ const PatientListInterface = () => {
               </div>
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search by name or HF ID"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
                 className="w-80 pl-10 pr-4 py-2 border border-black rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               />
-              <button className="absolute inset-y-0 right-0 flex items-center justify-center w-10 bg-[#01154c] text-white rounded-full ">
+              <button className="absolute inset-y-0 right-0 flex items-center justify-center w-10 bg-[#01154c] text-white rounded-full">
                 <Search className="h-4 w-4" />
               </button>
             </div>
-
           </div>
+
           <div className='border border-black mx-3'></div>
 
-          {/* Subtitle */}
+          {/* Subtitle and Filter Status */}
           <div className="mt-4 mb-6 flex items-center">
-            {/* Centered text */}
             <p className="flex-1 text-center text-blue-800 text-lg font-medium">
               "All your clinic's reports in one place!"
             </p>
-
-            {/* Green circular icon */}
             <div className="w-8 h-8 bg-[#238B02] rounded-md flex items-center justify-center ml-3">
               <FontAwesomeIcon icon={faInfoCircle} className="text-white text-sm" />
             </div>
           </div>
 
+
+
           {/* Patient Directory Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-black overflow-hidden">
+          <div className="bg-white h-[550px] rounded-lg shadow-sm border border-black overflow-hidden">
             {/* Card Header */}
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-700">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-medium text-gray-900">Patient Directory</h2>
                 <div className="flex items-center space-x-3">
-                  <span className="text-sm text-gray-600">Total: {totalPatients}</span>
+                  <span className="text-sm text-gray-800 font-bold">Total: {totalPatients}</span>
 
                   {/* Calendar Icon Button */}
                   <div className="relative">
                     <button
                       onClick={() => setShowDatePicker(!showDatePicker)}
-                      className="flex items-center justify-center w-10 h-10 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      className={`flex items-center justify-center w-10 h-10 border rounded-lg transition-colors ${appliedStartDate || appliedEndDate
+                          ? 'border-blue-500 bg-blue-50 text-blue-600'
+                          : 'border-gray-300 hover:bg-gray-50'
+                        }`}
                     >
-                      <Calendar className="h-5 w-5 text-gray-600" />
+                      <Calendar className="h-5 w-5" />
                     </button>
 
                     {/* Date Range Picker Modal */}
@@ -131,11 +280,7 @@ const PatientListInterface = () => {
                           <h3 className="text-sm font-medium text-gray-700 mb-2">Select Date Range</h3>
                           <DatePicker
                             selected={startDate}
-                            onChange={(dates) => {
-                              const [start, end] = dates;
-                              setStartDate(start);
-                              setEndDate(end);
-                            }}
+                            onChange={handleDateRangeChange}
                             startDate={startDate}
                             endDate={endDate}
                             selectsRange
@@ -154,16 +299,13 @@ const PatientListInterface = () => {
                         {/* Action buttons */}
                         <div className="flex justify-between">
                           <button
-                            onClick={() => {
-                              setStartDate(null);
-                              setEndDate(null);
-                            }}
+                            onClick={clearDateFilter}
                             className="text-xs text-gray-500 hover:text-gray-700"
                           >
                             Clear
                           </button>
                           <button
-                            onClick={() => setShowDatePicker(false)}
+                            onClick={handleDatePickerDone}
                             className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
                           >
                             Done
@@ -187,85 +329,132 @@ const PatientListInterface = () => {
               </div>
             </div>
 
+            {/* Loading State */}
+            {loading && (
+              <div className="px-6 py-8 text-center">
+                <div className="text-gray-500">Loading patients...</div>
+              </div>
+            )}
+
+            {/* No Results State */}
+            {!loading && currentPatients.length === 0 && (
+              <div className="px-6 py-8 text-center">
+                <div className="text-gray-500">
+                  {filteredPatients.length === 0 && patients.length > 0
+                    ? 'No patients found matching your search criteria.'
+                    : 'No patients found.'}
+                </div>
+                {(searchQuery || appliedStartDate || appliedEndDate) && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Clear filters to show all patients
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Patient Rows */}
-            <div className="divide-y divide-gray-200">
-              {patients.map((patient) => (
-                <div
-                  key={patient.id}
-                  className={`px-6 py-4 hover:bg-gray-50 transition-colors ${patient.highlighted ? 'bg-blue-50' : 'bg-white'
-                    }`}
-                >
-                  <div className="grid grid-cols-5 gap-4 items-center">
-                    {/* Name with Avatar */}
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-gray-600" />
+            {!loading && (
+              <div className="divide-y divide-gray-200">
+                {currentPatients.map((patient: any, index: number) => (
+                  <div
+                    key={`${patient.hfid}-${index}`}
+                    className={`px-6 py-4 hover:bg-gray-50 transition-colors ${patient.highlighted ? 'bg-blue-50' : 'bg-white'
+                      }`}
+                  >
+                    <div className="grid grid-cols-5 gap-4 items-center">
+                      {/* Name with Avatar */}
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-gray-600" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">{patient.patientName || 'N/A'}</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{patient.name}</span>
-                    </div>
 
-                    {/* HF ID */}
-                    <div className="text-sm text-gray-700">{patient.hfId}</div>
+                      {/* HF ID */}
+                      <div className="text-sm text-gray-700">{patient.hfid || 'N/A'}</div>
 
-                    {/* Last Visit */}
-                    <div className="text-sm text-gray-700">{patient.lastVisit}</div>
+                      {/* Last Visit */}
+                      <div className="text-sm text-gray-700">
+                        {patient.lastVisitDate ? new Date(patient.lastVisitDate).toLocaleDateString() : 'N/A'}
+                      </div>
 
-                    {/* Payment Status */}
-                    <div className={`text-sm font-medium ${patient.paymentColor}`}>
-                      {patient.payment}
-                    </div>
+                      {/* Payment Status */}
+                      <div className={`text-sm font-medium ${patient.paymentColor || 'text-gray-700'}`}>
+                        {patient.payment || "-"}
+                      </div>
 
-                    {/* View Button */}
-                    <div>
-                      <button
-                        className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors ${patient.highlighted
-                            ? 'text-white bg-[#238B02]'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                          }`}
-                        onClick={() => router.push('/tretmentDetails')}
-                      >
-                        See more
-                      </button>
+                      {/* View Button */}
+                      <div>
+                        <button
+                          className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors ${patient.highlighted
+                              ? 'text-white bg-[#238B02] border-[#238B02]'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          onClick={() => router.push('/tretmentDetails')}
+                        >
+                          See more
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Pagination */}
-          <div className="flex justify-center mt-6">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setCurrentPage(1)}
-                className={`w-8 h-8 rounded-md flex items-center justify-center text-sm font-medium transition-colors ${currentPage === 1
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
-              >
-                1
-              </button>
-              <button
-                onClick={() => setCurrentPage(2)}
-                className={`w-8 h-8 rounded-md flex items-center justify-center text-sm font-medium transition-colors ${currentPage === 2
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
-              >
-                2
-              </button>
-              <span className="text-gray-500 px-2">...</span>
-              <button
-                onClick={() => setCurrentPage(5)}
-                className={`w-8 h-8 rounded-md flex items-center justify-center text-sm font-medium transition-colors ${currentPage === 5
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
-              >
-                5
-              </button>
+          {/* Enhanced Pagination */}
+          {!loading && filteredPatients.length > 0 && (
+            <div className="flex justify-center mt-6">
+              <div className="flex items-center space-x-2">
+                {/* Previous Button */}
+                <button
+                  onClick={goToPrevious}
+                  disabled={currentPage === 1}
+                  className={`p-2 rounded-md transition-colors ${currentPage === 1
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                {/* Page Numbers */}
+                {getPaginationNumbers().map((page, index) => (
+                  <React.Fragment key={index}>
+                    {page === '...' ? (
+                      <span className="px-2 text-gray-500">...</span>
+                    ) : (
+                      <button
+                        onClick={() => goToPage(page as number)}
+                        className={`w-8 h-8 rounded-md flex items-center justify-center text-sm font-medium transition-colors ${currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    )}
+                  </React.Fragment>
+                ))}
+
+                {/* Next Button */}
+                <button
+                  onClick={goToNext}
+                  disabled={currentPage === totalPages}
+                  className={`p-2 rounded-md transition-colors ${currentPage === totalPages
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
         </div>
 
         {/* Click outside to close modal */}

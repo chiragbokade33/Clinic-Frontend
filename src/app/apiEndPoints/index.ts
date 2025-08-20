@@ -59,6 +59,11 @@ export const endPoints = {
 
     Appointments :{
         Addappointments : API_CLINIC_DATA + "appointments",
-        AppointmentList : API_CLINIC_DATA + "appointments/clinic"
+        AppointmentList : API_CLINIC_DATA + "appointments/clinic",
+        FollowUp : (clinicId:number) => `${API_CLINIC_DATA}appointments/clinics/${clinicId}/follow-up`,
+        VerifyHFID : API_CLINIC_DATA + "users/hfid",
+        UpdateAppoinment: (clinicId:number ,appointmentId:number) =>`${API_CLINIC_DATA}appointments/clinic/${clinicId}/appointment/${appointmentId }/status`,
+        PatientList : (clinicId:number) => `${API_CLINIC_DATA}appointments/clinics/${clinicId}/patients`,
+        BookAppoinment : (clinicId:number) => `${API_CLINIC_DATA}appointments/clinics/${clinicId}/appointments/follow-up`
     }
 };

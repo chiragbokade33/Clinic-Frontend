@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCalendar,
@@ -9,7 +9,8 @@ import {
   faExclamationCircle,
   faXmark,
   faUserPlus,
-  faPlus
+  faPlus,
+  faChevronDown
 } from '@fortawesome/free-solid-svg-icons';
 import DefaultLayout from '../components/DefaultLayout';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -17,7 +18,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { CreateAppointments, ListAppointment } from '../services/ClinicServiceApi';
+import { CreateAppointments, ListAppointment, HFID, AddFolllowUp, AppoinmentUpdate, BookFolllowUp } from '../services/ClinicServiceApi';
 import { getUserId } from '../hooks/GetitemsLocal';
 import CustomTimePicker from '../components/CustomTimePicker';
 import { toast } from 'react-toastify';
@@ -28,8 +29,26 @@ const HealthcareDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(1);
-  const [currentUserId, setCurrentUserId] = useState<number>();
-  const [appointments ,setAppointments] = useState() as any;
+  const [currentUserId, setCurrentUserId] = useState<number>() as any;
+  const [appointments, setAppointments] = useState() as any;
+  const [todayAppoinment, SetTodayAppoinmnet] = useState()as any;
+  const [miss, SetMiss] = useState() as any;
+
+  // New state variables for HF ID verification
+  const [isVerifyingHFID, setIsVerifyingHFID] = useState(false);
+  const [hfidVerified, setHfidVerified] = useState(false);
+  const [hfidError, setHfidError] = useState('');
+  const [open, setOpen] = useState(false);
+
+  // Add this new state variable with your other useState declarations
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+
+  // Updated edit state variables - using separate states instead of object
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingStatus, setEditingStatus] = useState("");
+  const [editingTreatment, setEditingTreatment] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [userName , setUserName]= useState() as any;
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -38,6 +57,52 @@ const HealthcareDashboard = () => {
     };
     fetchUserId();
   }, []);
+
+  // HF ID Verification Handler
+  const handleHFIDVerification = async () => {
+    if (!patientFormik.values.patientId) {
+      setHfidError('Please enter a Patient ID first');
+      return;
+    }
+
+    setIsVerifyingHFID(true);
+    setHfidError('');
+
+    try {
+      const payload = {
+        hfid: patientFormik.values.patientId
+      };
+
+      const response = await HFID(payload);
+
+      // Adjust this condition based on your API response structure
+      if (response.data.success || response.status === 200) {
+        setHfidVerified(true);
+        setUserName(response.data.data.username)
+        setHfidError('');
+        toast.success('Patient ID verified successfully!');
+      } else {
+        setHfidVerified(false);
+        setHfidError(response.data.message || 'Patient ID verification failed');
+        toast.error('Patient ID verification failed');
+      }
+    } catch (error) {
+      console.error('Error verifying HFID:', error);
+      setHfidVerified(false);
+      setHfidError('Error verifying Patient ID. Please try again.');
+      toast.error('Error verifying Patient ID');
+    } finally {
+      setIsVerifyingHFID(false);
+    }
+  };
+
+  // Modal Close Handler
+  const handlePatientModalClose = () => {
+    patientFormik.resetForm();
+    setIsModalOpen(false);
+    setHfidVerified(false);
+    setHfidError('');
+  };
 
   // Validation Schema for Appointment Form
   const appointmentValidationSchema = Yup.object({
@@ -65,6 +130,7 @@ const HealthcareDashboard = () => {
       .required('Time is required')
       .nullable(),
   });
+
   // Validation Schema for Patient Form
   const patientValidationSchema = Yup.object({
     patientId: Yup.string()
@@ -90,6 +156,7 @@ const HealthcareDashboard = () => {
       setShowModal(true);
     }
   };
+
   // Formik setup for Appointment Form
   const appointmentFormik = useFormik({
     initialValues: {
@@ -128,15 +195,17 @@ const HealthcareDashboard = () => {
         toast.success(`${response.data.message}`)
         resetForm();
         setShowModal(false);
+        appoinmentData(); // Refresh appointments
       } catch (error) {
         console.error("Error saving appointment:", error);
+        toast.error("Failed to create appointment");
       } finally {
         setSubmitting(false);
       }
     },
   });
 
-  // Formik setup for Patient Form
+  // Updated Formik setup for Patient Form with API integration
   const patientFormik = useFormik({
     initialValues: {
       patientId: "",
@@ -148,20 +217,84 @@ const HealthcareDashboard = () => {
       arthroseConsent: false,
     },
     validationSchema: patientValidationSchema,
-    onSubmit: (values, { setSubmitting, resetForm }) => {
-      try {
-        console.log('Saving patient:', values);
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      // Check if HFID is verified before submitting
+      if (!hfidVerified) {
+        toast.error('Please verify the Patient ID first by clicking the HF button');
+        setSubmitting(false);
+        return;
+      }
 
-        // Simulate API call
-        setTimeout(() => {
-          alert('Patient added successfully!');
+      try {
+        const id = await getUserId();
+        setCurrentUserId(id);
+
+        // Format the date for the API
+        const formatDate = (date: Date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${day}-${month}-${year}`;
+        };
+
+        // Format the time for the API
+        const formatTime = (time: Date) => {
+          const hours = String(time.getHours()).padStart(2, '0');
+          const minutes = String(time.getMinutes()).padStart(2, '0');
+          return `${hours}:${minutes}`;
+        };
+
+        // Create consentFormTitles array based on selected checkboxes
+        const consentFormTitles = [];
+        if (values.dtrConsent) consentFormTitles.push("DTR Consent");
+        if (values.tmdConsent) consentFormTitles.push("TMD/TMJP Consent");
+        if (values.photoConsent) consentFormTitles.push("Photo Consent");
+        if (values.arthroseConsent) consentFormTitles.push("Arthrose Functional Screening Consent");
+
+        // Create payload for both APIs (same structure)
+        const payload = {
+          hfid: values.patientId,
+          consentFormTitles: consentFormTitles,
+          appointmentDate: formatDate(values.appointmentDate),
+          appointmentTime: formatTime(values.appointmentTime),
+        };
+
+        console.log('Saving patient with payload:', payload);
+
+        let response;
+        let modalType = '';
+
+        // Determine which API to call based on which modal is open
+        if (isModalOpen) {
+          // Add New Patient modal - use AddFolllowUp API
+          response = await AddFolllowUp(id, payload);
+          modalType = 'Add New Patient';
+        } else if (showFollowUpModal) {
+          // Book Follow-up Appointment modal - use BookFolllowUp API
+          response = await BookFolllowUp(id, payload);
+          modalType = 'Book Follow-up Appointment';
+        }
+
+        // Handle response
+        if (response && (response.data.success || response.status === 200)) {
+          toast.success(response.data.message || `${modalType} completed successfully!`);
           resetForm();
           setIsModalOpen(false);
-          setSubmitting(false);
-        }, 1000);
+          setShowFollowUpModal(false);
+          setHfidVerified(false); // Reset verification status
+          setHfidError('');
+
+          // Refresh appointments list
+          appoinmentData();
+        } else {
+          toast.error(response?.data?.message || `Failed to ${modalType.toLowerCase()}`);
+        }
 
       } catch (error) {
         console.error('Error saving patient:', error);
+        const modalType = isModalOpen ? 'add patient' : 'book follow-up appointment';
+        toast.error(`Error ${modalType}. Please try again.`);
+      } finally {
         setSubmitting(false);
       }
     },
@@ -179,74 +312,18 @@ const HealthcareDashboard = () => {
     return formik.touched[fieldName] && formik.errors[fieldName];
   };
 
-  const appoinmentData = async () =>{
-     const id = await getUserId();
-      setCurrentUserId(id);
-    const  response = await ListAppointment(id);
-    setAppointments(response.data.data);
+  const appoinmentData = async () => {
+    const id = await getUserId();
+    setCurrentUserId(id);
+    const response = await ListAppointment(id);
+    setAppointments(response.data.data.appointments);
+    SetMiss(response.data.data.missedAppointmentsToday)
+    SetTodayAppoinmnet(response.data.data.totalAppointmentsToday)
   }
 
-  useEffect(() =>{
+  useEffect(() => {
     appoinmentData();
-  },[])
-  // // Enhanced appointments with complete patient data
-  // const appointments = [
-  //   {
-  //     id: 1,
-  //     patient: "Ankit k.",
-  //     patientId: "HF120624RANI097",
-  //     time: "8:12 AM",
-  //     type: "morning",
-  //     lastVisit: "15 / 02 / 2024",
-  //     status: "Scheduled",
-  //     treatment: "Facial, Jaw Pain",
-  //     phone: "9845624873"
-  //   },
-  //   {
-  //     id: 2,
-  //     patient: "Ankit k.",
-  //     patientId: "HF120624RANI097",
-  //     time: "3:10 AM",
-  //     type: "morning",
-  //     lastVisit: "15 / 02 / 2024",
-  //     status: "Scheduled",
-  //     treatment: "Facial, Jaw Pain",
-  //     phone: "9845624873"
-  //   },
-  //   {
-  //     id: 3,
-  //     patient: "Ankit k.",
-  //     patientId: "HF120624RANI097",
-  //     time: "3:01 AM",
-  //     type: "morning",
-  //     lastVisit: "15 / 02 / 2024",
-  //     status: "Scheduled",
-  //     treatment: "Facial, Jaw Pain",
-  //     phone: "9845624873"
-  //   },
-  //   {
-  //     id: 4,
-  //     patient: "Ankit k.",
-  //     patientId: "HF120624RANI097",
-  //     time: "1:00 AM",
-  //     type: "early",
-  //     lastVisit: "15 / 02 / 2024",
-  //     status: "Scheduled",
-  //     treatment: "Facial, Jaw Pain",
-  //     phone: "9845624873"
-  //   },
-  //   {
-  //     id: 5,
-  //     patient: "Ankit k.",
-  //     patientId: "HF120624RANI097",
-  //     time: "09:20 AM",
-  //     type: "morning",
-  //     lastVisit: "15 / 02 / 2024",
-  //     status: "Scheduled",
-  //     treatment: "Facial, Jaw Pain",
-  //     phone: "9845624873"
-  //   }
-  // ];
+  }, [])
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -325,50 +402,149 @@ const HealthcareDashboard = () => {
       currentDate.getFullYear() === today.getFullYear();
   };
 
-
-
   // Go to current month function
   const goToCurrentMonth = () => {
     setCurrentDate(new Date());
   };
 
-  // Get selected patient data
-  
-// Add this right before your CombinedAppointmentPatient component
-// Get selected patient data based on selectedAppointment ID
-const selectedPatient = appointments && appointments.length > 0 
-  ? appointments.find((appointment:any) => appointment.id === selectedAppointment) 
-  : null;
+  // Get selected patient data based on selectedAppointment ID
+  const selectedPatient = appointments && appointments.length > 0
+    ? appointments.find((appointment: any) => appointment.id === selectedAppointment)
+    : null;
+
+  // Add optimized handlers to prevent re-renders and cursor jumping
+  const handleTreatmentChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingTreatment(e.target.value);
+  }, []);
+
+  const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setEditingStatus(e.target.value);
+  }, []);
+
+  // Updated handleEditSave function using separate state variables
+  const handleEditSave = async () => {
+    if (!isEditing) {
+      // Enter edit mode
+      setIsEditing(true);
+      setEditingStatus(selectedPatient?.status || "Scheduled");
+      setEditingTreatment(selectedPatient?.treatment || "");
+    } else {
+      // Save changes
+      try {
+        setIsUpdating(true);
+
+        const payload = {
+          status: editingStatus,
+          treatment: editingTreatment
+        };
+
+        const response = await AppoinmentUpdate(
+          currentUserId,
+          selectedPatient.id,
+          payload
+        );
+
+        if (response.status === 200 || response.data.success) {
+          // Update the appointments list with the new data
+          setAppointments((prev: any[]) =>
+            prev.map(apt =>
+              apt.id === selectedPatient.id
+                ? { ...apt, ...payload }
+                : apt
+            )
+          );
+
+          toast.success('Appointment updated successfully!');
+          setIsEditing(false);
+          setEditingStatus("");
+          setEditingTreatment("");
+        } else {
+          toast.error('Failed to update appointment');
+        }
+      } catch (error) {
+        console.error('Error updating appointment:', error);
+        toast.error('Error updating appointment. Please try again.');
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+  };
+
+  // Updated handleCancelEdit function
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditingStatus("");
+    setEditingTreatment("");
+  };
 
   // Combined Appointment List & Patient Details Component
   const CombinedAppointmentPatient = () => (
-  <div className="bg-white rounded-2xl p-4 shadow-sm border">
-    <div className="flex flex-col lg:flex-row gap-8">
-      {/* Left Side - Appointment List */}
-      <div className="w-full lg:w-[60%] lg:border-r lg:border-black lg:pr-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-blue-800 font-poppins-600">Appointment List :</h3>
-          <select className=" px-3 py-2 text-md font-montserrat-600 font-semibold">
-            <option>All</option>
-            <option>Today</option>
-            <option>This Week</option>
-          </select>
-        </div>
-        <div className='border border-black '></div>
+    <div className="bg-white rounded-2xl p-4 shadow-sm border">
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left Side - Appointment List */}
+        <div className="w-full lg:w-[60%] lg:border-r lg:border-black lg:pr-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-blue-800 font-poppins-600">Appointment List :</h3>
+            <select className=" px-3 py-2 text-md font-montserrat-600 font-semibold">
+              <option>All</option>
+              <option>Today</option>
+              <option>This Week</option>
+            </select>
+          </div>
+          <div className='border border-black '></div>
 
-        <div className="space-y-3 mt-3">
-          {appointments && appointments.length > 0 ? (
-            appointments.map((appointment: any) => (
-              <div
-                key={appointment.id}
-                className={`flex items-center space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${selectedAppointment === appointment.id
-                  ? 'bg-blue-100 border border-blue-200'
-                  : 'hover:bg-gray-50 border border-transparent'
-                  }`}
-                onClick={() => setSelectedAppointment(appointment.id)}
-              >
-                {/* Profile Image */}
-                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
+          <div className="space-y-3 mt-3">
+            {appointments && appointments.length > 0 ? (
+              appointments.map((appointment: any) => (
+                <div
+                  key={appointment.id}
+                  className={`flex items-center space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${selectedAppointment === appointment.id
+                    ? 'bg-blue-100 border border-blue-200'
+                    : 'hover:bg-gray-50 border border-transparent'
+                    }`}
+                  onClick={() => {
+                    setSelectedAppointment(appointment.id);
+                    // Reset edit mode when switching patients
+                    setIsEditing(false);
+                    setEditingStatus("");
+                    setEditingTreatment("");
+                  }}
+                >
+                  {/* Profile Image */}
+                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
+                    <img
+                      src="/98c4113b37688d826fc939709728223539f249dd.jpg"
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Patient Info */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-gray-800 truncate font-poppins-600">{appointment.visitorUsername}</h4>
+                    <p className="text-sm text-gray-600 truncate font-medium font-poppins-500">{appointment.visitorPhoneNumber}</p>
+                  </div>
+
+                  {/* Time Badge */}
+                  <div className={`px-3 py-1 rounded-lg text-sm font-semibold flex-shrink-0 font-poppins-600 ${getTimeColor(appointment.status || 'morning')}`}>
+                    {appointment.appointmentTime}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No appointments available
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Side - Updated Patient Details */}
+        <div className="w-full lg:w-[30%] p-6 lg:pl-0 mx-auto ">
+          {selectedPatient ? (
+            <>
+              <div className="text-center mb-6">
+                <div className="w-25 h-25 rounded-full mx-auto mb-4 overflow-hidden border">
                   <img
                     src="/98c4113b37688d826fc939709728223539f249dd.jpg"
                     alt="Profile"
@@ -376,82 +552,124 @@ const selectedPatient = appointments && appointments.length > 0
                   />
                 </div>
 
-                {/* Patient Info */}
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-800 truncate font-poppins-600">{appointment.visitorUsername}</h4>
-                  <p className="text-sm text-gray-600 truncate font-medium font-poppins-500">{appointment.visitorPhoneNumber}</p>
+                <h3 className="text-xl font-medium font-poppins-500 text-gray-800">
+                  {selectedPatient.visitorUsername}
+                </h3>
+                <p className="text-sm text-gray-600 font-poppins-600 font-medium mt-1">
+                  {selectedPatient.hfid || 'N/A'}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 py-2">
+                  <span className="text-black font-semibold font-poppins-600">Last Visit :</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium text-gray-700 font-montserrat-500">
+                      {selectedPatient.appointmentDate || 'N/A'}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Time Badge */}
-                <div className={`px-3 py-1 rounded-lg text-sm font-semibold flex-shrink-0 font-poppins-600 ${getTimeColor(appointment.status || 'morning')}`}>
-                  {appointment.appointmentTime}
+                {/* Updated Status Field using separate state */}
+                <div className="flex items-center gap-4 py-2">
+                  <span className="text-black font-semibold font-poppins-600">Status :</span>
+                  {!isEditing ? (
+                    // Display as text when not editing
+                    <span className="font-medium text-gray-700 font-montserrat-500">
+                      {selectedPatient?.status || "Scheduled"}
+                    </span>
+                  ) : (
+                    // Show dropdown when editing with stable key
+                    <select
+                      key={`status-${selectedPatient?.id || 'new'}`}
+                      className="border rounded-lg px-3 py-1 text-blue-800 font-bold font-montserrat-700 bg-white"
+                      value={editingStatus}
+                      onChange={handleStatusChange}
+                    >
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="Canceled">Canceled</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  )}
+                </div>
+
+                {/* Updated Treatment Field using separate state */}
+                <div className="flex items-center gap-4 py-2">
+                  <label className="text-black font-semibold font-poppins-600 w-28">
+                    Treatment :
+                  </label>
+                  {!isEditing ? (
+                    // Display as text when not editing
+                    <span className="font-medium text-gray-700 font-montserrat-500">
+                      {selectedPatient.treatment || "No treatment specified"}
+                    </span>
+                  ) : (
+                    // Show input when editing with stable key and optimized handler
+                    <input
+                      key={`treatment-${selectedPatient?.id || 'new'}`}
+                      type="text"
+                      name="treatment"
+                      value={editingTreatment}
+                      onChange={handleTreatmentChange}
+                      placeholder="Enter treatment"
+                      autoComplete="off"
+                      autoFocus={true}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-gray-700 font-montserrat-500 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                    />
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4 py-2">
+                  <span className="text-black font-semibold font-poppins-600">Phone :</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-semibold text-gray-700 font-montserrat-500">
+                      {selectedPatient.visitorPhoneNumber}
+                    </span>
+                  </div>
                 </div>
               </div>
-            ))
+
+              {/* Updated Edit/Save/Cancel Buttons */}
+              <div className="mt-6 space-y-2">
+                {!isEditing ? (
+                  <button
+                    onClick={handleEditSave}
+                    className="w-full text-white font-semibold py-3 px-4 rounded-lg transition-colors bg-blue-600 hover:bg-blue-700"
+                  >
+                    Edit
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleEditSave}
+                      disabled={isUpdating}
+                      className={`flex-1 font-semibold py-3 px-4 rounded-lg transition-colors ${isUpdating
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                    >
+                      {isUpdating ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={isUpdating}
+                      className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              No appointments available
+              <p>Select an appointment to view patient details</p>
             </div>
           )}
         </div>
       </div>
-
-      {/* Right Side - Patient Details */}
-      <div className="w-full lg:w-[30%] p-6 lg:pl-0 mx-auto ">
-        {selectedPatient ? (
-          <>
-            <div className="text-center mb-6">
-              <div className="w-25 h-25 rounded-full mx-auto mb-4 overflow-hidden border">
-                <img
-                  src="/98c4113b37688d826fc939709728223539f249dd.jpg"
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <h3 className="text-xl font-medium font-poppins-500 text-gray-800">{selectedPatient.visitorUsername}</h3>
-              <p className="text-sm text-gray-600 font-poppins-600 font-medium mt-1">{selectedPatient.id || 'N/A'}</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 py-2">
-                <span className="text-black font-semibold font-poppins-600">Last Visit : :</span>
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium text-gray-700 font-montserrat-500">{selectedPatient.appointmentDate || 'N/A'}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 py-2">
-                <span className="text-black font-semibold font-poppins-600">Status :</span>
-                <span className="text-blue-800 font-bold font-montserrat-700">{selectedPatient.status || 'Scheduled'}</span>
-              </div>
-
-              <div className="flex items-center gap-4 py-2">
-                <span className="text-black font-semibold font-poppins-600">Treatment :</span>
-                <span className="font-semibold text-gray-700 text-right  font-montserrat-500 ">{selectedPatient.appointmentTime || 'N/A'}</span>
-              </div>
-
-              <div className="flex items-center gap-4 py-2">
-                <span className="text-black font-semibold font-poppins-600">Phone :</span>
-                <div className="flex items-center space-x-2">
-                  <span className="font-semibold text-gray-700  font-montserrat-500 ">{selectedPatient.visitorPhoneNumber}</span>
-                </div>
-              </div>
-            </div>
-
-            <button className="w-full primary text-white font-semibold py-3 px-4 rounded-lg mt-6 transition-colors">
-              Edit
-            </button>
-          </>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <p>Select an appointment to view patient details</p>
-          </div>
-        )}
-      </div>
     </div>
-  </div>
-);
+  );
 
   return (
     <DefaultLayout>
@@ -579,7 +797,7 @@ const selectedPatient = appointments && appointments.length > 0
 
                 {/* Combined row for 22 / 60 and Today */}
                 <div className="flex items-center justify-center gap-2">
-                  <div className="text-lg font-semibold text-gray-800">22 / 60</div>
+                  <div className="text-lg font-semibold text-gray-800">{todayAppoinment} / 60</div>
                   <div className="text-xs text-blue-800 font-semibold font-montserrat-600">Today</div>
                 </div>
               </div>
@@ -596,7 +814,7 @@ const selectedPatient = appointments && appointments.length > 0
                 <div className="border-t my-1" />
 
                 {/* Middle: Number */}
-                <div className="text-center text-xl font-bold text-gray-900">3</div>
+                <div className="text-center text-xl font-bold text-gray-900">{miss}</div>
 
                 {/* Bottom Text */}
                 <div className="text-[14px] text-center text-blue-800 mt-1">
@@ -651,10 +869,7 @@ const selectedPatient = appointments && appointments.length > 0
               <div className='border border-blue-800 mx-auto w-40'></div>
               <button
                 className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl"
-                onClick={() => {
-                  patientFormik.resetForm();
-                  setIsModalOpen(false);
-                }}
+                onClick={handlePatientModalClose}
               >
                 &times;
               </button>
@@ -668,21 +883,34 @@ const selectedPatient = appointments && appointments.length > 0
                     <div className="mb-4 flex items-center gap-3">
                       <button
                         type="button"
-                        className="bg-blue-800 text-white px-2 py-1 rounded-md text-sm font-semibold"
+                        onClick={handleHFIDVerification}
+                        disabled={isVerifyingHFID || !patientFormik.values.patientId}
+                        className={`px-2 py-1 rounded-md text-sm font-semibold transition-colors ${hfidVerified
+                          ? 'bg-green-600 text-white'
+                          : isVerifyingHFID
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-800 text-white hover:bg-blue-900'
+                          }`}
                       >
-                        HF
+                        {isVerifyingHFID ? 'Verifying...' : hfidVerified ? '✓ HF' : 'HF'}
                       </button>
                       <div className="flex-1">
                         <input
                           type="text"
                           name="patientId"
                           value={patientFormik.values.patientId}
-                          onChange={patientFormik.handleChange}
+                          onChange={(e) => {
+                            patientFormik.handleChange(e);
+                            setHfidVerified(false);
+                            setHfidError('');
+                          }}
                           onBlur={patientFormik.handleBlur}
                           placeholder="Patient's HF id."
                           className={`w-full border rounded-md px-4 py-2 focus:outline-none ${hasError(patientFormik, 'patientId')
                             ? 'border-red-500 bg-red-50'
-                            : 'border-black'
+                            : hfidVerified
+                              ? ' bg-green-50'
+                              : 'border-black'
                             }`}
                         />
                         {getErrorMessage(patientFormik, 'patientId') && (
@@ -690,6 +918,12 @@ const selectedPatient = appointments && appointments.length > 0
                             {getErrorMessage(patientFormik, 'patientId')}
                           </p>
                         )}
+                        {hfidError && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {hfidError}
+                          </p>
+                        )}
+
                       </div>
                     </div>
 
@@ -724,7 +958,7 @@ const selectedPatient = appointments && appointments.length > 0
                             onChange={patientFormik.handleChange}
                             className="accent-yellow-400"
                           />
-                          <span>TMD Consent</span>
+                          <span>TMD/TMJP Consent</span>
                         </label>
                         <label className="flex items-center space-x-2">
                           <input
@@ -794,11 +1028,20 @@ const selectedPatient = appointments && appointments.length > 0
                       </div>
                     </div>
 
+                    {/* Verification Status Message */}
+                    {!hfidVerified && patientFormik.values.patientId && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
+                        <p className="text-yellow-700 text-sm font-medium">
+                          Please verify the Patient ID by clicking the HF button before saving.
+                        </p>
+                      </div>
+                    )}
+
                     {/* Submit Button */}
                     <button
                       type="submit"
-                      disabled={patientFormik.isSubmitting || !patientFormik.isValid}
-                      className={`w-full font-bold py-3 rounded-lg transition-colors ${patientFormik.isSubmitting || !patientFormik.isValid
+                      disabled={patientFormik.isSubmitting || !patientFormik.isValid || !hfidVerified}
+                      className={`w-full font-bold py-3 rounded-lg transition-colors ${patientFormik.isSubmitting || !patientFormik.isValid || !hfidVerified
                         ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
@@ -826,7 +1069,7 @@ const selectedPatient = appointments && appointments.length > 0
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <p className="font-bold text-lg ml-4">Ankit k.</p>
+                      <p className="font-bold text-lg ml-4">{userName}</p>
                     </div>
 
                     <div className="flex justify-center">
@@ -851,11 +1094,47 @@ const selectedPatient = appointments && appointments.length > 0
             <div className="bg-white rounded-2xl p-8 max-w-5xl w-full relative">
               {/* Modal Header */}
               <div className="relative mb-8">
-                <div className="flex items-center justify-center space-x-3">
-                  <FontAwesomeIcon icon={faCalendar} className="w-7 h-7 text-blue-800" />
-                  <h2 className="text-2xl font-bold text-blue-800">Add New Appointment</h2>
+                <div className="text-center relative">
+                  {/* Header */}
+                  <div className="flex items-center justify-center space-x-3">
+                    <FontAwesomeIcon icon={faCalendar} className="w-7 h-7 text-blue-800" />
+                    <h2
+                      className="text-2xl font-bold text-blue-800 flex items-center space-x-2 cursor-pointer"
+                      onClick={() => setOpen(!open)}
+                    >
+                      <span>Add New Appointment</span>
+                      <FontAwesomeIcon
+                        icon={faChevronDown}
+                        className={`w-5 h-5 text-blue-800 transform transition-transform duration-300 ${open ? "rotate-180" : "rotate-0"
+                          }`}
+                      />
+                    </h2>
+                  </div>
+                  <div className="border border-blue-800 mx-auto w-40 mt-2"></div>
+
+                  {/* Dropdown */}
+                  {open && (
+                    <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-blue-300 rounded-lg shadow-lg z-10">
+                      <ul className="divide-y divide-gray-200">
+                        <li className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-blue-800" onClick={() => {
+
+                          setOpen(false); // Close dropdown
+                        }}>
+                          Add New Appointment
+                        </li>
+                        <li className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-blue-800" onClick={() => {
+                          setShowModal(false); // Close Add New Appointment modal
+                          setShowFollowUpModal(true); // Open Book Follow-up Appointment modal
+                          setOpen(false); // Close dropdown
+                          // Reset appointment form
+                          appointmentFormik.resetForm();
+                        }}>
+                          Book a New Appointment
+                        </li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
-                <div className='border border-blue-800 mx-auto w-40 mt-2'></div>
 
                 <button
                   onClick={() => {
@@ -974,7 +1253,6 @@ const selectedPatient = appointments && appointments.length > 0
                       </div>
                     </div>
 
-
                     {/* Save Button */}
                     <button
                       type="submit"
@@ -1005,6 +1283,289 @@ const selectedPatient = appointments && appointments.length > 0
                         alt="Add Appointment"
                         className="w-full h-full object-cover"
                       />
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Book Follow-up Appointment Modal */}
+        {showFollowUpModal && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-3xl w-full relative p-6 sm:p-8">
+              {/* Modal Header with Dropdown */}
+              <div className="relative mb-8">
+                <div className="text-center relative">
+                  {/* Header */}
+                  <div className="flex items-center justify-center space-x-3">
+                    <FontAwesomeIcon icon={faPlus} className="text-white bg-blue-800 w-4 h-4 rounded-sm" />
+                    <h2
+                      className="text-2xl font-bold text-blue-800 flex items-center space-x-2 cursor-pointer"
+                      onClick={() => setOpen(!open)}
+                    >
+                      <span>Book Follow-up Appointment</span>
+                      <FontAwesomeIcon
+                        icon={faChevronDown}
+                        className={`w-5 h-5 text-blue-800 transform transition-transform duration-300 ${open ? "rotate-180" : "rotate-0"
+                          }`}
+                      />
+                    </h2>
+                  </div>
+                  <div className="border border-blue-800 mx-auto w-40 mt-2"></div>
+
+                  {/* Dropdown */}
+                  {open && (
+                    <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-blue-300 rounded-lg shadow-lg z-10">
+                      <ul className="divide-y divide-gray-200">
+                        <li
+                          className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-blue-800"
+                          onClick={() => {
+                            setShowFollowUpModal(false); // Close follow-up modal
+                            setShowModal(true); // Open Add New Appointment modal
+                            setOpen(false); // Close dropdown
+                            // Reset patient form states
+                            patientFormik.resetForm();
+                            setHfidVerified(false);
+                            setHfidError('');
+                          }}
+                        >
+                          Add New Appointment
+                        </li>
+                        <li
+                          className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-blue-800"
+                          onClick={() => {
+                            setOpen(false); // Close dropdown (stay on current modal)
+                          }}
+                        >
+                          Book a New Appointment
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Close Button */}
+
+              </div>
+              <button
+                className="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl"
+                onClick={() => {
+                  patientFormik.resetForm();
+                  setShowFollowUpModal(false);
+                  setHfidVerified(false);
+                  setHfidError('');
+                }}
+              >
+                &times;
+              </button>
+
+              {/* Modal Content */}
+              <form onSubmit={patientFormik.handleSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center mt-3">
+                  {/* Left side */}
+                  <div className="lg:border-r lg:border-black lg:pr-6">
+                    {/* Patient ID */}
+                    <div className="mb-4 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleHFIDVerification}
+                        disabled={isVerifyingHFID || !patientFormik.values.patientId}
+                        className={`px-2 py-1 rounded-md text-sm font-semibold transition-colors ${hfidVerified
+                          ? 'bg-green-600 text-white'
+                          : isVerifyingHFID
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-800 text-white hover:bg-blue-900'
+                          }`}
+                      >
+                        {isVerifyingHFID ? 'Verifying...' : hfidVerified ? '✓ HF' : 'HF'}
+                      </button>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          name="patientId"
+                          value={patientFormik.values.patientId}
+                          onChange={(e) => {
+                            patientFormik.handleChange(e);
+                            setHfidVerified(false);
+                            setHfidError('');
+                          }}
+                          onBlur={patientFormik.handleBlur}
+                          placeholder="Patient's HF id."
+                          className={`w-full border rounded-md px-4 py-2 focus:outline-none ${hasError(patientFormik, 'patientId')
+                            ? 'border-red-500 bg-red-50'
+                            : hfidVerified
+                              ? ' bg-green-50'
+                              : 'border-black'
+                            }`}
+                        />
+                        {getErrorMessage(patientFormik, 'patientId') && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {getErrorMessage(patientFormik, 'patientId')}
+                          </p>
+                        )}
+                        {hfidError && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {hfidError}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Forms Section */}
+                    <div className="mb-4">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <img
+                          src="/01fe876ae4c4ba6eac80e64ee74af7bb5936c1f8.png"
+                          alt="Forms"
+                          className="w-8 h-8"
+                        />
+                        <h2 className="text-blue-700 text-lg font-semibold">Select Forms to Send</h2>
+                      </div>
+                      <div className="h-[2px] bg-blue-700 w-60 mx-auto mb-3"></div>
+
+                      <div className="space-y-2 gap-3 mx-5">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            name="dtrConsent"
+                            checked={patientFormik.values.dtrConsent}
+                            onChange={patientFormik.handleChange}
+                            className="accent-yellow-400"
+                          />
+                          <span>DTR Consent</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            name="tmdConsent"
+                            checked={patientFormik.values.tmdConsent}
+                            onChange={patientFormik.handleChange}
+                            className="accent-yellow-400"
+                          />
+                          <span>TMD Consent</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            name="photoConsent"
+                            checked={patientFormik.values.photoConsent}
+                            onChange={patientFormik.handleChange}
+                            className="accent-yellow-400"
+                          />
+                          <span>Photo Consent</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            name="arthroseConsent"
+                            checked={patientFormik.values.arthroseConsent}
+                            onChange={patientFormik.handleChange}
+                            className="accent-yellow-400"
+                          />
+                          <span>Arthrose Functional Screening Consent</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Date and Time Pickers */}
+                    <div className="flex space-x-4 mb-4">
+                      {/* Date Picker */}
+                      <div className="w-1/2">
+                        <div className="flex items-center border rounded-lg px-3 py-2">
+                          <FontAwesomeIcon icon={faCalendar} className="w-5 h-5 mr-2 text-gray-500" />
+                          <DatePicker
+                            selected={patientFormik.values.appointmentDate}
+                            onChange={(date) => patientFormik.setFieldValue('appointmentDate', date)}
+                            onBlur={() => patientFormik.setFieldTouched('appointmentDate', true)}
+                            dateFormat="yyyy-MM-dd"
+                            className="w-full focus:outline-none"
+                          />
+                        </div>
+                        {getErrorMessage(patientFormik, 'appointmentDate') && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {getErrorMessage(patientFormik, 'appointmentDate')}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Time Picker */}
+                      <div className="w-1/2">
+                        <div className="flex items-center border rounded-lg px-3 py-2">
+                          <FontAwesomeIcon icon={faClock} className="w-5 h-5 mr-2 text-gray-500" />
+                          <DatePicker
+                            selected={patientFormik.values.appointmentTime}
+                            onChange={(time) => patientFormik.setFieldValue('appointmentTime', time)}
+                            onBlur={() => patientFormik.setFieldTouched('appointmentTime', true)}
+                            showTimeSelect
+                            showTimeSelectOnly
+                            timeIntervals={15}
+                            timeCaption="Time"
+                            dateFormat="HH:mm"
+                            className="w-full focus:outline-none"
+                          />
+                        </div>
+                        {getErrorMessage(patientFormik, 'appointmentTime') && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {getErrorMessage(patientFormik, 'appointmentTime')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Verification Status Message */}
+                    {!hfidVerified && patientFormik.values.patientId && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
+                        <p className="text-yellow-700 text-sm font-medium">
+                          Please verify the Patient ID by clicking the HF button before saving.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={patientFormik.isSubmitting || !patientFormik.isValid || !hfidVerified}
+                      className={`w-full font-bold py-3 rounded-lg transition-colors ${patientFormik.isSubmitting || !patientFormik.isValid || !hfidVerified
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                    >
+                      {patientFormik.isSubmitting ? 'Saving...' : 'Save Patient'}
+                    </button>
+
+                    {/* Form Status */}
+                    {Object.keys(patientFormik.errors).length > 0 && patientFormik.submitCount > 0 && (
+                      <div className="bg-red-50 border border-red-200 rounded-md p-3 mt-3">
+                        <p className="text-red-700 text-sm font-medium">
+                          Please fix the errors above before submitting.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right side: Image and Info */}
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="flex items-center bg-blue-100 rounded-xl p-4 w-full">
+                      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
+                        <img
+                          src="/98c4113b37688d826fc939709728223539f249dd.jpg"
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <p className="font-bold text-lg ml-4">{userName}</p>
+                    </div>
+
+                    <div className="flex justify-center">
+                      <div className="w-full max-w-sm">
+                        <img
+                          src="f02ab4b2b4aeffe41f18ff4ece3c64bd20e9a0f4 (1).png"
+                          alt="Add Appointment"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
