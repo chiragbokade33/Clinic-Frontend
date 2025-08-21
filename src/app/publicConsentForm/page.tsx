@@ -1,8 +1,10 @@
 'use client'
 import React, { useState, useRef, useCallback, useEffect, ChangeEvent } from 'react';
-import { Upload, FileText, Check, Camera, X, Download } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Upload, FileText, Check, Camera, X, Download, CloudUpload } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import PublicDefault from '../components/publicDefault';
+import { AddPdfPublic } from '../services/ClinicServiceApi';
+import { toast, ToastContainer } from 'react-toastify';
 
 // Type definitions
 interface FormData {
@@ -24,12 +26,30 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
         date: new Date().toISOString().split('T')[0]
     });
     const router = useRouter();
+    const searchParams = useSearchParams();
+    
+    // Extract URL parameters
+    // Expected URL format: /publicConsentForm?ConsentId=5&ConsentName=DTR%20Consent
+    const getUrlParams = () => {
+        const params = Object.fromEntries(searchParams.entries());
+        // Extract ConsentId and ConsentName from URL parameters
+        const consentId = params.ConsentId ? Number(params.ConsentId) : 121212; // fallback to default
+        const consentName = params.ConsentName ? decodeURIComponent(params.ConsentName) : "TMD/TMJP Treatment Protocol - Consent Form";
+        
+        return { consentId, consentName };
+    };
+
+    // Update the component to use the new parameter names
+    const { consentId, consentName } = getUrlParams();
+    
     const [isVerified, setIsVerified] = useState<boolean>(false);
     const [showCamera, setShowCamera] = useState<boolean>(false);
     const [showSignatureOptions, setShowSignatureOptions] = useState<boolean>(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState<boolean>(false);
+    const [isUploading, setIsUploading] = useState<boolean>(false);
+    const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -185,121 +205,39 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
         });
     };
 
-    // UPDATED: Enhanced PDF generation with perfect page sizing
-    const generateSimplePDF = async (): Promise<void> => {
-        try {
-            setIsGeneratingPDF(true);
-            console.log('🔄 Generating simple PDF as fallback...');
-            
-            // Dynamic import with better error handling
-            const { default: jsPDF } = await import('jspdf');
-            
-            // Create A4 PDF format
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            let yPosition = 20;
-            
-            // Add title
-            pdf.setFontSize(16);
-            pdf.setFont(undefined, 'bold');
-            pdf.text('TMD/TMJP Treatment Protocol - Consent Form', pageWidth/2, yPosition, { align: 'center' });
-            yPosition += 20;
-            
-            // Add patient info
-            pdf.setFontSize(12);
-            pdf.setFont(undefined, 'normal');
-            pdf.text(`Patient Name: ${formData.patientName || 'Ankit Kuchara'}`, 20, yPosition);
-            yPosition += 10;
-            pdf.text(`Guardian Name: ${formData.guardianName}`, 20, yPosition);
-            yPosition += 10;
-            pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 20, yPosition);
-            yPosition += 20;
-            
-            // Add consent text
-            pdf.setFontSize(10);
-            const consentText = [
-                'I understand that the treatment of dental conditions pertaining to the',
-                'Temporomandibular joint (TMJ) includes certain risks and I willingly accept',
-                'to undergo the following for successful treatment:',
-                '',
-                '• TMJ disorder treatment is perhaps the most difficult procedure in Dentistry',
-                '• Treatment length may vary according to the complexity of the condition',
-                '• Unusual occurrences can happen like minor tooth movement, sore mouth, etc.',
-                '• Good communication is essential to successful treatment',
-                '• Referral to other professionals may be indicated and necessary',
-                '• Success depends on the degree of adaptability and cooperation of the patient',
-                '• Comprehensive diagnostic evaluation may be essential',
-                '• No guarantee or promise has been made concerning the results'
-            ];
-            
-            consentText.forEach(line => {
-                if (yPosition > pageHeight - 30) {
-                    pdf.addPage();
-                    yPosition = 20;
-                }
-                pdf.text(line, 20, yPosition);
-                yPosition += 6;
+    // UPDATED: Generate PDF and return as File object for upload
+    const generatePDFFile = async (): Promise<File | null> => {
+        const cleanup = () => {
+            const styleOverride = document.getElementById('pdf-color-override');
+            if (styleOverride && styleOverride.parentNode) {
+                styleOverride.parentNode.removeChild(styleOverride);
+            }
+
+            if (formRef.current) {
+                formRef.current.classList.remove('pdf-temp-override');
+            }
+
+            const elementsToHide = formRef.current?.querySelectorAll('.pdf-hidden');
+            const elementsToShow = formRef.current?.querySelectorAll('.pdf-show');
+
+            elementsToHide?.forEach(el => {
+                (el as HTMLElement).style.display = '';
             });
-            
-            // Add signature info
-            yPosition += 20;
-            if (yPosition > pageHeight - 30) {
-                pdf.addPage();
-                yPosition = 20;
-            }
-            
-            pdf.setFontSize(12);
-            pdf.setFont(undefined, 'bold');
-            pdf.text('Digital Signature Information:', 20, yPosition);
-            yPosition += 10;
-            pdf.setFont(undefined, 'normal');
-            pdf.setFontSize(10);
-            
-            if (formData.signatureFile) {
-                pdf.text(`Signature File: ${formData.signatureFile.name}`, 20, yPosition);
-                yPosition += 8;
-                pdf.text(`File Type: ${formData.signatureFile.type}`, 20, yPosition);
-                yPosition += 8;
-                pdf.text(`File Size: ${(formData.signatureFile.size / 1024).toFixed(2)} KB`, 20, yPosition);
-            } else {
-                pdf.text('No signature file attached', 20, yPosition);
-            }
-            
-            // Generate filename and save
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-            const safeName = (formData.guardianName || 'patient').replace(/[^a-zA-Z0-9]/g, '_');
-            const filename = `TMD_TMJP_Consent_Form_${safeName}_${timestamp}.pdf`;
-            
-            pdf.save(filename);
-            
-            console.log('✅ Simple PDF generated successfully');
-            alert('PDF generated successfully using simplified format!');
-            
-        } catch (error) {
-            console.error('❌ Error generating simple PDF:', error);
-            alert('Error generating PDF. Please try refreshing the page and trying again.');
-        } finally {
-            setIsGeneratingPDF(false);
-        }
-    };
 
-    // FIXED: Perfect PDF generation with exact page sizing
-    const generatePDF = async (): Promise<void> => {
+            elementsToShow?.forEach(el => {
+                (el as HTMLElement).style.display = 'none';
+            });
+
+        };
+
         try {
-            setIsGeneratingPDF(true);
-            console.log('🔄 Starting PDF generation...');
 
-            // Check if form reference exists
             if (!formRef.current) {
                 throw new Error('Form reference not found');
             }
 
-            // Check if required libraries can be imported
-            let jsPDF, html2canvas;
+            let jsPDF: any, html2canvas: any;
             try {
-                console.log('📦 Importing PDF libraries...');
                 const imports = await Promise.all([
                     import('jspdf'),
                     import('html2canvas')
@@ -307,10 +245,10 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                 jsPDF = imports[0].default;
                 html2canvas = imports[1].default;
             } catch (importError) {
-                console.error('❌ Failed to import libraries:', importError);
+                throw new Error('Failed to load PDF generation libraries');
             }
 
-            // Create a comprehensive style override to fix oklch() color issues
+            // Style override for PDF generation
             const styleOverride = document.createElement('style');
             styleOverride.id = 'pdf-color-override';
             styleOverride.textContent = `
@@ -332,7 +270,6 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                     border-color: transparent !important;
                     outline: none !important;
                     outline-color: transparent !important;
-                    /* Override any oklch, hsl, or other modern color functions */
                     --tw-text-opacity: 1 !important;
                     --tw-bg-opacity: 1 !important;
                     --tw-border-opacity: 0 !important;
@@ -353,7 +290,6 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                 .pdf-temp-override .bg-gray-50 {
                     background-color: rgb(249, 250, 251) !important;
                 }
-                /* Force all elements to use safe colors and no borders */
                 .pdf-temp-override input,
                 .pdf-temp-override button,
                 .pdf-temp-override div,
@@ -373,7 +309,6 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                     outline: none !important;
                     box-shadow: none !important;
                 }
-                /* Ensure the bottom border line is also removed */
                 .pdf-temp-override .border-b,
                 .pdf-temp-override .border-gray-400 {
                     border-bottom: none !important;
@@ -381,86 +316,63 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
             `;
             document.head.appendChild(styleOverride);
 
-            // Additional step: Replace any oklch colors in computed styles and remove borders
             const replaceOklchColors = (element: Element) => {
                 const computedStyle = window.getComputedStyle(element);
                 const problematicProperties = ['color', 'background-color', 'border-color', 'outline-color'];
-                
+
                 problematicProperties.forEach(prop => {
                     const value = computedStyle.getPropertyValue(prop);
                     if (value.includes('oklch') || value.includes('hsl') || value.includes('lab')) {
-                        // Force safe RGB color
                         (element as HTMLElement).style.setProperty(prop, 'rgb(0, 0, 0)', 'important');
                     }
                 });
-                
-                // Remove all borders
+
                 (element as HTMLElement).style.setProperty('border', 'none', 'important');
                 (element as HTMLElement).style.setProperty('outline', 'none', 'important');
                 (element as HTMLElement).style.setProperty('box-shadow', 'none', 'important');
             };
 
-            // Apply color fixes to all elements
             const allElements = formRef.current.querySelectorAll('*');
             allElements.forEach(replaceOklchColors);
 
-            // Add temporary class to form
             formRef.current.classList.add('pdf-temp-override');
 
-            // Hide/show elements for PDF
             const elementsToHide = formRef.current.querySelectorAll('.pdf-hidden');
             const elementsToShow = formRef.current.querySelectorAll('.pdf-show');
-            
-            console.log(`🔄 Hiding ${elementsToHide.length} elements, showing ${elementsToShow.length} elements`);
-            
+
             elementsToHide.forEach(el => {
                 (el as HTMLElement).style.display = 'none';
             });
-            
+
             elementsToShow.forEach(el => {
                 (el as HTMLElement).style.display = 'block';
             });
 
-            // Wait for DOM to update
             await new Promise(resolve => setTimeout(resolve, 300));
 
-            console.log('📸 Capturing form content...');
-            
-            // Get form dimensions
-            const formRect = formRef.current.getBoundingClientRect();
-            console.log('📏 Form dimensions:', { 
-                width: formRect.width, 
-                height: formRect.height,
-                scrollWidth: formRef.current.scrollWidth,
-                scrollHeight: formRef.current.scrollHeight
-            });
-
-            // FIXED: Capture with optimized dimensions for A4 page breaking
             const canvas = await html2canvas(formRef.current, {
-                scale: 1.5, // Reduced scale for better performance with large forms
+                scale: 1.5,
                 useCORS: true,
                 allowTaint: false,
                 backgroundColor: '#ffffff',
-                width: Math.min(formRef.current.scrollWidth, 1600), // Limit max width
-                height: formRef.current.scrollHeight, // Use full height, we'll break into pages
+                width: Math.min(formRef.current.scrollWidth, 1600),
+                height: formRef.current.scrollHeight,
                 scrollX: 0,
                 scrollY: 0,
                 logging: false,
                 removeContainer: true,
                 imageTimeout: 15000,
                 foreignObjectRendering: false,
-                ignoreElements: (element) => {
-                    return element.classList.contains('pdf-hidden') || 
-                           element.tagName === 'SCRIPT' || 
-                           element.tagName === 'STYLE' ||
-                           element.classList.contains('no-pdf');
+                ignoreElements: (element: { classList: { contains: (arg0: string) => any; }; tagName: string; }) => {
+                    return element.classList.contains('pdf-hidden') ||
+                        element.tagName === 'SCRIPT' ||
+                        element.tagName === 'STYLE' ||
+                        element.classList.contains('no-pdf');
                 },
-                onclone: (clonedDoc) => {
-                    // Additional cleanup in cloned document
+                onclone: (clonedDoc: { querySelectorAll: (arg0: string) => any; }) => {
                     const clonedElements = clonedDoc.querySelectorAll('.pdf-hidden');
-                    clonedElements.forEach(el => el.remove());
-                    
-                    // Force safe colors and remove borders in cloned document
+                    clonedElements.forEach((el: { remove: () => any; }) => el.remove());
+
                     const allClonedElements = clonedDoc.querySelectorAll('*');
                     allClonedElements.forEach((el: Element) => {
                         const htmlEl = el as HTMLElement;
@@ -474,201 +386,144 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                 }
             });
 
-            console.log('✅ Canvas created:', { 
-                width: canvas.width, 
-                height: canvas.height 
-            });
-
-            // Check canvas size
             if (canvas.width === 0 || canvas.height === 0) {
                 throw new Error('Canvas has invalid dimensions');
             }
 
-            // FIXED: Create PDF with proper A4 sizing
             const pdf = new jsPDF('p', 'mm', 'a4');
-            
             const pageWidth = pdf.internal.pageSize.getWidth();
             const pageHeight = pdf.internal.pageSize.getHeight();
             const margin = 10;
 
-            console.log('📄 PDF page dimensions:', { pageWidth, pageHeight });
-
-            // Convert canvas to image with high quality
             const imgData = canvas.toDataURL('image/png', 0.95);
-            
-            // Check if image data is valid
+
             if (!imgData || imgData === 'data:,') {
                 throw new Error('Failed to convert canvas to image');
             }
 
-            // FIXED: Calculate image dimensions for proper A4 page breaking
             const availableWidth = pageWidth - (margin * 2);
             const availableHeight = pageHeight - (margin * 2);
-            
-            // Convert canvas dimensions to mm (1px = 0.264583mm at 96 DPI)
+
             const canvasWidthMM = canvas.width * 0.264583;
             const canvasHeightMM = canvas.height * 0.264583;
-            
-            // Calculate scale to fit width, but don't scale down too much to maintain readability
+
             const scaleX = availableWidth / canvasWidthMM;
-            const minScale = 0.5; // Minimum scale to maintain readability
-            const scale = Math.max(Math.min(scaleX, 1), minScale); // Don't scale up, but maintain minimum readability
-            
+            const minScale = 0.5;
+            const scale = Math.max(Math.min(scaleX, 1), minScale);
+
             const imgWidth = canvasWidthMM * scale;
             const imgHeight = canvasHeightMM * scale;
 
-            console.log('🖼️ Image dimensions for PDF:', { 
-                imgWidth, 
-                imgHeight, 
-                scale,
-                canvasWidthMM,
-                canvasHeightMM,
-                availableHeight 
-            });
-
-            // FIXED: Proper multi-page handling - break content when it exceeds A4 height
             const maxContentHeight = availableHeight;
-            
+
             if (imgHeight <= maxContentHeight) {
-                // Content fits on one page perfectly
-                console.log('📄 Content fits on one page');
                 pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
             } else {
-                // Content needs multiple A4 pages
-                console.log('📄 Content needs multiple pages');
-                
-                let currentY = 0; // Current Y position in the source canvas
+                let currentY = 0;
                 let pageNumber = 1;
-                
+
                 while (currentY < canvas.height) {
                     if (pageNumber > 1) {
                         pdf.addPage();
-                        console.log(`📄 Adding page ${pageNumber}`);
                     }
-                    
-                    // Calculate how much of the source canvas fits on this page
+
                     const remainingSourceHeight = canvas.height - currentY;
-                    const maxSourceHeightForThisPage = maxContentHeight / scale / 0.264583; // Convert back to pixels
+                    const maxSourceHeightForThisPage = maxContentHeight / scale / 0.264583;
                     const sourceHeightForThisPage = Math.min(remainingSourceHeight, maxSourceHeightForThisPage);
-                    
-                    // Calculate the corresponding display height in mm
+
                     const displayHeightForThisPage = sourceHeightForThisPage * 0.264583 * scale;
-                    
-                    console.log(`📄 Page ${pageNumber}:`, {
-                        currentY,
-                        sourceHeightForThisPage,
-                        displayHeightForThisPage,
-                        remainingSourceHeight
-                    });
-                    
-                    // Create a temporary canvas for this page's content
+
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = canvas.width;
                     tempCanvas.height = Math.ceil(sourceHeightForThisPage);
                     const tempCtx = tempCanvas.getContext('2d');
-                    
+
                     if (tempCtx && sourceHeightForThisPage > 0) {
-                        // Draw the portion of the original canvas onto the temporary canvas
                         tempCtx.drawImage(
-                            canvas, 
-                            0, currentY, // Source position
-                            canvas.width, sourceHeightForThisPage, // Source dimensions
-                            0, 0, // Destination position
-                            canvas.width, sourceHeightForThisPage // Destination dimensions
+                            canvas,
+                            0, currentY,
+                            canvas.width, sourceHeightForThisPage,
+                            0, 0,
+                            canvas.width, sourceHeightForThisPage
                         );
-                        
-                        // Convert to image and add to PDF
+
                         const tempImgData = tempCanvas.toDataURL('image/png', 0.95);
                         pdf.addImage(tempImgData, 'PNG', margin, margin, imgWidth, displayHeightForThisPage);
-                        
-                        // Clean up temporary canvas
+
                         tempCanvas.remove();
                     }
-                    
-                    // Move to the next section
+
                     currentY += sourceHeightForThisPage;
                     pageNumber++;
-                    
-                    // Safety check to prevent infinite loops
+
                     if (pageNumber > 50) {
                         console.warn('⚠️ Too many pages, breaking to prevent infinite loop');
                         break;
                     }
                 }
-                
-                console.log(`✅ Generated ${pageNumber - 1} pages total`);
+
             }
 
-            // Generate filename
+            // UPDATED: Get PDF as blob and convert to File
+            const pdfBlob = pdf.output('blob');
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
             const safeName = (formData.guardianName || 'patient').replace(/[^a-zA-Z0-9]/g, '_');
-            const filename = `TMD_TMJP_Consent_Form_${safeName}_${timestamp}.pdf`;
+            const safeTitle = consentName.replace(/[^a-zA-Z0-9]/g, '_'); // FIXED: Use consentName
+            const filename = `${safeTitle}_${safeName}_${timestamp}.pdf`;
 
-            console.log('💾 Saving PDF:', filename);
+            // Convert blob to File object
+            const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
 
-            // Save the PDF
-            pdf.save(filename);
+            
+            return pdfFile;
 
-            console.log('✅ PDF generated successfully');
-            alert('PDF generated successfully!');
-
-            // Cleanup
-            cleanup();
-
-        } catch (error) {
-
-            cleanup();
+        } catch (error: unknown) {
+            console.error('❌ Error generating PDF:', error);
+            throw error;
         } finally {
-            setIsGeneratingPDF(false);
-        }
-
-        // Cleanup function
-        function cleanup() {
-            console.log('🧹 Cleaning up...');
-            
-            // Remove temporary styles
-            const styleOverride = document.getElementById('pdf-color-override');
-            if (styleOverride && styleOverride.parentNode) {
-                styleOverride.parentNode.removeChild(styleOverride);
-            }
-            
-            // Remove temporary class
-            if (formRef.current) {
-                formRef.current.classList.remove('pdf-temp-override');
-            }
-            
-            // Restore original display states
-            const elementsToHide = formRef.current?.querySelectorAll('.pdf-hidden');
-            const elementsToShow = formRef.current?.querySelectorAll('.pdf-show');
-            
-            elementsToHide?.forEach(el => {
-                (el as HTMLElement).style.display = '';
-            });
-            
-            elementsToShow?.forEach(el => {
-                (el as HTMLElement).style.display = 'none';
-            });
-            
-            console.log('✅ Cleanup completed');
+            cleanup();
         }
     };
 
-    // Create payload and handle submission
+    // UPDATED: Upload PDF to server
+    const uploadPDF = async (pdfFile: File): Promise<void> => {
+        try {
+            setIsUploading(true);
+            const payload = {
+                ConsentFormTitle: consentName, // Use the extracted consent name
+                PdfFile: pdfFile,
+            };
+            // Pass the extracted consentId instead of hardcoded patientId
+            const response = await AddPdfPublic(consentId, payload);
+            
+            setUploadSuccess(true);
+            toast.success('PDF uploaded successfully!')
+
+        } catch (err: any) {
+            console.error("❌ Upload failed:", err.response?.data || err.message);
+            throw err;
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    // UPDATED: Create payload for form data
     const createPayload = async () => {
         try {
             const timestamp = new Date().toISOString();
-            
+
             let signatureBase64 = null;
             if (formData.signatureFile) {
                 signatureBase64 = await convertFileToBase64(formData.signatureFile);
             }
 
             const payload = {
-                formType: 'TMD_TMJP_Consent_Form',
+                formType: consentName, // FIXED: Use consentName
                 submissionId: `consent_${Date.now()}`,
                 timestamp: timestamp,
                 patientInfo: {
-                    name: formData.patientName || 'Ankit Kuchara', // Default from form
+                    consentId: consentId, // FIXED: Use consentId
+                    name: formData.patientName || 'Ankit Kuchara',
                     guardianName: formData.guardianName,
                     submissionDate: formData.date
                 },
@@ -679,7 +534,7 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                     base64Data: signatureBase64
                 },
                 consentDetails: {
-                    treatmentType: 'TMD/TMJP Treatment Protocol',
+                    treatmentType: consentName, // FIXED: Use consentName
                     clinicName: 'ARTHRONE',
                     consentGiven: true,
                     risks_acknowledged: [
@@ -701,13 +556,13 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
             };
 
             return payload;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('❌ Error creating payload:', error);
             throw error;
         }
     };
 
-    // Handle form submission
+    // UPDATED: Handle form submission with PDF generation and upload
     const handleVerify = async (): Promise<void> => {
         if (!formData.guardianName || !formData.signatureFile) {
             alert('Please fill in guardian name and upload signature.');
@@ -715,58 +570,43 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
         }
 
         try {
-            console.log('🔄 Starting form submission process...');
-            
-            // Create payload
+            setIsGeneratingPDF(true);
             const payload = await createPayload();
-            
-            // Log the complete form data
             console.group('📋 CONSENT FORM SUBMISSION DATA');
-            console.log('📝 Form Data:', {
-                patientName: formData.patientName,
-                guardianName: formData.guardianName,
-                signatureFileName: formData.signatureFile?.name,
-                signatureFileType: formData.signatureFile?.type,
-                signatureFileSize: formData.signatureFile?.size,
-                date: formData.date
-            });
-            console.log('📦 Complete Payload:', payload);
             console.groupEnd();
-
-            // Simulate API call (replace with your actual API endpoint)
-            console.log('🚀 Sending payload to server...');
-            
-            // Example API call (uncomment and modify for your backend)
-            /*
-            const response = await fetch('/api/consent-forms', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const pdfFile = await generatePDFFile();
+            if (!pdfFile) {
+                throw new Error('Failed to generate PDF file');
             }
-
-            const result = await response.json();
-            console.log('✅ Server response:', result);
-            */
-
-            // Set form as verified
             setIsVerified(true);
-            
-            // Generate PDF
-            await generatePDF();
-            
-            // Success message
-            alert('Form verified and submitted successfully! PDF has been generated.');
-            console.log('✅ Form submission completed successfully');
+            await uploadPDF(pdfFile);
+        } catch (error: unknown) {
+        } finally {
+            setIsGeneratingPDF(false);
+        }
+    };
 
-        } catch (error) {
-            console.error('❌ Error during form submission:', error);
-            alert('Error submitting form. Please try again.');
+    // Download PDF separately if needed
+    const handleDownloadPDF = async (): Promise<void> => {
+        try {
+            setIsGeneratingPDF(true);
+            const pdfFile = await generatePDFFile();
+            if (!pdfFile) {
+                throw new Error('Failed to generate PDF file');
+            }
+            // Create download link
+            const url = URL.createObjectURL(pdfFile);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = pdfFile.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error: unknown) {
+            console.error('❌ Error downloading PDF:', error);
+        } finally {
+            setIsGeneratingPDF(false);
         }
     };
 
@@ -802,15 +642,14 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                         </div>
                         <div className="flex items-center justify-between p-2 ">
                             <div className="text-center w-full">
-                                <h2 className="text-xl text-black font-semibold mb-1 font-poppins-600">Consent form</h2>
-                                <p className="text-black font-semibold text-xl font-poppins-600 ">TMD/TMJP Treatment Protocol</p>
+                                <h2 className="text-xl text-black font-semibold mb-1 font-poppins-600">{consentName}</h2>
                             </div>
                         </div>
 
                         {/* Consent Content */}
                         <div className="space-y-4 text-sm text-gray-700 mb-8 mx-3">
                             <div className="font-montserrat-300">
-                                <strong className="text-black font-bold">  1:  {formData.patientName || 'Ankit Kuchara'}</strong> understand that the treatment of dental conditions
+                                <strong className="text-black font-bold">I: {formData.patientName || 'Ankit Kuchara'}</strong> understand that the treatment of dental conditions
                                 pertaining to the Temporomandibular joint (TMJ) includes certain risks. I
                                 willingly accept to undergo the following for successful treatment:
                             </div>
@@ -905,14 +744,14 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                                     required
                                 />
                                 {/* Display field for PDF */}
-                                <div className="flex-grow p-2 min-h-8 flex items-center pdf-show font-medium" style={{display: 'none'}}>
+                                <div className="flex-grow p-2 min-h-8 flex items-center pdf-show font-medium" style={{ display: 'none' }}>
                                     {formData.guardianName || 'Name . . .'}
                                 </div>
                             </div>
-                            
+
                             {/* Signature Display for PDF */}
                             {formData.signatureFile && imagePreview && (
-                                <div className="flex items-center gap-4 mt-4 pdf-show" style={{display: 'none'}}>
+                                <div className="flex items-center gap-4 mt-4 pdf-show" style={{ display: 'none' }}>
                                     <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
                                         Digital Signature:
                                     </label>
@@ -925,7 +764,7 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                                     </div>
                                 </div>
                             )}
-                            
+
                             <div className='text-black flex justify-end font-medium'>
                                 Date: {new Date().toLocaleDateString('en-GB')}
                             </div>
@@ -1081,11 +920,11 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
 
                     {/* Action Buttons */}
                     <div className="flex justify-end mt-8 pb-8 gap-4">
-                        {isVerified && (
+                        {isVerified && !uploadSuccess && (
                             <>
                                 <button
-                                    onClick={generatePDF}
-                                    disabled={isGeneratingPDF}
+                                    onClick={handleDownloadPDF}
+                                    disabled={isGeneratingPDF || isUploading}
                                     className="px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
                                 >
                                     {isGeneratingPDF ? (
@@ -1100,53 +939,47 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                                         </>
                                     )}
                                 </button>
-                                
-                                <button
-                                    onClick={generateSimplePDF}
-                                    disabled={isGeneratingPDF}
-                                    className="px-4 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 text-sm"
-                                    title="Generate a simplified PDF if the main PDF generation fails"
-                                >
-                                    {isGeneratingPDF ? (
-                                        <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                            Generating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FileText className="h-4 w-4" />
-                                            Simple PDF
-                                        </>
-                                    )}
-                                </button>
                             </>
                         )}
-                        
+
+                        {uploadSuccess && (
+                            <div className="px-6 py-3 rounded-lg font-medium flex items-center gap-2 bg-green-100 text-green-800 border border-green-300">
+                                <Check className="h-5 w-5" />
+                                Uploaded Successfully
+                            </div>
+                        )}
+
                         <button
                             onClick={handleVerify}
-                            disabled={isVerified || isGeneratingPDF}
-                            className={`px-8 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${
-                                isVerified
+                            disabled={isVerified || isGeneratingPDF || isUploading}
+                            className={`px-8 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${isVerified && uploadSuccess
                                     ? 'bg-green-600 text-white cursor-not-allowed'
                                     : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
-                            }`}
+                                }`}
                         >
-                            {isVerified ? (
-                                <>
-                                    <Check className="h-5 w-5" />
-                                    Verified
-                                </>
-                            ) : isGeneratingPDF ? (
+                            {isGeneratingPDF ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Processing...
+                                    Generating PDF...
+                                </>
+                            ) : isUploading ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    <CloudUpload className="h-4 w-4" />
+                                    Uploading...
+                                </>
+                            ) : isVerified && uploadSuccess ? (
+                                <>
+                                    <Check className="h-5 w-5" />
+                                    Completed
                                 </>
                             ) : (
-                                'Submit'
+                                'Submit & Upload'
                             )}
                         </button>
                     </div>
                 </div>
+                <ToastContainer/>
             </div>
         </PublicDefault>
     );

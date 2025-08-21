@@ -65,5 +65,11 @@ export const endPoints = {
         UpdateAppoinment: (clinicId:number ,appointmentId:number) =>`${API_CLINIC_DATA}appointments/clinic/${clinicId}/appointment/${appointmentId }/status`,
         PatientList : (clinicId:number) => `${API_CLINIC_DATA}appointments/clinics/${clinicId}/patients`,
         BookAppoinment : (clinicId:number) => `${API_CLINIC_DATA}appointments/clinics/${clinicId}/appointments/follow-up`
+    },
+
+    ConsentForm : {
+        ConsentList : API_CLINIC_DATA + "consent/forms",
+        PublicConsent : API_CLINIC_DATA + "consent",
+        VerifyConsent : (visitConsentFormId :number) => `${API_CLINIC_DATA}consent/${visitConsentFormId }/verify`
     }
 };

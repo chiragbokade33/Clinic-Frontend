@@ -187,3 +187,40 @@ export const ListPatients = async (clinicId: number, startDate?: string, endDate
 export const BookFolllowUp = async (clinicId:number,payloade:any) =>{
     return axiosInstance.post(`${endPoints.Appointments.BookAppoinment(clinicId)}`,payloade)
 }
+
+
+// Consent forms details 
+
+export const Listconsent = async (clinicId: number, payload: any) => {
+  return axiosInstance.post(
+    `${endPoints.ConsentForm.ConsentList}/${clinicId}`,
+    payload,
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+};
+
+// api call
+export const AddPdfPublic = async (visitConsentFormId: number, payload: { ConsentFormTitle: string; PdfFile: File }) => {
+  const formData = new FormData();
+  formData.append("ConsentFormTitle", payload.ConsentFormTitle);
+  formData.append("PdfFile", payload.PdfFile); // must be File or Blob
+
+  return axios.post(
+    `${endPoints.ConsentForm.PublicConsent}/${visitConsentFormId}`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+};
+
+
+export const ConsentVerify = async (visitConsentFormId:number,consentFormTitle:number) =>{
+    return axiosInstance.put(`${endPoints.ConsentForm.VerifyConsent(visitConsentFormId)}?consentFormTitle=${consentFormTitle}`)
+}

@@ -212,6 +212,27 @@ const PatientListInterface = () => {
     setAppliedEndDate(null);
   };
 
+  // Handle "See more" button click with patient data
+  const handleSeeMore = (patient: any) => {
+    // Create URL search parameters
+    const params = new URLSearchParams();
+    
+    // Add patient data to URL parameters
+    if (patient.patientId || patient.id) {
+      params.append('patientId', patient.patientId || patient.id);
+    }
+    if (patient.hfid) {
+      params.append('hfid', patient.hfid);
+    }
+    if (patient.lastVisitDate) {
+      params.append('lastVisitDate', patient.lastVisitDate);
+    }
+    
+    // Navigate to treatment details page with parameters
+    const queryString = params.toString();
+    router.push(`/tretmentDetails${queryString ? `?${queryString}` : ''}`);
+  };
+
   return (
     <DefaultLayout>
       <div className="h-[80vh] p-6">
@@ -378,7 +399,7 @@ const PatientListInterface = () => {
 
                       {/* Last Visit */}
                       <div className="text-sm text-gray-700">
-                        {patient.lastVisitDate ? new Date(patient.lastVisitDate).toLocaleDateString() : 'N/A'}
+                        {patient.lastVisitDate || 'N/A'}
                       </div>
 
                       {/* Payment Status */}
@@ -393,7 +414,7 @@ const PatientListInterface = () => {
                               ? 'text-white bg-[#238B02] border-[#238B02]'
                               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                             }`}
-                          onClick={() => router.push('/tretmentDetails')}
+                          onClick={() => handleSeeMore(patient)}
                         >
                           See more
                         </button>
