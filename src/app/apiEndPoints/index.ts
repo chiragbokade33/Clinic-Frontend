@@ -71,7 +71,8 @@ export const endPoints = {
         ConsentList : API_CLINIC_DATA + "consent/forms",
         PublicConsent : API_CLINIC_DATA + "consent",
         VerifyConsent : (visitConsentFormId :number) => `${API_CLINIC_DATA}consent/${visitConsentFormId }/verify`,
-        Profile: API_CLINIC_DATA + "patient/details"
+        Profile: API_CLINIC_DATA + "patient/details",
+        AttechImges : API_CLINIC_DATA + "clinic/patient/records/upload"
     },
 
     TreatmentPlane : {

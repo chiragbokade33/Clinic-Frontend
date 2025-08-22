@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHistory } from '@fortawesome/free-solid-svg-icons';
 import { Listconsent, ListJsondata, ListProfile } from '../services/ClinicServiceApi';
 import { getUserId } from '../hooks/GetitemsLocal';
+import FileUploadModal from '../components/FileUploadModal';
 
 const page = () => {
     const [isConsentDropdownOpen, setIsConsentDropdownOpen] = useState(false);
@@ -29,31 +30,31 @@ const page = () => {
     const [treatmentData, setTreatmentData] = useState([]) as any;
 
 
-       useEffect(() => {
-            const FetchDatajson = async () => {
-                const extractedHfid = searchParams.get("hfid");
-                const extractedLastVisitId = searchParams.get("visitId");
-                const extractedPatientId = searchParams.get('patientId');
-                if (!extractedHfid) return;
-                const id = await getUserId();
-                setCurrentUserId(id);
-                try {
-                    const response = await ListJsondata(id, extractedPatientId, extractedLastVisitId);
-                    const apiData = response.data.data;
-    
-                    // Find Treatment type
-                    const treatmentEntry = apiData.find((item: { type: string; }) => item.type === "Invoice");
-                    if (treatmentEntry) {
-                        const parsed = JSON.parse(treatmentEntry.jsonData);
-                        setTreatmentData(parsed.treatments || []);
-                    }
-                } catch (error) {
-                    console.error("Error fetching profile:", error);
+    useEffect(() => {
+        const FetchDatajson = async () => {
+            const extractedHfid = searchParams.get("hfid");
+            const extractedLastVisitId = searchParams.get("visitId");
+            const extractedPatientId = searchParams.get('patientId');
+            if (!extractedHfid) return;
+            const id = await getUserId();
+            setCurrentUserId(id);
+            try {
+                const response = await ListJsondata(id, extractedPatientId, extractedLastVisitId);
+                const apiData = response.data.data;
+
+                // Find Treatment type
+                const treatmentEntry = apiData.find((item: { type: string; }) => item.type === "Invoice");
+                if (treatmentEntry) {
+                    const parsed = JSON.parse(treatmentEntry.jsonData);
+                    setTreatmentData(parsed.treatments || []);
                 }
-            };
-    
-            FetchDatajson();
-        }, [searchParams]);
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+            }
+        };
+
+        FetchDatajson();
+    }, [searchParams]);
 
 
     useEffect(() => {
@@ -182,8 +183,6 @@ const page = () => {
 
     // Function to handle prescription checkbox click and generate PDF
     const handlePrescriptionCheck = () => {
-        console.log('Prescription checkbox clicked - Generating PDF...');
-
         // Sample prescription data (replace with your actual API data)
         const samplePrescriptionData = {
             patient: {
@@ -1818,7 +1817,7 @@ const page = () => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                                 {/* Attach Images Card */}
-                                <div className="bg-white rounded-lg p-4">
+                                {/* <div className="bg-white rounded-lg p-4">
                                     <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
                                         <img
                                             src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
@@ -1828,8 +1827,9 @@ const page = () => {
                                     </div>
                                     <button className="w-full bg-yellow text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors">
                                         Attach Images
-                                    </button>
-                                </div>
+                                    </button> */}
+                                {/* </div> */}
+                                    <FileUploadModal/>
 
                                 {/* Prescription + Share wrapper with border between */}
                                 <div className="col-span-2 flex divide-x divide-black rounded-lg overflow-hidden bg-white">
@@ -1929,7 +1929,7 @@ const page = () => {
                                 />
                             </div>
                             <button className="w-full bg-yellow text-black border border-black font-semibold py-2 px-4 rounded-lg  transition-colors"
-                              onClick={() => {
+                                onClick={() => {
                                     const extractedHfid = searchParams.get("hfid");
                                     const extractedLastVisitId = searchParams.get("visitId");
                                     const extractedPatientId = searchParams.get('patientId');

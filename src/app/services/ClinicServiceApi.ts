@@ -229,6 +229,10 @@ export const ConsentVerify = async (visitConsentFormId:number,consentFormTitle:n
     return axiosInstance.put(`${endPoints.ConsentForm.VerifyConsent(visitConsentFormId)}?consentFormTitle=${consentFormTitle}`)
 }
 
+export const Uploaebulk = async (payloade:any) =>{
+    return axiosInstance.post(`${endPoints.ConsentForm.AttechImges}`, payloade)
+}
+
 
 // Treament plane 
 
