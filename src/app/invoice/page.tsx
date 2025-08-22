@@ -1,20 +1,29 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DefaultLayout from '../components/DefaultLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import Tooltip from '../components/Tooltip';
 import Drawer from '../components/clinicInfoDrawer';
+import { JsonAdded, ListJsondata, ListProfile } from '../services/ClinicServiceApi';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { getUserId } from '../hooks/GetitemsLocal';
+import { toast, ToastContainer } from 'react-toastify';
+
+// Updated type to match your actual data structure
+type Treatment = {
+    name: string;
+    qtyPerDay: string;
+    cost: number;
+    status: string;
+    total: number;
+};
 
 const Invoice = () => {
-    const [treatments, setTreatments] = useState([
-        { id: 1, service: 'Arthrose Functional screening', qty: '1 QTY', cost: 35000.0, total: 35000.0 },
-        { id: 2, service: 'TMJ Orthotic', qty: '1 QTY', cost: 95000.0, total: 95000.0 }
-    ]);
     const [showForm, setShowForm] = useState(false);
     const [newTreatment, setNewTreatment] = useState({
         name: '',
-        qty: '',
+        qtyPerDay: '',
         cost: '',
         total: ''
     });
@@ -31,25 +40,159 @@ const Invoice = () => {
     };
 
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [profileData, setProfileData] = useState() as any;
+    const searchParams = useSearchParams();
+    const [treatmentData, setTreatmentData] = useState<Treatment[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const router = useRouter();
 
 
-    const totalCost = treatments.reduce((sum, item) => sum + item.total, 0);
+    useEffect(() => {
+        const listDataProfile = async () => {
+            const extractedHfid = searchParams.get("hfid");
+            const extractedLastVisitId = searchParams.get("visitId");
+            const extractedPatientId = searchParams.get('patientId');
+            if (!extractedHfid) return;
+            try {
+                const response = await ListProfile(extractedHfid);
+                setProfileData(response.data.data);
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+            }
+        };
 
+        listDataProfile();
+    }, [searchParams]);
+
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    useEffect(() => {
+        const fetchUserId = async () => {
+            const id = await getUserId();
+            setCurrentUserId(id);
+        };
+        fetchUserId();
+    }, []);
+
+    useEffect(() => {
+        const FetchDatajson = async () => {
+            const extractedHfid = searchParams.get("hfid");
+            const extractedLastVisitId = searchParams.get("visitId");
+            const extractedPatientId = searchParams.get('patientId');
+            if (!extractedHfid) return;
+            const id = await getUserId();
+            setCurrentUserId(id);
+            try {
+                const response = await ListJsondata(id, extractedPatientId, extractedLastVisitId);
+                const apiData = response.data.data;
+
+                // Find Treatment type
+                const treatmentEntry = apiData.find((item: { type: string; }) => item.type === "Treatment");
+                if (treatmentEntry) {
+                    const parsed = JSON.parse(treatmentEntry.jsonData);
+                    setTreatmentData(parsed.treatments || []);
+                }
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+            }
+        };
+
+        FetchDatajson();
+    }, [searchParams]);
+
+
+    // Fixed totalCost calculation with proper null checking
+    const totalCost = treatmentData.reduce((sum, item) => sum + (item.total || 0), 0);
+
+    // Fixed handleAddTreatment function
     const handleAddTreatment = () => {
         if (newTreatment.name && newTreatment.cost) {
             const cost = parseFloat(newTreatment.cost) || 0;
-            const qty = newTreatment.qty || '1 QTY';
+            const qtyPerDay = newTreatment.qtyPerDay || '1 QTY';
             const total = cost;
 
-            setTreatments([...treatments, {
-                id: treatments.length + 1,
-                service: newTreatment.name,
-                qty: qty,
+            const newTreatmentItem: Treatment = {
+                name: newTreatment.name,
+                qtyPerDay: qtyPerDay,
                 cost: cost,
+                status: "Not Started",
                 total: total
-            }]);
+            };
 
-            setNewTreatment({ name: '', qty: '', cost: '', total: '' });
+            setTreatmentData([...treatmentData, newTreatmentItem]);
+            setNewTreatment({ name: '', qtyPerDay: '', cost: '', total: '' });
+        }
+    };
+
+    const handleSaveInvoice = async () => {
+        try {
+            setIsSaving(true);
+
+            // Get URL parameters
+            const extractedHfid = searchParams.get("hfid");
+            const extractedLastVisitId = searchParams.get("visitId");
+            const extractedPatientId = searchParams.get('patientId');
+
+            if (!extractedPatientId || !extractedLastVisitId || !currentUserId) {
+                alert("Missing required parameters");
+                return;
+            }
+
+            // Create invoice JSON data
+            const invoiceData = {
+                patient: {
+                    name: profileData?.fullName || "",
+                    hfid: profileData?.hfId || "",
+                    gender: profileData?.gender || "",
+                    invid: "INV3147", // You might want to generate this dynamically
+                    dob: profileData?.dob || "",
+                    date: new Date().toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                    }),
+                    mobile: profileData?.phoneNumber || "",
+                    city: profileData?.city || ""
+                },
+                services: treatmentData.map(treatment => ({
+                    name: treatment.name,
+                    qtyPerDay: treatment.qtyPerDay,
+                    cost: treatment.cost,
+                    total: treatment.total
+                })),
+                totalCost: totalCost,
+                grandTotal: totalCost,
+                paid: totalCost,
+                clinicInfo: {
+                    name: "ARTHROSE",
+                    subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
+                    website: "www.arthrosetmjindia.com"
+                }
+            };
+
+            // Create API payload
+            const payload = {
+                clinicId: currentUserId,
+                patientId: parseInt(extractedPatientId),
+                clinicVisitId: parseInt(extractedLastVisitId),
+                type: "Invoice",
+                jsonData: JSON.stringify(invoiceData)
+            };
+
+            console.log("Saving invoice with payload:", payload);
+
+            // Call the API
+            const response = await JsonAdded(payload);
+
+            if (response.status === 200 || response.status === 201) {
+                toast.success(response.data.message)
+                router.push(`/clinicpatient`);
+            } else {
+            }
+
+        } catch (error) {
+            console.error("Error saving invoice:", error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -109,25 +252,29 @@ const Invoice = () => {
                             <div className="space-y-2">
                                 <div className="flex">
                                     <span className="font-semibold w-24">Patient Name :</span>
-                                    <span>KAURESH WAGH</span>
+                                    <span>{profileData?.fullName}</span>
                                 </div>
                                 <div className="flex">
                                     <span className="font-semibold w-24">Gender :</span>
-                                    <span>Male ●</span>
+                                    <span>{profileData?.gender}</span>
                                 </div>
                                 <div className="flex">
                                     <span className="font-semibold w-24">DOB :</span>
-                                    <span>29 - 01 - 2025</span>
+                                    <span>{profileData?.dob}</span>
                                 </div>
                                 <div className="flex">
                                     <span className="font-semibold w-24">Date :</span>
-                                    <span>31 - 03 - 2025</span>
+                                    <span> {new Date().toLocaleDateString("en-GB", {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "numeric",
+                                    })}</span>
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <div className="flex">
-                                    <span className="font-semibold w-16">UHID :</span>
-                                    <span>P20032502</span>
+                                    <span className="font-semibold w-16">HFID :</span>
+                                    <span>{profileData?.hfId}</span>
                                 </div>
                                 <div className="flex">
                                     <span className="font-semibold w-16">INVID :</span>
@@ -137,23 +284,23 @@ const Invoice = () => {
                                     <label className="font-semibold w-20">Mobile :</label>
                                     <input
                                         type="text"
-                                        placeholder="Enter Mobile Number"
-                                        value={formData.mobile}
-                                        onChange={(e) => handleInputChange("mobile", e.target.value)}
-                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md 
-                                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Enter mobile number"
+                                        value={profileData?.phoneNumber || ""}
+                                        readOnly
+                                        className="px-2 py-1 rounded text-xs border border-gray-700 focus:outline-none w-full sm:w-auto"
                                     />
                                 </div>
 
                                 <div className="flex">
                                     <span className="font-semibold w-16">City :</span>
-                                    <span>Pen</span>
+                                    <span>{profileData?.city}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className='border border-black mx-auto'></div>
-                    {/* Invoice Table */}
+
+                    {/* Fixed Invoice Table */}
                     <div className="mb-6 mt-3">
                         <h3 className="text-center font-bold mb-4">Invoice</h3>
 
@@ -177,27 +324,34 @@ const Invoice = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {treatments.map((treatment, index) => (
-                                        <tr key={treatment.id} className="">
-                                            <td className="p-2 text-sm">{index + 1}</td>
-                                            <td className="  p-2 text-sm">
-                                                {treatment.service}
-                                            </td>
-                                            <td className="  p-2 text-sm">
-                                                {treatment.qty}
-                                            </td>
-                                            <td className="  p-2 text-sm">
-                                                {treatment.cost.toFixed(1)}
-                                            </td>
-                                            <td className="  p-2 text-sm">
-                                                {treatment.total.toFixed(1)}
+                                    {treatmentData && treatmentData.length > 0 ? (
+                                        treatmentData.map((treatment, index) => (
+                                            <tr key={`treatment-${index}`} className="">
+                                                <td className="p-2 text-sm">{index + 1}</td>
+                                                <td className="border-l border-gray-400 p-2 text-sm">
+                                                    {treatment.name}
+                                                </td>
+                                                <td className="border-l border-gray-400 p-2 text-sm">
+                                                    {treatment.qtyPerDay}
+                                                </td>
+                                                <td className="border-l border-gray-400 p-2 text-sm">
+                                                    {treatment.cost.toFixed(1)}
+                                                </td>
+                                                <td className="border-l border-gray-400 p-2 text-sm">
+                                                    {treatment.total.toFixed(1)}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={5} className="p-4 text-center text-gray-500">
+                                                No treatments available
                                             </td>
                                         </tr>
-                                    ))}
+                                    )}
                                 </tbody>
                             </table>
                         </div>
-
 
                         {/* Summary */}
                         <div className="mt-4 text-right text-sm space-y-1">
@@ -208,20 +362,13 @@ const Invoice = () => {
                             <div className="text-green-600">
                                 <span className="font-semibold">Paid : ₹{totalCost.toFixed(1)}</span>
                             </div>
-                            <div>
-                                <span className="font-semibold">Balance : ₹0.0</span>
-                            </div>
                         </div>
                     </div>
                     <div className='border border-black mx-auto'></div>
 
-                    {/* Add Treatment Form */}
-
+                    {/* Fixed Add Treatment Form */}
                     <div className="mb-6 p-4 mt-3">
-                        <div
-                            className={`flex ${showForm ? "justify-between" : "justify-end"
-                                } items-start`}
-                        >
+                        <div className={`flex ${showForm ? "justify-between" : "justify-end"} items-start`}>
                             {/* Show form only if true */}
                             {showForm && (
                                 <div className="w-full md:w-3/4">
@@ -234,16 +381,16 @@ const Invoice = () => {
                                             onChange={(e) =>
                                                 setNewTreatment({ ...newTreatment, name: e.target.value })
                                             }
-                                            className="border border-gray-400  p-2 text-sm w-full"
+                                            className="border border-gray-400 p-2 text-sm w-full"
                                         />
                                         <input
                                             type="text"
                                             placeholder="Qty / Day"
-                                            value={newTreatment.qty}
+                                            value={newTreatment.qtyPerDay}
                                             onChange={(e) =>
-                                                setNewTreatment({ ...newTreatment, qty: e.target.value })
+                                                setNewTreatment({ ...newTreatment, qtyPerDay: e.target.value })
                                             }
-                                            className="border border-gray-400  p-2 text-sm w-full"
+                                            className="border border-gray-400 p-2 text-sm w-full"
                                         />
                                     </div>
 
@@ -254,16 +401,20 @@ const Invoice = () => {
                                             placeholder="Cost . . ."
                                             value={newTreatment.cost}
                                             onChange={(e) =>
-                                                setNewTreatment({ ...newTreatment, cost: e.target.value })
+                                                setNewTreatment({
+                                                    ...newTreatment,
+                                                    cost: e.target.value,
+                                                    total: e.target.value // Auto-calculate total
+                                                })
                                             }
-                                            className="border border-gray-400  p-2 text-sm w-full"
+                                            className="border border-gray-400 p-2 text-sm w-full"
                                         />
                                         <input
                                             type="text"
                                             placeholder="Total . . ."
-                                            value={newTreatment.total}
+                                            value={newTreatment.cost || newTreatment.total}
                                             readOnly
-                                            className="border border-gray-400  p-2 text-sm w-full"
+                                            className="border border-gray-400 p-2 text-sm w-full bg-gray-100"
                                         />
                                     </div>
 
@@ -282,18 +433,14 @@ const Invoice = () => {
                             {/* Billing Info Button */}
                             <div>
                                 <button
-                                    onClick={() => {
-                                        handleAddTreatment();
-                                        setShowForm(true);
-                                    }}
+                                    onClick={() => setShowForm(!showForm)}
                                     className="bg-yellow-300 hover:bg-yellow-400 text-black font-semibold py-2 px-6 rounded text-sm"
                                 >
-                                    Enter Billing Info
+                                    {showForm ? 'Hide Form' : 'Enter Billing Info'}
                                 </button>
                             </div>
                         </div>
                     </div>
-
 
                     {/* Doctor Signature */}
                     <div className="mt-2 sm:mt-2 flex justify-end mb-3">
@@ -315,11 +462,16 @@ const Invoice = () => {
 
                 {/* Save Button */}
                 <div className="text-end mt-3">
-                    <button className="primary text-white font-semibold py-3 px-8 rounded text-sm">
-                        Save
+                    <button
+                        onClick={handleSaveInvoice}
+                        disabled={isSaving}
+                        className="primary text-white font-semibold py-3 px-8 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSaving ? 'Saving...' : 'Save'}
                     </button>
                 </div>
             </div>
+            <ToastContainer />
         </DefaultLayout>
     );
 };

@@ -5,7 +5,7 @@ import DefaultLayout from '../components/DefaultLayout';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHistory } from '@fortawesome/free-solid-svg-icons';
-import { Listconsent } from '../services/ClinicServiceApi';
+import { Listconsent, ListJsondata, ListProfile } from '../services/ClinicServiceApi';
 import { getUserId } from '../hooks/GetitemsLocal';
 
 const page = () => {
@@ -24,7 +24,37 @@ const page = () => {
     const [invoiceData, setInvoiceData] = useState(null);
     const [receiptData, setReceiptData] = useState(null);
     const [consentListData, setConsentListData] = useState() as any;
+    const [profileData, setProfileData] = useState() as any;
     const [currentUserId, setCurrentUserId] = useState<number>();
+    const [treatmentData, setTreatmentData] = useState([]) as any;
+
+
+       useEffect(() => {
+            const FetchDatajson = async () => {
+                const extractedHfid = searchParams.get("hfid");
+                const extractedLastVisitId = searchParams.get("visitId");
+                const extractedPatientId = searchParams.get('patientId');
+                if (!extractedHfid) return;
+                const id = await getUserId();
+                setCurrentUserId(id);
+                try {
+                    const response = await ListJsondata(id, extractedPatientId, extractedLastVisitId);
+                    const apiData = response.data.data;
+    
+                    // Find Treatment type
+                    const treatmentEntry = apiData.find((item: { type: string; }) => item.type === "Invoice");
+                    if (treatmentEntry) {
+                        const parsed = JSON.parse(treatmentEntry.jsonData);
+                        setTreatmentData(parsed.treatments || []);
+                    }
+                } catch (error) {
+                    console.error("Error fetching profile:", error);
+                }
+            };
+    
+            FetchDatajson();
+        }, [searchParams]);
+
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -33,6 +63,25 @@ const page = () => {
         };
         fetchUserId();
     }, []);
+
+
+    useEffect(() => {
+        const listDataProfile = async () => {
+            const extractedHfid = searchParams.get("hfid");
+            if (!extractedHfid) return;
+            try {
+                const response = await ListProfile(extractedHfid);
+                setProfileData(response.data.data);
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+            } finally {
+            }
+        };
+
+        listDataProfile();
+    }, [searchParams]);
+
+
 
     // Checkbox states for documents
     const [checkedItems, setCheckedItems] = useState({
@@ -69,6 +118,7 @@ const page = () => {
             const extractedPatientId = searchParams.get('patientId');
             const extractedHfid = searchParams.get('hfid');
             const extractedLastVisitDate = searchParams.get('lastVisitDate');
+            const extractedLastVisitId = searchParams.get('visitId');
             const convertedDate = convertDateFormat(extractedLastVisitDate);
             if (extractedHfid && convertedDate) {
                 const payload = {
@@ -208,7 +258,7 @@ const page = () => {
         const sampleTreatmentData = {
             patient: {
                 name: "Ankit K.",
-                uhid: "HF010125ANK1312",
+                hfid: "HF010125ANK1312",
                 gender: "Male",
                 prfid: "T50AHYBM6",
                 dob: "1990-01-25",
@@ -350,7 +400,6 @@ const page = () => {
             totalCost: 130000.0,
             grandTotal: 130000.0,
             paid: 130000.0,
-            balance: 0.0,
             clinicInfo: {
                 name: "ARTHROSE",
                 subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
@@ -1624,7 +1673,7 @@ const page = () => {
                         {/* HF ID in top-right */}
                         <div className="absolute top-0 right-0 bg-white px-3 py-1 rounded-bl-lg rounded-tr-2xl border-l border-b border-black">
                             <span className="text-xs md:text-sm font-mono text-gray-800">
-                                HF010125ANK1312
+                                {profileData?.hfId}
                             </span>
                         </div>
 
@@ -1644,7 +1693,7 @@ const page = () => {
 
                             {/* Details */}
                             <div className="flex-1">
-                                <h2 className="text-xl font-bold text-blue-800">Ankit k.</h2>
+                                <h2 className="text-xl font-bold text-blue-800">{profileData?.fullName}</h2>
                                 <div>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="text-sm font-medium text-gray-600">Blood Group :</span>
@@ -1793,7 +1842,17 @@ const page = () => {
                                                 className="max-w-20 max-h-20 rounded"
                                             />
                                         </div>
-                                        <button className="w-full bg-yellow text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors" onClick={() => router.push("/prescription")}>
+                                        <button className="w-full bg-yellow text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors"
+                                            onClick={() => {
+                                                const extractedHfid = searchParams.get("hfid");
+                                                const extractedLastVisitId = searchParams.get("visitId");
+                                                const extractedPatientId = searchParams.get('patientId');
+                                                if (extractedHfid) {
+                                                    router.push(`/prescription?hfid=${extractedHfid}&visitId=${extractedLastVisitId}&patientId=${extractedPatientId}`);
+                                                } else {
+                                                    console.error("HFID not found in URL");
+                                                }
+                                            }}>
                                             Prescription
                                         </button>
                                     </div>
@@ -1807,7 +1866,17 @@ const page = () => {
                                                 className="max-w-20 max-h-20 rounded"
                                             />
                                         </div>
-                                        <button className="w-full  text-white font-semibold py-2 px-4 rounded-lg primary cursor-pointer transition-colors">
+                                        <button className="w-full  text-white font-semibold py-2 px-4 rounded-lg primary cursor-pointer transition-colors"
+                                            onClick={() => {
+                                                const extractedHfid = searchParams.get("hfid");
+                                                const extractedLastVisitId = searchParams.get("visitId");
+                                                const extractedPatientId = searchParams.get('patientId');
+                                                if (extractedHfid) {
+                                                    router.push(`/treatmentPlane?hfid=${extractedHfid}&visitId=${extractedLastVisitId}&patientId=${extractedPatientId}`);
+                                                } else {
+                                                    console.error("HFID not found in URL");
+                                                }
+                                            }}>
                                             Share
                                         </button>
                                     </div>
@@ -1835,7 +1904,17 @@ const page = () => {
                                     className="max-w-20 max-h-20 rounded"
                                 />
                             </div>
-                            <button className="w-full primary text-white font-semibold py-2 px-4 rounded-lg  transition-colors">
+                            <button className="w-full primary text-white font-semibold py-2 px-4 rounded-lg  transition-colors"
+                                onClick={() => {
+                                    const extractedHfid = searchParams.get("hfid");
+                                    const extractedLastVisitId = searchParams.get("visitId");
+                                    const extractedPatientId = searchParams.get('patientId');
+                                    if (extractedHfid) {
+                                        router.push(`/invoice?hfid=${extractedHfid}&visitId=${extractedLastVisitId}&patientId=${extractedPatientId}`);
+                                    } else {
+                                        console.error("HFID not found in URL");
+                                    }
+                                }}>
                                 Share
                             </button>
                         </div>
@@ -1849,7 +1928,17 @@ const page = () => {
                                     className="max-w-20 max-h-20 rounded"
                                 />
                             </div>
-                            <button className="w-full bg-yellow text-black border border-black font-semibold py-2 px-4 rounded-lg  transition-colors">
+                            <button className="w-full bg-yellow text-black border border-black font-semibold py-2 px-4 rounded-lg  transition-colors"
+                              onClick={() => {
+                                    const extractedHfid = searchParams.get("hfid");
+                                    const extractedLastVisitId = searchParams.get("visitId");
+                                    const extractedPatientId = searchParams.get('patientId');
+                                    if (extractedHfid) {
+                                        router.push(`/receipt?hfid=${extractedHfid}&visitId=${extractedLastVisitId}&patientId=${extractedPatientId}`);
+                                    } else {
+                                        console.error("HFID not found in URL");
+                                    }
+                                }}>
                                 Receipt
                             </button>
                         </div>

@@ -220,7 +220,52 @@ export const AddPdfPublic = async (visitConsentFormId: number, payload: { Consen
   );
 };
 
+export const ListProfile = async (hfId:any) =>{
+    return axiosInstance.get(`${endPoints.ConsentForm.Profile}?hfId=${hfId}`)
+}
+
 
 export const ConsentVerify = async (visitConsentFormId:number,consentFormTitle:number) =>{
     return axiosInstance.put(`${endPoints.ConsentForm.VerifyConsent(visitConsentFormId)}?consentFormTitle=${consentFormTitle}`)
+}
+
+
+// Treament plane 
+
+export const Treatment = async (payloade:any) =>{
+    return axiosInstance.post(`${endPoints.TreatmentPlane.AddTreatment}`, payloade)
+}
+
+export const ListTreatemnet = async (clinicId:number) =>{
+    return axiosInstance.get(`${endPoints.TreatmentPlane.GetDetailsTreaatment(clinicId)}`)
+}
+
+export const UpdateData = async (clinicId:number,treatmentId :number, payloade:any) =>{
+    return axiosInstance.patch(`${endPoints.TreatmentPlane.updateTreatment(clinicId,treatmentId)}`, payloade)
+}
+
+
+// Common Json Add 
+
+export const JsonAdded = async (payloade:any) =>{
+    return axiosInstance.post(`${endPoints.CommonAddJson.AddJson}`,payloade )
+}
+
+export const ListJsondata = async (clinicId:number,patientId:number,clinicVisitId:number) =>{
+    return axiosInstance.get(`${endPoints.CommonAddJson.GetJsonDataList(clinicId,patientId,clinicVisitId)}`)
+}
+
+
+//  Prescripation Added
+
+export const AddPrescripation = async (payloade:any) =>{
+    return axiosInstance.post(`${endPoints.Prescrition.AddPrescripation}`, payloade)
+}
+
+export const GetListData = async (clinicId:number) =>{
+    return axiosInstance.get(`${endPoints.Prescrition.GetPrescripationList(clinicId)}`)
+}
+
+export const UpdatePrescipation = async (clinicId:number, prescriptionId:number , payloade:any) =>{
+    return axiosInstance.patch(`${endPoints.Prescrition.PrescriptionClinic(clinicId,prescriptionId)}`,payloade)
 }

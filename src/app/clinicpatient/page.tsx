@@ -228,6 +228,11 @@ const PatientListInterface = () => {
       params.append('lastVisitDate', patient.lastVisitDate);
     }
     
+      // Add visitId from the visits array (using the first visit if available)
+    if (patient.visits && patient.visits.length > 0 && patient.visits[0].visitId) {
+      params.append('visitId', patient.visits[0].visitId);
+    }
+    
     // Navigate to treatment details page with parameters
     const queryString = params.toString();
     router.push(`/tretmentDetails${queryString ? `?${queryString}` : ''}`);

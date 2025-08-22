@@ -1,61 +1,95 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import DefaultLayout from '../components/DefaultLayout';
 import Tooltip from '../components/Tooltip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import Drawer from '../components/clinicInfoDrawer';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { AddPrescripation, GetListData, JsonAdded, ListProfile, UpdatePrescipation } from '../services/ClinicServiceApi';
+import { useFormik } from 'formik';
+import * as Yup from "yup";
+import { getUserId } from '../hooks/GetitemsLocal';
+import { toast } from 'react-toastify';
 
 interface SavedPrescriptionDrawerProps {
     isOpen: any;
     onClose: any;
     onSelectMedication: any;
-    // adjust type if medication is not string
 }
 
 interface AddNewPrescriptionModalProps {
     isOpen: boolean;
     onClose: any;
-    onSave: any; // replace `any` with the actual type you expect
+    onSave: any;
 }
 
-
-// Add New Prescription Modal Component
 const AddNewPrescriptionModal: React.FC<AddNewPrescriptionModalProps> = ({
     isOpen,
     onClose,
     onSave,
 }) => {
-    const [formData, setFormData] = useState({
-        drugName: '',
-        drugDosage: '',
-        frequency: '',
-        timing: '',
-        instruction: ''
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const fetchUserId = async () => {
+            const id = await getUserId();
+            setCurrentUserId(id);
+        };
+        fetchUserId();
+    }, []);
+
+    // Formik setup
+    const formik = useFormik({
+        initialValues: {
+            medicationName: "",
+            medicationDosage: "",
+            frequency: "",
+            timing: "",
+            instructions: "",
+        },
+        validationSchema: Yup.object({
+            medicationName: Yup.string().required("Drug name is required"),
+            medicationDosage: Yup.string().required("Dosage is required"),
+            frequency: Yup.string().required("Select frequency"),
+            timing: Yup.string().required("Select timing"),
+            instructions: Yup.string().nullable(),
+        }),
+        onSubmit: async (values, { resetForm }) => {
+            setIsSubmitting(true);
+
+            try {
+                const clinicId = await getUserId();
+                setCurrentUserId(clinicId);
+
+                // Create payload with only non-empty values
+                const payload: any = {
+                    clinicId: clinicId,
+                };
+
+                if (values.medicationName?.trim()) payload.medicationName = values.medicationName.trim();
+                if (values.medicationDosage?.trim()) payload.medicationDosage = values.medicationDosage.trim();
+                if (values.frequency?.trim()) payload.frequency = values.frequency.trim();
+                if (values.timing?.trim()) payload.timing = values.timing.trim();
+                if (values.instructions?.trim()) payload.instructions = values.instructions.trim();
+
+                const response = await AddPrescripation(payload);
+                toast.success(response.data.message || "Prescription added successfully");
+                resetForm();
+                onClose();
+                if (onSave) {
+                    onSave(values); // Pass the values to parent
+                }
+            } catch (error: any) {
+                console.error("❌ Failed to add prescription:", error);
+                toast.error(error?.response?.data?.message || "Failed to add prescription");
+            } finally {
+                setIsSubmitting(false);
+            }
+        },
     });
-
-    const handleInputChange = (field: string, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-    };
-
-    const handleSave = () => {
-        if (formData.drugName && formData.drugDosage) {
-            onSave(formData);
-            // Reset form
-            setFormData({
-                drugName: '',
-                drugDosage: '',
-                frequency: '',
-                timing: '',
-                instruction: ''
-            });
-            onClose();
-        }
-    };
 
     if (!isOpen) return null;
 
@@ -74,7 +108,9 @@ const AddNewPrescriptionModal: React.FC<AddNewPrescriptionModalProps> = ({
                     {/* Header */}
                     <div className="flex items-center rounded-lg justify-between p-3 sm:p-4 bg-white relative">
                         <div className="flex-1 text-center">
-                            <h2 className="text-base sm:text-lg font-bold text-blue-800">Add a New Prescription</h2>
+                            <h2 className="text-base sm:text-lg font-bold text-blue-800">
+                                Add a New Prescription
+                            </h2>
                             <div className="border-b-2 border-blue-800 w-32 sm:w-40 mx-auto mt-1"></div>
                         </div>
 
@@ -88,129 +124,161 @@ const AddNewPrescriptionModal: React.FC<AddNewPrescriptionModalProps> = ({
 
                     {/* Content */}
                     <div className="p-3 sm:p-6">
-                        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
-                            {/* Left side - Form */}
-                            <div className="flex-1 space-y-2">
-                                {/* Drug Name */}
-                                <div className="flex flex-col sm:flex-row gap-4 items-start">
-                                    {/* Left side - Form Fields */}
-                                    <div className="flex-1 w-full">
-                                        {/* Drug Name */}
-                                        <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6">
-                                            <label
-                                                htmlFor="drugName"
-                                                className="w-full sm:w-32 text-sm font-medium text-gray-700 mb-2 sm:mb-0 sm:mr-4"
-                                            >
-                                                Drug Name :
-                                            </label>
-                                            <input
-                                                id="drugName"
-                                                type="text"
-                                                placeholder="Enter Drug Name :"
-                                                value={formData.drugName}
-                                                onChange={(e) => handleInputChange('drugName', e.target.value)}
-                                                className="flex-1 w-full px-3 sm:px-4 py-2 sm:py-3 border border-[#353935] rounded-lg 
-                                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                                     placeholder-gray-400 text-sm"
-                                            />
+                        <form onSubmit={formik.handleSubmit}>
+                            <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+                                {/* Left side - Form */}
+                                <div className="flex-1 space-y-2">
+                                    {/* Drug Name & Dosage */}
+                                    <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                        <div className="flex-1 w-full">
+                                            {/* Drug Name */}
+                                            <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6">
+                                                <label
+                                                    htmlFor="medicationName"
+                                                    className="w-full sm:w-32 text-sm font-medium text-gray-700 mb-2 sm:mb-0 sm:mr-4"
+                                                >
+                                                    Drug Name :
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="medicationName"
+                                                    value={formik.values.medicationName}
+                                                    onChange={formik.handleChange}
+                                                    onBlur={formik.handleBlur}
+                                                    className="w-full px-3 py-2 border rounded-md text-sm"
+                                                    placeholder="Enter drug name"
+                                                />
+                                            </div>
+                                            {formik.touched.medicationName &&
+                                                formik.errors.medicationName && (
+                                                    <p className="text-red-500 text-xs mt-1">
+                                                        {formik.errors.medicationName}
+                                                    </p>
+                                                )}
+
+                                            {/* Drug Dosage */}
+                                            <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6">
+                                                <label
+                                                    htmlFor="medicationDosage"
+                                                    className="w-full sm:w-32 text-sm font-medium text-gray-700 mb-2 sm:mb-0 sm:mr-4"
+                                                >
+                                                    Drug Dosage :
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="medicationDosage"
+                                                    value={formik.values.medicationDosage}
+                                                    onChange={formik.handleChange}
+                                                    onBlur={formik.handleBlur}
+                                                    className="w-full px-3 py-2 border rounded-md text-sm"
+                                                    placeholder="Enter dosage"
+                                                />
+                                            </div>
+                                            {formik.touched.medicationDosage &&
+                                                formik.errors.medicationDosage && (
+                                                    <p className="text-red-500 text-xs mt-1">
+                                                        {formik.errors.medicationDosage}
+                                                    </p>
+                                                )}
                                         </div>
 
-                                        {/* Drug Dosage */}
-                                        <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6">
-                                            <label
-                                                htmlFor="drugDosage"
-                                                className="w-full sm:w-32 text-sm font-medium text-gray-700 mb-2 sm:mb-0 sm:mr-4"
-                                            >
-                                                Drug Dosage :
-                                            </label>
-                                            <input
-                                                id="drugDosage"
-                                                type="text"
-                                                placeholder="Enter Dosage :"
-                                                value={formData.drugDosage}
-                                                onChange={(e) => handleInputChange('drugDosage', e.target.value)}
-                                                className="flex-1 w-full px-3 sm:px-4 py-2 sm:py-3 border border-[#353935] rounded-lg 
-                                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                                     placeholder-gray-400 text-sm"
+                                        {/* Illustration */}
+                                        <div className="w-full sm:w-35 flex items-center justify-center order-first sm:order-last">
+                                            <img
+                                                src="/f02ab4b2b4aeffe41f18ff4ece3c64bd20e9a0f4 (1).png"
+                                                alt="samantha"
+                                                className="max-w-24 sm:max-w-32 h-auto"
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Right side - Illustration */}
-                                    <div className="w-full sm:w-35 flex items-center justify-center order-first sm:order-last">
-                                        <img
-                                            src="/f02ab4b2b4aeffe41f18ff4ece3c64bd20e9a0f4 (1).png"
-                                            alt='samantha'
-                                            className="max-w-24 sm:max-w-32 h-auto"
+                                    {/* Frequency and Timing */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Frequency
+                                            </label>
+                                            <select
+                                                name="frequency"
+                                                value={formik.values.frequency}
+                                                onChange={formik.handleChange}
+                                                onBlur={formik.handleBlur}
+                                                className="w-full px-3 py-2 border rounded-md text-sm"
+                                            >
+                                                <option value="">Select</option>
+                                                <option value="OnceADay">Once a day</option>
+                                                <option value="TwiceADay">Twice a day</option>
+                                                <option value="ThreeTimesADay">
+                                                    Three times a day
+                                                </option>
+                                                <option value="FourTimesADay">Four times a day</option>
+                                            </select>
+                                            {formik.touched.frequency && formik.errors.frequency && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    {formik.errors.frequency}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Timing
+                                            </label>
+                                            <select
+                                                name="timing"
+                                                value={formik.values.timing}
+                                                onChange={formik.handleChange}
+                                                onBlur={formik.handleBlur}
+                                                className="w-full px-3 py-2 border rounded-md text-sm"
+                                            >
+                                                <option value="">Select</option>
+                                                <option value="Morning">Morning</option>
+                                                <option value="Evening">Evening</option>
+                                                <option value="Night">Night</option>
+                                                <option value="MorningEvening">
+                                                    Morning / Evening
+                                                </option>
+                                                <option value="MorningNight">Morning / Night</option>
+                                                <option value="BeforeMeals">Before meals</option>
+                                                <option value="AfterMeals">After meals</option>
+                                            </select>
+                                            {formik.touched.timing && formik.errors.timing && (
+                                                <p className="text-red-500 text-xs mt-1">
+                                                    {formik.errors.timing}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Instructions */}
+                                    <div>
+                                        <textarea
+                                            name="instructions"
+                                            rows={3}
+                                            value={formik.values.instructions}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            className="w-full px-3 py-2 border rounded-md text-sm resize-none"
+                                            placeholder="Enter instructions..."
                                         />
                                     </div>
-                                </div>
 
-                                {/* Frequency and Timing Row */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {/* Frequency */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Frequency
-                                        </label>
-                                        <select
-                                            value={formData.frequency}
-                                            onChange={(e) => handleInputChange('frequency', e.target.value)}
-                                            className="w-full px-3 py-2 border border-[#353935] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                                    {/* Save Button */}
+                                    <div className="flex justify-end pt-4">
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className={`px-6 py-2 rounded-md text-sm font-medium transition ${isSubmitting
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-blue-600 hover:bg-blue-700'
+                                                } text-white`}
                                         >
-                                            <option value="">Frequency</option>
-                                            <option value="Once a day">Once a day</option>
-                                            <option value="Twice a day">Twice a day</option>
-                                            <option value="Three times a day">Three times a day</option>
-                                            <option value="Four times a day">Four times a day</option>
-                                            <option value="As needed">As needed</option>
-                                        </select>
+                                            {isSubmitting ? 'Saving...' : 'Save'}
+                                        </button>
                                     </div>
-
-                                    {/* Timing */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Timing
-                                        </label>
-                                        <select
-                                            value={formData.timing}
-                                            onChange={(e) => handleInputChange('timing', e.target.value)}
-                                            className="w-full px-3 py-2 border border-[#353935] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-                                        >
-                                            <option value="">Timing</option>
-                                            <option value="Morning">Morning</option>
-                                            <option value="Evening">Evening</option>
-                                            <option value="Night">Night</option>
-                                            <option value="Morning / Evening">Morning / Evening</option>
-                                            <option value="Morning / night">Morning / Night</option>
-                                            <option value="Before meals">Before meals</option>
-                                            <option value="After meals">After meals</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Instruction */}
-                                <div>
-                                    <textarea
-                                        placeholder="Instruction ..."
-                                        value={formData.instruction}
-                                        onChange={(e) => handleInputChange('instruction', e.target.value)}
-                                        rows={3}
-                                        className="w-full px-3 py-2 border border-[#353935] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
-                                    />
-                                </div>
-
-                                {/* Save Button */}
-                                <div className="flex justify-end pt-4">
-                                    <button
-                                        onClick={handleSave}
-                                        className="primary text-white px-6 sm:px-8 py-2 rounded-md font-medium transition-colors text-sm"
-                                    >
-                                        Save
-                                    </button>
                                 </div>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -224,67 +292,110 @@ const SavedPrescriptionDrawer: React.FC<SavedPrescriptionDrawerProps> = ({
     onClose,
     onSelectMedication,
 }) => {
-    const [selectedMedication, setSelectedMedication] = useState(null);
+    const [selectedMedication, setSelectedMedication] = useState<any>(null);
     const [isAddNewModalOpen, setIsAddNewModalOpen] = useState(false);
+    const [medicalList, setMedicalList] = useState<any[]>([]);
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [loading, setLoading] = useState(false);
 
-    const savedMedications = [
-        {
-            id: 1,
-            name: 'TAB ZERODOL TH 4MG',
-            dosage: '1 Tablet',
-            frequency: 'Twice a day',
-            timing: 'Morning / night',
-            instruction: 'Take on an empty stomach and avoid dairy products.',
-            isSelected: false
-        },
-        {
-            id: 2,
-            name: 'TAB PAN 40 MG PANTOPRAZOLE',
-            dosage: '1 Tablet',
-            frequency: 'Twice a day',
-            timing: 'Morning / night',
-            instruction: 'Take on an empty stomach and avoid dairy products.',
-            isSelected: true
-        },
-        {
-            id: 3,
-            name: 'TAB ZERODOL TH 4MG',
-            dosage: '1 Tablet',
-            frequency: 'Twice a day',
-            timing: 'Morning / night',
-            instruction: 'Take on an empty stomach and avoid dairy products.',
-            isSelected: false
-        },
-        {
-            id: 4,
-            name: 'TAB ZERODOL TH 4MG',
-            dosage: '1 Tablet',
-            frequency: 'Twice a day',
-            timing: 'Morning / night',
-            instruction: 'Take on an empty stomach and avoid dairy products.',
-            isSelected: false
+    useEffect(() => {
+        const fetchUserId = async () => {
+            const id = await getUserId();
+            setCurrentUserId(id);
+        };
+        fetchUserId();
+    }, []);
+
+    // Enhanced listData function with error handling
+    const listData = async () => {
+        if (!currentUserId) return;
+
+        try {
+            setLoading(true);
+            const response = await GetListData(Number(currentUserId));
+
+            if (response?.data?.data) {
+                // Map the API response to match the component's expected format
+                const mappedData = response.data.data.map((item: any) => ({
+                    id: item.prescriptionId,
+                    name: item.medicationName || '',
+                    dosage: item.medicationDosage || '',
+                    frequency: item.frequency || '',
+                    timing: item.timing || '',
+                    instruction: item.instructions || '',
+                    isSelected: false
+                }));
+
+                setMedicalList(mappedData);
+            } else {
+                setMedicalList([]);
+            }
+        } catch (error: any) {
+            console.error('Error fetching prescription data:', error);
+            toast.error(error?.response?.data?.message || 'Failed to fetch prescriptions');
+            setMedicalList([]);
+        } finally {
+            setLoading(false);
         }
-    ];
+    };
 
+    useEffect(() => {
+        if (currentUserId) {
+            listData();
+        }
+    }, [currentUserId]);
+
+    // Enhanced handleSelectMedication with better state management
     const handleSelectMedication = (med: any) => {
-        setSelectedMedication(med.id === selectedMedication?.id ? null : med);
-        if (onSelectMedication) {
+        // Toggle selection
+        const isCurrentlySelected = selectedMedication?.id === med.id;
+        setSelectedMedication(isCurrentlySelected ? null : med);
+
+        // Update the medication list to reflect selection
+        setMedicalList(prev => prev.map(item => ({
+            ...item,
+            isSelected: item.id === med.id ? !isCurrentlySelected : false
+        })));
+
+        // Pass the selected medication to parent component
+        if (onSelectMedication && !isCurrentlySelected) {
             onSelectMedication(med);
         }
     };
 
-    const handleSaveNewPrescription = (newPrescription: any) => {
-        // You can add logic here to save the new prescription to your data source
-        console.log('New prescription saved:', newPrescription);
-        // Optionally, you can call onSelectMedication to add it to the current form
-        if (onSelectMedication) {
-            onSelectMedication({
-                name: newPrescription.drugName,
-                dosage: newPrescription.drugDosage,
+    // Fixed handleSaveNewPrescription function
+    const handleSaveNewPrescription = async (newPrescription: any) => {
+        try {
+            // Create the new medication object with proper mapping
+            const newMed = {
+                id: Date.now(), // Temporary ID until API response
+                name: newPrescription.medicationName, // Fixed property mapping
+                dosage: newPrescription.medicationDosage, // Fixed property mapping
                 frequency: newPrescription.frequency,
                 timing: newPrescription.timing,
-                instruction: newPrescription.instruction
-            });
+                instruction: newPrescription.instructions, // Fixed property mapping
+                isSelected: false
+            };
+
+            // Add to local list immediately for better UX
+            setMedicalList(prev => [...prev, newMed]);
+
+            // Close the modal
+            setIsAddNewModalOpen(false);
+
+            // Select the newly added medication
+            if (onSelectMedication) {
+                onSelectMedication(newMed);
+            }
+
+            // Refresh the list from server to get the actual ID
+            setTimeout(() => {
+                listData();
+            }, 500);
+
+        } catch (error) {
+            console.error("Error handling new prescription:", error);
+            toast.error("Failed to add prescription");
         }
     };
 
@@ -323,9 +434,22 @@ const SavedPrescriptionDrawer: React.FC<SavedPrescriptionDrawerProps> = ({
                         </div>
                         <div className='border border-gray-400'></div>
 
+                        {/* Loading State */}
+                        {loading && (
+                            <div className="flex justify-center items-center py-8">
+                                <div className="text-gray-500">Loading prescriptions...</div>
+                            </div>
+                        )}
+
                         {/* Medication List */}
                         <div className="space-y-0 mt-3">
-                            {savedMedications.map((med) => (
+                            {!loading && medicalList.length === 0 && (
+                                <div className="text-center py-8 text-gray-500">
+                                    No saved prescriptions found
+                                </div>
+                            )}
+
+                            {medicalList.map((med) => (
                                 <div
                                     key={med.id}
                                     className={`px-3 sm:px-4 py-4 cursor-pointer transition-colors border-b border-gray-200 last:border-b-0 ${med.isSelected || selectedMedication?.id === med.id
@@ -375,77 +499,272 @@ const SavedPrescriptionDrawer: React.FC<SavedPrescriptionDrawerProps> = ({
 };
 
 const PrescriptionForm = () => {
-    const [medications, setMedications] = useState([
-        {
-            sno: 1,
-            medication: 'Cetirizine',
-            description: 'Cetirizine Tabs are an effective remedy against mild asthma and hay fever conditions',
-            dosage: '1 Tablet',
-            frequency: 'Twice a day',
-            timing: 'Morning night'
-        },
-        {
-            sno: 2,
-            medication: 'Aciclovir (Zovirax)',
-            description: '',
-            dosage: '1 Tablet',
-            frequency: 'Once a day',
-            timing: 'Evening'
-        }
-    ]);
-
-    const [newMedication, setNewMedication] = useState({
-        name: '',
-        dosage: '',
-        frequency: '',
-        timing: '',
-        instruction: ''
-    });
+    const [medications, setMedications] = useState([]) as any;
 
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isSavedPrescriptionOpen, setIsSavedPrescriptionOpen] = useState(false);
     const [showMedicationForm, setShowMedicationForm] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const searchParams = useSearchParams();
+    const [profileData, setProfileData] = useState<any>();
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+        const router = useRouter();
 
-    // Function to add medication to the table
-    const handleAddMedication = () => {
-        if (newMedication.name) {
-            setMedications([...medications, {
-                sno: medications.length + 1,
-                medication: newMedication.name,
-                description: newMedication.instruction,
-                dosage: newMedication.dosage,
-                frequency: newMedication.frequency,
-                timing: newMedication.timing
-            }]);
-            // Clear the form after adding
-            setNewMedication({
-                name: '',
-                dosage: '',
-                frequency: '',
-                timing: '',
-                instruction: ''
+
+    useEffect(() => {
+        const fetchUserId = async () => {
+            const id = await getUserId();
+            setCurrentUserId(id);
+        };
+        fetchUserId();
+    }, []);
+
+    // Yup validation schema
+    const validationSchema = Yup.object({
+        medicationName: Yup.string()
+            .required('Medication name is required')
+            .min(2, 'Medication name must be at least 2 characters'),
+        medicationDosage: Yup.string()
+            .required('Dosage is required'),
+        frequency: Yup.string()
+            .required('Frequency is required'),
+        timing: Yup.string()
+            .required('Timing is required'),
+        instructions: Yup.string()
+            .optional()
+    });
+
+    // Formik setup
+    const formik = useFormik({
+        initialValues: {
+            medicationName: '',
+            medicationDosage: '',
+            frequency: '',
+            timing: '',
+            instructions: ''
+        },
+        validationSchema,
+        onSubmit: async (values, { resetForm }) => {
+            await handleAddMedication(values, resetForm);
+        }
+    });
+
+    useEffect(() => {
+        const listDataProfile = async () => {
+            const extractedHfid = searchParams.get("hfid");
+            if (!extractedHfid) return;
+            try {
+                const response = await ListProfile(extractedHfid);
+                setProfileData(response.data.data);
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+            }
+        };
+
+        listDataProfile();
+    }, [searchParams]);
+
+    // Fixed handleAddMedication function
+    const handleAddMedication = async (values: any, resetForm: any) => {
+        if (isLoading) return; // Prevent multiple submissions
+
+        setIsLoading(true);
+
+        try {
+            const id = await getUserId();
+            setCurrentUserId(id);
+
+            // Create payload with only non-empty values (differential update)
+            const payload: any = {
+                clinicId: id,
+            };
+
+            if (values.medicationName?.trim()) payload.medicationName = values.medicationName.trim();
+            if (values.medicationDosage?.trim()) payload.medicationDosage = values.medicationDosage.trim();
+            if (values.frequency?.trim()) payload.frequency = values.frequency.trim();
+            if (values.timing?.trim()) payload.timing = values.timing.trim();
+            if (values.instructions?.trim()) payload.instructions = values.instructions.trim();
+
+            // Check if we have any data to send
+            if (Object.keys(payload).length <= 1) { // Only clinicId
+                toast.error("Please fill at least one field to add");
+                return;
+            }
+
+            // Use AddPrescripation for new prescriptions
+            const response = await AddPrescripation(payload);
+
+            if (response.data) {
+                // Add to local state for immediate UI update
+                const newMedication = {
+                    sno: medications.length + 1,
+                    medication: values.medicationName,
+                    description: values.instructions || '',
+                    dosage: values.medicationDosage,
+                    frequency: values.frequency,
+                    timing: values.timing
+                };
+
+                setMedications(prev => [...prev, newMedication]);
+                toast.success(response.data.message || "Medication added successfully");
+                resetForm();
+                setShowMedicationForm(false);
+            }
+        } catch (error: any) {
+            console.error("Error adding medication:", error);
+            toast.error(error?.response?.data?.message || "Failed to add medication");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Function to update existing prescription (if needed)
+    const handleUpdatePrescription = async (prescriptionId: number, values: any) => {
+        setIsLoading(true);
+
+        try {
+            const id = await getUserId();
+
+            // Create payload with only changed values
+            const payload: any = {};
+
+            // Compare with existing values and only include changed ones
+            Object.keys(values).forEach(key => {
+                if (values[key] && values[key].trim() !== '') {
+                    payload[key] = values[key].trim();
+                }
             });
-            // Hide the form after adding medication
-            setShowMedicationForm(false);
+
+            if (Object.keys(payload).length === 0) {
+                toast.error("No changes detected");
+                return;
+            }
+
+            const response = await UpdatePrescipation(id, prescriptionId, payload);
+
+            if (response.data) {
+                toast.success(response.data.message || "Prescription updated successfully");
+
+                // Update local medications list
+                setMedications(prev => prev.map(med =>
+                    med.sno === prescriptionId ? {
+                        ...med,
+                        medication: payload.medicationName || med.medication,
+                        description: payload.instructions || med.description,
+                        dosage: payload.medicationDosage || med.dosage,
+                        frequency: payload.frequency || med.frequency,
+                        timing: payload.timing || med.timing
+                    } : med
+                ));
+            }
+        } catch (error: any) {
+            console.error("Error updating prescription:", error);
+            toast.error(error?.response?.data?.message || "Failed to update prescription");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     // Function to handle medication selection from drawer
     const handleSelectMedication = (selectedMed: any) => {
-        setNewMedication({
-            name: selectedMed.name,
-            dosage: selectedMed.dosage,
-            frequency: selectedMed.frequency,
-            timing: selectedMed.timing,
-            instruction: selectedMed.instruction
+        formik.setValues({
+            medicationName: selectedMed.name || '',
+            medicationDosage: selectedMed.dosage || '',
+            frequency: selectedMed.frequency || '',
+            timing: selectedMed.timing || '',
+            instructions: selectedMed.instruction || ''
         });
         setIsSavedPrescriptionOpen(false);
+        setShowMedicationForm(true); // Show the form when a medication is selected
     };
 
     // Function to open saved prescriptions drawer
     const openSavedPrescriptions = () => {
         setIsSavedPrescriptionOpen(true);
         setShowMedicationForm(true);
+    };
+
+    const handleSavePrescription = async () => {
+        try {
+            setIsLoading(true);
+
+            // Extract URL parameters
+            const extractedHfid = searchParams.get("hfid");
+            const extractedVisitId = searchParams.get("visitId");
+            const extractedPatientId = searchParams.get('patientId');
+
+            // Validation
+            if (!currentUserId) {
+                toast.error("Clinic ID not found");
+                return;
+            }
+
+            if (!extractedPatientId) {
+                toast.error("Patient ID not found");
+                return;
+            }
+
+            if (!extractedVisitId) {
+                toast.error("Visit ID not found");
+                return;
+            }
+
+            if (medications.length === 0) {
+                toast.error("Please add at least one medication before saving");
+                return;
+            }
+
+            // Create prescription data in the required format
+            const prescriptionData = {
+                patient: {
+                    name: profileData?.fullName || "",
+                    hfid: profileData?.hfId || extractedHfid || "",
+                    gender: profileData?.gender || "",
+                    prfid: "T5QAHYBM6", // You may want to get this from profileData if available
+                    dob: profileData?.dob || "",
+                    mobile: profileData?.phoneNumber || "",
+                    doctor: "Dr. Varun R Kunte", // You may want to make this dynamic
+                    city: profileData?.city || ""
+                },
+                medications: medications.map(med => ({
+                    name: med.medication || "",
+                    dosage: med.dosage || "",
+                    frequency: med.frequency || "",
+                    timing: med.timing || "",
+                    instruction: med.description || ""
+                })),
+                clinicInfo: {
+                    name: "ARTHROSE",
+                    subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
+                    website: "www.arthrosetmjindia.com"
+                },
+                timestamp: new Date().toISOString(),
+                prescriptionId: `PRESC_${Date.now()}`
+            };
+
+            // Create API payload
+            const payload = {
+                clinicId: Number(currentUserId),
+                patientId: Number(extractedPatientId),
+                clinicVisitId: Number(extractedVisitId),
+                type: "Prescription",
+                jsonData: JSON.stringify(prescriptionData)
+            };
+
+            console.log("Saving prescription with payload:", payload);
+
+            // Make API call
+            const response = await JsonAdded(payload);
+            if (response.data) {
+                toast.success(response.data.message || "Prescription saved successfully!");
+                router.push(`/clinicpatient`);
+            }
+
+        } catch (error: any) {
+            console.error("Error saving prescription:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -456,13 +775,12 @@ const PrescriptionForm = () => {
                     <div className="flex items-center justify-between">
                         {/* Back Button */}
                         <div className="flex items-center">
-                        <button
-                            // onClick={() => router.push('/folders')}
-                            className="mr-1 sm:mr-2 p-1.5 sm:p-2 rounded-lg  transition-colors flex items-center"
-                        >
-                            <FontAwesomeIcon icon={faChevronLeft} className="w-2 h-2 mr-2" />
-                            <span className="text-md sm:text-md font-bold text-[#333333] ">Back</span>
-                        </button>
+                            <button
+                                className="mr-1 sm:mr-2 p-1.5 sm:p-2 rounded-lg transition-colors flex items-center"
+                            >
+                                <FontAwesomeIcon icon={faChevronLeft} className="w-2 h-2 mr-2" />
+                                <span className="text-md sm:text-md font-bold text-[#333333] ">Back</span>
+                            </button>
                         </div>
 
                         <div className="flex flex-col items-center">
@@ -483,7 +801,7 @@ const PrescriptionForm = () => {
                             </div>
 
                             <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
-                                hii
+                                Prescription Information
                             </Drawer>
                         </div>
                     </div>
@@ -507,25 +825,25 @@ const PrescriptionForm = () => {
                             <div className="space-y-2">
                                 <div className="flex flex-col sm:flex-row">
                                     <span className="font-medium w-full sm:w-32">Patient Name:</span>
-                                    <span>KALPESH WAGH</span>
+                                    <span>{profileData?.fullName}</span>
                                 </div>
                                 <div className="flex flex-col sm:flex-row">
                                     <span className="font-medium w-full sm:w-32">Gender:</span>
-                                    <span>Male ●</span>
+                                    <span>{profileData?.gender}</span>
                                 </div>
                                 <div className="flex flex-col sm:flex-row">
                                     <span className="font-medium w-full sm:w-32">DOB:</span>
-                                    <span>29 - 03 - 2025</span>
+                                    <span>{profileData?.dob}</span>
                                 </div>
                                 <div className="flex flex-col sm:flex-row">
-                                    <span className="font-medium w-full sm:w-32">Counsultant Doctor:</span>
+                                    <span className="font-medium w-full sm:w-32">Consultant Doctor:</span>
                                     <span>Dr. Varun R Kunte</span>
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <div className="flex flex-col sm:flex-row">
-                                    <span className="font-medium w-full sm:w-20">UHID:</span>
-                                    <span>P20032502</span>
+                                    <span className="font-medium w-full sm:w-20">HFID:</span>
+                                    <span>{profileData?.hfId}</span>
                                 </div>
                                 <div className="flex flex-col sm:flex-row">
                                     <span className="font-medium w-full sm:w-20">PRID:</span>
@@ -536,12 +854,14 @@ const PrescriptionForm = () => {
                                     <input
                                         type="text"
                                         placeholder="Enter mobile number"
+                                        value={profileData?.phoneNumber || ""}
+                                        readOnly
                                         className="px-2 py-1 rounded text-xs border border-gray-700 focus:outline-none w-full sm:w-auto"
                                     />
                                 </div>
                                 <div className="flex flex-col sm:flex-row">
                                     <span className="font-medium w-full sm:w-20">City:</span>
-                                    <span>Pen</span>
+                                    <span>{profileData?.city}</span>
                                 </div>
                             </div>
                         </div>
@@ -582,78 +902,130 @@ const PrescriptionForm = () => {
                         </div>
 
                         {/* Add Medication Form */}
-                        <div className="mt-6 sm:mt-8 space-y-4">
-                            <div
-                                className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 ${showMedicationForm ? "justify-between" : "justify-end"
-                                    }`}
-                            >
-                                {showMedicationForm && (
-                                    <input
-                                        type="text"
-                                        placeholder="Medication name..."
-                                        value={newMedication.name}
-                                        onChange={(e) =>
-                                            setNewMedication({ ...newMedication, name: e.target.value })
-                                        }
-                                        className="w-full sm:w-40 md:w-1/2 border border-gray-500 px-3 py-2 focus:outline-none focus:border-blue-500 text-sm"
-                                    />
-                                )}
-                                <button
-                                    onClick={openSavedPrescriptions}
-                                    className="w-full sm:w-auto bg-yellow-300 hover:bg-yellow-500 px-4 sm:px-6 py-2 rounded-lg font-medium text-sm"
+                        <form onSubmit={formik.handleSubmit}>
+                            <div className="mt-6 sm:mt-8 space-y-4">
+                                <div
+                                    className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 ${showMedicationForm ? "justify-between" : "justify-end"
+                                        }`}
                                 >
-                                    Add Medication
-                                </button>
+                                    {showMedicationForm && (
+                                        <div className="w-full sm:w-40 md:w-1/2">
+                                            <input
+                                                type="text"
+                                                placeholder="Medication name..."
+                                                name="medicationName"
+                                                value={formik.values.medicationName}
+                                                onChange={formik.handleChange}
+                                                onBlur={formik.handleBlur}
+                                                className={`w-full border px-3 py-2 focus:outline-none focus:border-blue-500 text-sm ${formik.touched.medicationName && formik.errors.medicationName
+                                                    ? 'border-red-500'
+                                                    : 'border-gray-500'
+                                                    }`}
+                                            />
+                                            {formik.touched.medicationName && formik.errors.medicationName && (
+                                                <div className="text-red-500 text-xs mt-1">{formik.errors.medicationName}</div>
+                                            )}
+                                        </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={openSavedPrescriptions}
+                                        className="w-full sm:w-auto bg-yellow-300 hover:bg-yellow-500 px-4 sm:px-6 py-2 rounded-lg font-medium text-sm"
+                                    >
+                                        Add Medication
+                                    </button>
+                                </div>
+
+                                {/* Show form fields only when showMedicationForm is true */}
+                                {showMedicationForm && (
+                                    <>
+                                        {/* Dosage, Frequency, Timing Inputs */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Dosage..."
+                                                    name="medicationDosage"
+                                                    value={formik.values.medicationDosage}
+                                                    onChange={formik.handleChange}
+                                                    onBlur={formik.handleBlur}
+                                                    className={`w-full border px-3 py-2 focus:outline-none focus:border-blue-500 text-sm ${formik.touched.medicationDosage && formik.errors.medicationDosage
+                                                        ? 'border-red-500'
+                                                        : 'border-gray-500'
+                                                        }`}
+                                                />
+                                                {formik.touched.medicationDosage && formik.errors.medicationDosage && (
+                                                    <div className="text-red-500 text-xs mt-1">{formik.errors.medicationDosage}</div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Frequency..."
+                                                    name="frequency"
+                                                    value={formik.values.frequency}
+                                                    onChange={formik.handleChange}
+                                                    onBlur={formik.handleBlur}
+                                                    className={`w-full border px-3 py-2 focus:outline-none focus:border-blue-500 text-sm ${formik.touched.frequency && formik.errors.frequency
+                                                        ? 'border-red-500'
+                                                        : 'border-gray-500'
+                                                        }`}
+                                                />
+                                                {formik.touched.frequency && formik.errors.frequency && (
+                                                    <div className="text-red-500 text-xs mt-1">{formik.errors.frequency}</div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Timing..."
+                                                    name="timing"
+                                                    value={formik.values.timing}
+                                                    onChange={formik.handleChange}
+                                                    onBlur={formik.handleBlur}
+                                                    className={`w-full border px-3 py-2 focus:outline-none focus:border-blue-500 text-sm ${formik.touched.timing && formik.errors.timing
+                                                        ? 'border-red-500'
+                                                        : 'border-gray-500'
+                                                        }`}
+                                                />
+                                                {formik.touched.timing && formik.errors.timing && (
+                                                    <div className="text-red-500 text-xs mt-1">{formik.errors.timing}</div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Instruction Textarea */}
+                                        <div>
+                                            <textarea
+                                                placeholder="Instructions"
+                                                name="instructions"
+                                                value={formik.values.instructions}
+                                                onChange={formik.handleChange}
+                                                onBlur={formik.handleBlur}
+                                                className="w-full sm:w-40 md:w-1/2 border border-gray-500 px-3 py-2 h-16 sm:h-20 resize-none focus:outline-none focus:border-blue-500 text-sm"
+                                            />
+                                            {formik.touched.instructions && formik.errors.instructions && (
+                                                <div className="text-red-500 text-xs mt-1">{formik.errors.instructions}</div>
+                                            )}
+                                        </div>
+
+                                        {/* Add Button */}
+                                        <div className="flex justify-center">
+                                            <button
+                                                type="submit"
+                                                disabled={isLoading}
+                                                className={`px-6 sm:px-8 py-2 border border-black rounded-lg font-medium text-sm ${isLoading
+                                                    ? 'bg-gray-300 cursor-not-allowed'
+                                                    : 'bg-yellow hover:bg-yellow-400'
+                                                    }`}
+                                            >
+                                                {isLoading ? 'Adding...' : 'Add'}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
-
-                            {/* Show form fields only when showMedicationForm is true */}
-                            {showMedicationForm && (
-                                <>
-                                    {/* Dosage, Frequency, Timing Inputs */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                                        <input
-                                            type="text"
-                                            placeholder="Dosage..."
-                                            value={newMedication.dosage}
-                                            onChange={(e) => setNewMedication({ ...newMedication, dosage: e.target.value })}
-                                            className="border border-gray-500 px-3 py-2 focus:outline-none focus:border-blue-500 text-sm"
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="Frequency..."
-                                            value={newMedication.frequency}
-                                            onChange={(e) => setNewMedication({ ...newMedication, frequency: e.target.value })}
-                                            className="border border-gray-500 px-3 py-2 focus:outline-none focus:border-blue-500 text-sm"
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="Timing..."
-                                            value={newMedication.timing}
-                                            onChange={(e) => setNewMedication({ ...newMedication, timing: e.target.value })}
-                                            className="border border-gray-500 px-3 py-2 focus:outline-none focus:border-blue-500 text-sm"
-                                        />
-                                    </div>
-
-                                    {/* Instruction Textarea */}
-                                    <textarea
-                                        placeholder="Instruction"
-                                        value={newMedication.instruction}
-                                        onChange={(e) => setNewMedication({ ...newMedication, instruction: e.target.value })}
-                                        className="w-full sm:w-40 md:w-1/2 border border-gray-500 px-3 py-2 h-16 sm:h-20 resize-none focus:outline-none focus:border-blue-500 text-sm"
-                                    />
-
-                                    {/* Add Button */}
-                                    <div className="flex justify-center">
-                                        <button
-                                            onClick={handleAddMedication}
-                                            className="bg-yellow px-6 sm:px-8 py-2 border border-black rounded-lg font-medium text-sm"
-                                        >
-                                            Add
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        </form>
 
                         {/* Doctor Signature */}
                         <div className="mt-8 sm:mt-12 flex justify-end">
@@ -677,8 +1049,15 @@ const PrescriptionForm = () => {
 
                 {/* Save Button */}
                 <div className="p-3 sm:p-4 flex justify-end">
-                    <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 rounded-lg font-medium text-sm">
-                        Save
+                    <button
+                        onClick={handleSavePrescription}
+                        disabled={isLoading}
+                        className={`w-full sm:w-auto px-6 sm:px-8 py-2 rounded-lg font-medium text-sm text-white transition-colors ${isLoading
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                            }`}
+                    >
+                        {isLoading ? 'Saving...' : 'Save'}
                     </button>
                 </div>
             </div>

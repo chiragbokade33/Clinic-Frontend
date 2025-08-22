@@ -70,6 +70,25 @@ export const endPoints = {
     ConsentForm : {
         ConsentList : API_CLINIC_DATA + "consent/forms",
         PublicConsent : API_CLINIC_DATA + "consent",
-        VerifyConsent : (visitConsentFormId :number) => `${API_CLINIC_DATA}consent/${visitConsentFormId }/verify`
-    }
+        VerifyConsent : (visitConsentFormId :number) => `${API_CLINIC_DATA}consent/${visitConsentFormId }/verify`,
+        Profile: API_CLINIC_DATA + "patient/details"
+    },
+
+    TreatmentPlane : {
+        AddTreatment : API_CLINIC_DATA + "clinic/treatment",
+        GetDetailsTreaatment : (clinicId:number) => `${API_CLINIC_DATA}clinic/${clinicId}/treatments`,
+        updateTreatment : (clinicId:number,treatmentId:number) =>`${API_CLINIC_DATA}clinic/${clinicId}/treatment/${treatmentId}`
+
+    },
+
+    CommonAddJson : {
+        AddJson : API_CLINIC_DATA + "clinic/patient/records",
+        GetJsonDataList : (clinicId:number,patientId:number,clinicVisitId:number) => `${API_CLINIC_DATA}clinic/${clinicId}/patient/${patientId}/visit/${clinicVisitId}/records`
+    },
+
+    Prescrition :{
+        AddPrescripation : API_CLINIC_DATA + "clinic/prescription",
+        GetPrescripationList : (clinicId:number) => `${API_CLINIC_DATA}clinic/${clinicId}/prescriptions`,
+        PrescriptionClinic : (clinicId:number, prescriptionId :number) => `${API_CLINIC_DATA}clinic/${clinicId}/prescription/${prescriptionId}`
+    } 
 };
