@@ -1,4 +1,6 @@
 'use client'
+export const runtime = "edge";           // ✅ Run on Edge runtime
+export const dynamic = "force-dynamic";
 import React, { useState, useRef, useCallback, useEffect, ChangeEvent } from 'react';
 import { Upload, FileText, Check, Camera, X, Download, CloudUpload } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';

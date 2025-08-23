@@ -1,6 +1,16 @@
 import React from 'react'
 
-const Profiledetails = ({profileData}) => {
+interface ProfileData {
+  name: string;
+  email: string;
+  age?: number; // optional
+  avatarUrl?: string;
+  hfId:string;
+  bloodGroup:string;
+  fullName:string;
+}
+
+const Profiledetails: React.FC<{ profileData: ProfileData }> = ({ profileData }) => {
   return (
     <div className='flex flex-col lg:flex-row justify-between gap-6 mb-6'>
     

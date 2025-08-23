@@ -1,4 +1,6 @@
 'use client'
+export const runtime = "edge";           // ✅ Run on Edge runtime
+export const dynamic = "force-dynamic";
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import DefaultLayout from '../components/DefaultLayout';
