@@ -84,7 +84,8 @@ export const endPoints = {
 
     CommonAddJson : {
         AddJson : API_CLINIC_DATA + "clinic/patient/records",
-        GetJsonDataList : (clinicId:number,patientId:number,clinicVisitId:number) => `${API_CLINIC_DATA}clinic/${clinicId}/patient/${patientId}/visit/${clinicVisitId}/records`
+        GetJsonDataList : (clinicId:number,patientId:number,clinicVisitId:number) => `${API_CLINIC_DATA}clinic/${clinicId}/patient/${patientId}/visit/${clinicVisitId}/records`,
+        FinalUploade : API_CLINIC_DATA + "clinic/patient/documents/upload"
     },
 
     Prescrition :{

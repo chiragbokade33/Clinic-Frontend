@@ -258,6 +258,18 @@ export const JsonAdded = async (payloade:any) =>{
 export const ListJsondata = async (clinicId:number,patientId:number,clinicVisitId:number) =>{
     return axiosInstance.get(`${endPoints.CommonAddJson.GetJsonDataList(clinicId,patientId,clinicVisitId)}`)
 }
+// api.ts
+export const UploadeallData = async (payload: FormData) => {
+  return axiosInstance.post(
+    `${endPoints.CommonAddJson.FinalUploade}`,
+    payload,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+};
 
 
 //  Prescripation Added
