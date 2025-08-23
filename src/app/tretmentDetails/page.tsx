@@ -16,37 +16,179 @@ const page = () => {
     const [paymentMethod, setPaymentMethod] = useState('Credit Card');
     const router = useRouter();
     const searchParams = useSearchParams(); // Hook to get query parameters
-    const [hovered, setHovered] = useState(false);
-
     // Enhanced state for tracking actions and PDF data
     const [actionPayload, setActionPayload] = useState([]);
     const [prescriptionData, setPrescriptionData] = useState(null);
     const [treatmentPlanData, setTreatmentPlanData] = useState(null);
-    const [invoiceData, setInvoiceData] = useState(null);
+    const [invoiceData, setInvoiceData] = useState(null) as any;
     const [receiptData, setReceiptData] = useState(null);
     const [consentListData, setConsentListData] = useState() as any;
     const [profileData, setProfileData] = useState() as any;
     const [currentUserId, setCurrentUserId] = useState<number>();
     const [treatmentData, setTreatmentData] = useState([]) as any;
+    const [prescriptionPdf, setPrescriptionPdf] = useState() as any;
+    const [receiptApiData, setReceiptApiData] = useState(null);
+
+const [prescriptionPath, setPrescriptionPath] = useState<string | null>(null);
+
+    // Add state for report images data
+    const [reportImagesData, setReportImagesData] = useState(null);
 
 
     useEffect(() => {
         const FetchDatajson = async () => {
             const extractedHfid = searchParams.get("hfid");
             const extractedLastVisitId = searchParams.get("visitId");
-            const extractedPatientId = searchParams.get('patientId');
+            const extractedPatientId = searchParams.get("patientId");
             if (!extractedHfid) return;
+
             const id = await getUserId();
             setCurrentUserId(id);
+
             try {
                 const response = await ListJsondata(id, extractedPatientId, extractedLastVisitId);
                 const apiData = response.data.data;
 
-                // Find Treatment type
-                const treatmentEntry = apiData.find((item: { type: string; }) => item.type === "Invoice");
+                // ✅ Find Treatment data
+                const treatmentEntry = apiData.find((item: { type: string }) => item.type === "Treatment");
                 if (treatmentEntry) {
                     const parsed = JSON.parse(treatmentEntry.jsonData);
-                    setTreatmentData(parsed.treatments || []);
+                    const normalized = {
+                        patient: {
+                            name: parsed.patient.name,
+                            uhid: parsed.patient.hfid,     // map hfid → uhid
+                            prfid: parsed.patient.tid,     // map tid → prfid
+                            gender: parsed.patient.gender,
+                            dob: parsed.patient.dob,
+                            mobile: parsed.patient.mobile,
+                            doctor: parsed.patient.doctor,
+                            city: parsed.patient.city,
+                        },
+                        treatments: parsed.treatments.map((t: any) => ({
+                            name: t.name,
+                            qtyPerDay: t.qtyPerDay,
+                            cost: t.cost,
+                            status: t.status,
+                            total: t.total,
+                        })),
+                        totalCost: parsed.totalCost,
+                        grandTotal: parsed.grandTotal,
+                        clinicInfo: {
+                            name: parsed.clinicInfo.name,
+                            subtitle: parsed.clinicInfo.subtitle,
+                            website: parsed.clinicInfo.website,
+                        },
+                    };
+
+                    setTreatmentData(normalized || []);
+                }
+
+                // ✅ Find Invoice data
+                const invoiceEntry = apiData.find((item: { type: string }) => item.type === "Invoice");
+                if (invoiceEntry) {
+                    const parsed = JSON.parse(invoiceEntry.jsonData);
+
+                    // Normalize invoice data to match PDF structure
+                    const normalizedInvoiceData = {
+                        patient: {
+                            name: parsed.patient.name,
+                            uhid: parsed.patient.hfid,     // map hfid → uhid for consistency
+                            gender: parsed.patient.gender,
+                            invid: parsed.patient.invid,
+                            dob: parsed.patient.dob,
+                            date: parsed.patient.date,
+                            mobile: parsed.patient.mobile,
+                            city: parsed.patient.city
+                        },
+                        services: parsed.services,
+                        totalCost: parsed.totalCost,
+                        grandTotal: parsed.grandTotal,
+                        paid: parsed.paid,
+                        balance: parsed.grandTotal - parsed.paid, // Calculate balance
+                        clinicInfo: parsed.clinicInfo
+                    };
+
+                    setInvoiceData(normalizedInvoiceData); // Store complete invoice object
+                }
+
+                // ✅ Find Invoice data
+                const PrescripationEntry = apiData.find((item: { type: string }) => item.type === "Prescription");
+                if (PrescripationEntry) {
+                    const parsed = JSON.parse(PrescripationEntry.jsonData);
+
+                    // 🔄 Normalize keys (only if necessary)
+                    const normalized = {
+                        patient: {
+                            name: parsed.patient.name,
+                            uhid: parsed.patient.hfid,     // map hfid → uhid
+                            prfid: parsed.patient.prfid,   // already same
+                            gender: parsed.patient.gender,
+                            dob: parsed.patient.dob,
+                            mobile: parsed.patient.mobile,
+                            doctor: parsed.patient.doctor,
+                            city: parsed.patient.city,
+                            bloodGroup: parsed.patient.bloodGroup || "", // optional
+                        },
+                        medications: parsed.medications,
+                        clinicInfo: parsed.clinicInfo,
+                        timestamp: parsed.timestamp,
+                        prescriptionId: parsed.prescriptionId
+                    };
+
+                    setPrescriptionPdf(normalized);
+                }
+
+                const ReceiptEntry = apiData.find((item: { type: string }) => item.type === "Receipt");
+                if (ReceiptEntry) {
+                    const parsed = JSON.parse(ReceiptEntry.jsonData);
+
+                    // Normalize receipt data structure
+                    const normalizedReceiptData = {
+                        patient: {
+                            name: parsed.patient.name,
+                            uhid: parsed.patient.hfid,     // map hfid → uhid for consistency
+                            gender: parsed.patient.gender,
+                            receiptId: parsed.patient.receiptId || parsed.patient.prfid,
+                            dob: parsed.patient.dob,
+                            doctor: parsed.patient.doctor || "Dr. Varun R Kunte",
+                            mobile: parsed.patient.mobile,
+                            city: parsed.patient.city
+                        },
+                        receipt: {
+                            date: parsed.receipt.date,
+                            receiptNumber: parsed.receipt.receiptNumber,
+                            modeOfPayment: parsed.receipt.modeOfPayment,
+                            chequeNo: parsed.receipt.chequeNo,
+                            amountPaid: parsed.receipt.amountPaid,
+                            amountInWords: parsed.receipt.amountInWords
+                        },
+                        clinicInfo: parsed.clinicInfo
+                    };
+
+                    setReceiptApiData(normalizedReceiptData); // Store complete receipt data
+                }
+
+                const reportImagesEntry = apiData.find((item: { type: string }) => item.type === "ReportImages" || item.type === "Images" || item.type === "Reports");
+                if (reportImagesEntry) {
+                    const parsed = JSON.parse(reportImagesEntry.jsonData);
+
+                    // Normalize report images data structure
+                    const normalizedImagesData = {
+                        patient: {
+                            name: parsed.patient.name,
+                            uhid: parsed.patient.hfid,     // map hfid → uhid for consistency
+                            gender: parsed.patient.gender,
+                            dob: parsed.patient.dob,
+                            mobile: parsed.patient.mobile,
+                            city: parsed.patient.city
+                        },
+                        images: parsed.images || parsed.reports || [], // Handle different possible structures
+                        totalImages: parsed.images?.length || parsed.reports?.length || 0,
+                        clinicInfo: parsed.clinicInfo,
+                        uploadDate: parsed.uploadDate || new Date().toISOString()
+                    };
+
+                    setReportImagesData(normalizedImagesData); // Store complete images data
                 }
             } catch (error) {
                 console.error("Error fetching profile:", error);
@@ -55,7 +197,6 @@ const page = () => {
 
         FetchDatajson();
     }, [searchParams]);
-
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -183,249 +324,225 @@ const page = () => {
 
     // Function to handle prescription checkbox click and generate PDF
     const handlePrescriptionCheck = () => {
-        // Sample prescription data (replace with your actual API data)
-        const samplePrescriptionData = {
-            patient: {
-                name: "Ankit K.",
-                uhid: "HF010125ANK1312",
-                gender: "Male",
-                prfid: "T50AHYBM6",
-                dob: "1990-01-25",
-                mobile: "+91 9876543210",
-                doctor: "Dr. Varun R Kunte",
-                city: "Mumbai",
-                bloodGroup: "AB-"
-            },
-            medications: [
-                {
-                    name: "Paracetamol",
-                    dosage: "500mg",
-                    frequency: "Three times a day",
-                    timing: "After meals",
-                    instruction: "Take with plenty of water"
-                },
-                {
-                    name: "Ibuprofen",
-                    dosage: "200mg",
-                    frequency: "Twice a day",
-                    timing: "Morning & Evening",
-                    instruction: "Take with food to avoid stomach upset"
-                },
-                {
-                    name: "Vitamin D3",
-                    dosage: "60,000 IU",
-                    frequency: "Once a week",
-                    timing: "Sunday morning",
-                    instruction: "Take with breakfast"
-                }
-            ],
-            clinicInfo: {
-                name: "ARTHROSE",
-                subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
-                website: "www.arthrosetmjindia.com"
-            }
-        };
+        if (!prescriptionPdf) { // FIXED: Now correctly references the state
+            console.warn("No prescription data found!");
+            return;
+        }
 
-        // Store the action in payload
         const actionData = {
             timestamp: new Date().toISOString(),
             action: 'prescription_checked',
-            patientId: "HF010125ANK1312",
+            patientId: prescriptionPdf.patient.uhid, // Use uhid instead of hfid
             documentType: 'prescription',
-            data: samplePrescriptionData
+            data: prescriptionPdf
         };
 
         // Update action payload state
         setActionPayload(prev => [...prev, actionData]);
 
         // Store prescription data for PDF generation
-        setPrescriptionData(samplePrescriptionData);
+        setPrescriptionData(prescriptionPdf);
 
         // Log to console
-        console.log('Action Payload:', actionData);
-        console.log('All Actions:', [...actionPayload, actionData]);
+        console.log('Prescription Action Payload:', actionData);
 
-        // Generate PDF
-        generatePrescriptionPDF(samplePrescriptionData);
+        // Generate PDF with fetched data
+        generatePrescriptionPDF(prescriptionPdf);
     };
 
+
+
     // Function to handle treatment plan checkbox click and generate PDF
+
+
+    // Function to handle receipt checkbox click and generate PDF
+    // Replace your handleTreatmentPlanCheck function with this:
     const handleTreatmentPlanCheck = () => {
         console.log('Treatment Plan checkbox clicked - Generating PDF...');
 
-        // Sample treatment plan data
-        const sampleTreatmentData = {
-            patient: {
-                name: "Ankit K.",
-                hfid: "HF010125ANK1312",
-                gender: "Male",
-                prfid: "T50AHYBM6",
-                dob: "1990-01-25",
-                mobile: "+91 9876543210",
-                doctor: "Dr. Varun R Kunte",
-                city: "Mumbai",
-                bloodGroup: "AB-"
-            },
-            treatments: [
-                {
-                    name: "Arthrose Functional screening",
-                    qtyPerDay: "1 QTY",
-                    cost: 35000.0,
-                    status: "Not started",
-                    total: 35000.0
-                },
-                {
-                    name: "TMJ Orthotic",
-                    qtyPerDay: "1 QTY",
-                    cost: 95000.0,
-                    status: "Not started",
-                    total: 95000.0
-                }
-            ],
-            totalCost: 130000.0,
-            grandTotal: 130000.0,
-            clinicInfo: {
-                name: "ARTHROSE",
-                subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
-                website: "www.arthrosetmjindia.com"
-            }
-        };
+        if (!treatmentData || !treatmentData.patient) {
+            console.warn("No treatment data found!");
+            return;
+        }
 
         // Store the action in payload
         const actionData = {
             timestamp: new Date().toISOString(),
             action: 'treatment_plan_checked',
-            patientId: "HF010125ANK1312",
+            patientId: treatmentData.patient.uhid, // Use actual patient ID
             documentType: 'treatment_plan',
-            data: sampleTreatmentData
+            data: treatmentData
         };
 
         // Update action payload state
         setActionPayload(prev => [...prev, actionData]);
 
         // Store treatment plan data for PDF generation
-        setTreatmentPlanData(sampleTreatmentData);
+        setTreatmentPlanData(treatmentData);
 
         // Log to console
         console.log('Treatment Plan Action Payload:', actionData);
 
         // Generate PDF
-        generateTreatmentPlanPDF(sampleTreatmentData);
+        generateTreatmentPlanPDF(treatmentData);
     };
 
-    // Function to handle receipt checkbox click and generate PDF
+    // Replace your handleReceiptCheck function with this:
     const handleReceiptCheck = () => {
         console.log('Receipt checkbox clicked - Generating PDF...');
 
-        // Sample receipt data
-        const sampleReceiptData = {
-            patient: {
-                name: "Ankit K.",
-                uhid: "HF010125ANK1312",
-                gender: "Male",
-                receiptId: "T50AHYBM6",
-                dob: "1990-01-25",
-                doctor: "Dr. Varun R Kunte",
-                mobile: "+91 9876543210",
-                city: "Mumbai"
-            },
-            receipt: {
-                date: "22 Mar, 2025",
-                receiptNumber: "Rc.3668",
-                modeOfPayment: "Cash",
-                chequeNo: "-",
-                amountPaid: 1000.0,
-                amountInWords: "One Thousand Only"
-            },
-            clinicInfo: {
-                name: "ARTHROSE",
-                subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
-                website: "www.arthrosetmjindia.com"
-            }
+        let receiptDataForPDF;
+
+        // Helper function to convert number to words (simplified)
+        const convertNumberToWords = (amount) => {
+            if (amount === 1000) return "One Thousand Only";
+            if (amount === 1400) return "One Thousand Four Hundred Only";
+            if (amount === 130000) return "One Lakh Thirty Thousand Only";
+            return `${amount.toLocaleString('en-IN')} Only`;
         };
+
+        // Priority 1: Use Receipt API data if available
+        if (receiptApiData) {
+            console.log('Using Receipt API data');
+            receiptDataForPDF = receiptApiData;
+        }
+        // Priority 2: Generate from Invoice data
+        else if (invoiceData) {
+            console.log('Generating receipt from Invoice data');
+
+            receiptDataForPDF = {
+                patient: {
+                    name: invoiceData.patient.name,
+                    uhid: invoiceData.patient.uhid,
+                    gender: invoiceData.patient.gender,
+                    receiptId: `RC${Math.floor(Math.random() * 9999)}`,
+                    dob: invoiceData.patient.dob,
+                    doctor: "Dr. Varun R Kunte", // Default doctor
+                    mobile: invoiceData.patient.mobile,
+                    city: invoiceData.patient.city
+                },
+                receipt: {
+                    date: new Date().toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    }),
+                    receiptNumber: `Rc.${Math.floor(Math.random() * 9999)}`,
+                    modeOfPayment: paymentMethod,
+                    chequeNo: paymentMethod === 'Cash' ? '-' : 'N/A',
+                    amountPaid: invoiceData.paid,
+                    amountInWords: convertNumberToWords(invoiceData.paid)
+                },
+                clinicInfo: invoiceData.clinicInfo
+            };
+        }
+        // Priority 3: Generate from Treatment data
+        else if (treatmentData) {
+            console.log('Generating receipt from Treatment data');
+
+            receiptDataForPDF = {
+                patient: {
+                    name: treatmentData.patient.name,
+                    uhid: treatmentData.patient.uhid,
+                    gender: treatmentData.patient.gender,
+                    receiptId: treatmentData.patient.prfid,
+                    dob: treatmentData.patient.dob,
+                    doctor: treatmentData.patient.doctor,
+                    mobile: treatmentData.patient.mobile,
+                    city: treatmentData.patient.city
+                },
+                receipt: {
+                    date: new Date().toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    }),
+                    receiptNumber: `Rc.${Math.floor(Math.random() * 9999)}`,
+                    modeOfPayment: paymentMethod,
+                    chequeNo: paymentMethod === 'Cash' ? '-' : 'N/A',
+                    amountPaid: treatmentData.grandTotal,
+                    amountInWords: convertNumberToWords(treatmentData.grandTotal)
+                },
+                clinicInfo: treatmentData.clinicInfo
+            };
+        }
+        else {
+            console.warn("No data available for receipt generation!");
+            return;
+        }
 
         // Store the action in payload
         const actionData = {
             timestamp: new Date().toISOString(),
             action: 'receipt_checked',
-            patientId: "HF010125ANK1312",
+            patientId: receiptDataForPDF.patient.uhid,
             documentType: 'receipt',
-            data: sampleReceiptData
+            data: receiptDataForPDF
         };
 
         // Update action payload state
         setActionPayload(prev => [...prev, actionData]);
 
         // Store receipt data for PDF generation
-        setReceiptData(sampleReceiptData);
+        setReceiptData(receiptDataForPDF);
 
         // Log to console
         console.log('Receipt Action Payload:', actionData);
+        console.log('Receipt data source:', receiptApiData ? 'API' : invoiceData ? 'Invoice' : 'Treatment');
 
         // Generate PDF
-        generateReceiptPDF(sampleReceiptData);
+        generateReceiptPDF(receiptDataForPDF);
     };
 
     // Function to handle invoice checkbox click and generate PDF
     const handleInvoiceCheck = () => {
         console.log('Invoice checkbox clicked - Generating PDF...');
 
-        // Sample invoice data
-        const sampleInvoiceData = {
+        if (!invoiceData) {
+            console.warn("No invoice data found!");
+            return;
+        }
+
+        // Use the complete invoice data directly from API
+        const invoiceDataForPDF = {
             patient: {
-                name: "Ankit K.",
-                uhid: "HF010125ANK1312",
-                gender: "Male",
-                invid: "INV3147",
-                dob: "1990-01-25",
-                date: "31-03-2025",
-                mobile: "+91 9876543210",
-                city: "Mumbai"
+                name: invoiceData.patient.name,
+                uhid: invoiceData.patient.uhid,
+                gender: invoiceData.patient.gender,
+                invid: invoiceData.patient.invid,
+                dob: invoiceData.patient.dob,
+                date: invoiceData.patient.date,
+                mobile: invoiceData.patient.mobile,
+                city: invoiceData.patient.city
             },
-            services: [
-                {
-                    name: "Arthrose Functional screening",
-                    qtyPerDay: "1 QTY",
-                    cost: 35000.0,
-                    total: 35000.0
-                },
-                {
-                    name: "TMJ Orthotic",
-                    qtyPerDay: "1 QTY",
-                    cost: 95000.0,
-                    total: 95000.0
-                }
-            ],
-            totalCost: 130000.0,
-            grandTotal: 130000.0,
-            paid: 130000.0,
-            clinicInfo: {
-                name: "ARTHROSE",
-                subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
-                website: "www.arthrosetmjindia.com"
-            }
+            services: invoiceData.services,
+            totalCost: invoiceData.totalCost,
+            grandTotal: invoiceData.grandTotal,
+            paid: invoiceData.paid,
+            balance: invoiceData.balance || 0,
+            clinicInfo: invoiceData.clinicInfo
         };
 
         // Store the action in payload
         const actionData = {
             timestamp: new Date().toISOString(),
             action: 'invoice_checked',
-            patientId: "HF010125ANK1312",
+            patientId: invoiceData.patient.uhid,
             documentType: 'invoice',
-            data: sampleInvoiceData
+            data: invoiceDataForPDF
         };
 
         // Update action payload state
         setActionPayload(prev => [...prev, actionData]);
 
-        // Store invoice data for PDF generation
-        setInvoiceData(sampleInvoiceData);
+        // Store invoice data for PDF generation (already complete)
+        // setInvoiceData is not needed here since invoiceData already contains everything
 
         // Log to console
         console.log('Invoice Action Payload:', actionData);
 
-        // Generate PDF
-        generateInvoicePDF(sampleInvoiceData);
+        // Generate PDF with fetched invoice data
+        generateInvoicePDF(invoiceDataForPDF);
     };
 
     // Function to generate prescription PDF
@@ -1560,28 +1677,32 @@ const page = () => {
         console.log('Receipt PDF generated successfully!');
     };
 
-    // Enhanced handleFinalSend to include payload data
     const handleFinalSend = () => {
+        const extractedLastVisitId = searchParams.get("visitId");
+        const extractedPatientId = searchParams.get("patientId");
         const finalPayload = {
-            timestamp: new Date().toISOString(),
-            patientId: "HF010125ANK1312",
-            patientName: "Ankit K.",
-            checkedDocuments: Object.keys(checkedItems).filter(key => checkedItems[key]),
-            paymentMethod: paymentMethod,
+            clinicId: currentUserId,
+            patientId: extractedPatientId,
+            clinicVisitId: extractedLastVisitId,
+            paymentMethod: paymentMethod || "CreditCard",
+
+            documents: Object.keys(checkedItems)
+                .filter(key => checkedItems[key])
+                .map(key => ({
+                    type: key,
+                    sendToPatient: true,
+                    pdfFile: generatePdfBase64(key) || ""
+                })),
+
+            // ✅ extra meta if needed
             allActions: actionPayload,
-            prescriptionData: prescriptionData,
-            treatmentPlanData: treatmentPlanData,
+            prescriptionData: prescripationPdf,
+            treatmentPlanData: treatmentData,
             invoiceData: invoiceData,
             receiptData: receiptData
         };
 
-        console.log('Final Send Payload:', finalPayload);
-        console.log('Sending documents...');
-        console.log('Checked items:', checkedItems);
-
-        // Here you can send the payload to your API
-        // Example: await sendDocumentsToPatient(finalPayload);
-
+        console.log("Final Send Payload:", finalPayload);
         setIsSendModalOpen(false);
     };
 
@@ -1697,7 +1818,7 @@ const page = () => {
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="text-sm font-medium text-gray-600">Blood Group :</span>
                                         <span className="bg-white border border-black text-black text-sm font-medium px-2.5 py-0.5 rounded">
-                                            AB-
+                                           {profileData?.bloodGroup}
                                         </span>
                                     </div>
                                 </div>
@@ -1713,14 +1834,14 @@ const page = () => {
                     </div>
 
                     {/* Symptoms Diary Section - Your original improved */}
-                    <div className="p-4 max-w-sm">
+                    {/* <div className="p-4 max-w-sm">
                         <p className="text-gray-700 text-center mb-4 font-medium">
                             Share a Symptoms Diary with the patient.
                         </p>
                         <button className='bg-green text-white font-semibold py-3 px-6 rounded-lg w-full transition-colors'>
                             Send Now
                         </button>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Consent Forms Section - Added to match the design */}
@@ -1760,7 +1881,7 @@ const page = () => {
                                         {/* Logo container */}
                                         <div className="w-full h-20 rounded-lg flex items-center justify-center mb-3">
                                             <img
-                                                src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                                src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                                 alt="ARTHROSE Logo"
                                                 className="max-w-full max-h-full rounded"
                                             />
@@ -1817,19 +1938,7 @@ const page = () => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                                 {/* Attach Images Card */}
-                                {/* <div className="bg-white rounded-lg p-4">
-                                    <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
-                                        <img
-                                            src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
-                                            alt="ARTHROSE Logo"
-                                            className="max-w-20 max-h-20 rounded"
-                                        />
-                                    </div>
-                                    <button className="w-full bg-yellow text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors">
-                                        Attach Images
-                                    </button> */}
-                                {/* </div> */}
-                                    <FileUploadModal/>
+                                <FileUploadModal />
 
                                 {/* Prescription + Share wrapper with border between */}
                                 <div className="col-span-2 flex divide-x divide-black rounded-lg overflow-hidden bg-white">
@@ -1837,7 +1946,7 @@ const page = () => {
                                     <div className="flex-1 p-4">
                                         <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
                                             <img
-                                                src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                                src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                                 alt="ARTHROSE Logo"
                                                 className="max-w-20 max-h-20 rounded"
                                             />
@@ -1861,7 +1970,7 @@ const page = () => {
                                     <div className="flex-1 p-4">
                                         <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
                                             <img
-                                                src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                                src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                                 alt="ARTHROSE Logo"
                                                 className="max-w-20 max-h-20 rounded"
                                             />
@@ -1899,7 +2008,7 @@ const page = () => {
                         <div className="bg-white  p-4">
                             <div className="h-45 w-40 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
                                 <img
-                                    src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                    src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                     alt="ARTHROSE Logo"
                                     className="max-w-20 max-h-20 rounded"
                                 />
@@ -1923,7 +2032,7 @@ const page = () => {
                         <div className="bg-white  rounded-lg p-4">
                             <div className="h-45 w-40 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
                                 <img
-                                    src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                    src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                     alt="ARTHROSE Logo"
                                     className="max-w-20 max-h-20 rounded"
                                 />

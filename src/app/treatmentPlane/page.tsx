@@ -717,7 +717,7 @@ const Page: React.FC = () => {
                     <div className="p-3 sm:p-6">
                         <div className="flex justify-center">
                             <img
-                                src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                               src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                 alt="ARTHROSE Logo"
                                 className="w-60 sm:w-80 object-contain"
                             />

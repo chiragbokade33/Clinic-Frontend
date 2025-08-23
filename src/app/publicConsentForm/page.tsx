@@ -635,7 +635,7 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                     <div ref={formRef} className="mb-4 bg-white mx-auto">
                         <div className='flex justify-end mx-3 mt-4'>
                             <img
-                                src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                 alt="ARTHRONE Logo"
                                 className="w-24 h-auto"
                             />

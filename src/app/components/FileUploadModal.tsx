@@ -1,11 +1,68 @@
-import React, { useState, useRef } from 'react';
-import { Upload, X, File, Image, FileText, Trash2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, X, File, Image, FileText, Trash2, Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Uploaebulk } from '../services/ClinicServiceApi';
+import { getUserId } from '../hooks/GetitemsLocal';
+import { toast } from 'react-toastify';
 
-const FileUploadModal = () => {
+interface FileData {
+  id: number;
+  file: File;
+  name: string;
+  size: number;
+  type: string;
+  preview: string | null;
+}
+
+interface FileUploadModalProps {
+  clinicId?: number; // Optional since we'll get from getUserId
+  patientId?: number; // Optional since we'll get from search params
+  clinicVisitId?: number; // Optional since we'll get from search params  
+  onUploadSuccess?: (response: any) => void;
+  onUploadError?: (error: any) => void;
+}
+
+const FileUploadModal: React.FC<FileUploadModalProps> = ({
+  onUploadSuccess,
+  onUploadError
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [uploadedFiles, setUploadedFiles] = useState<FileData[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number>();
+  const [patientId, setPatientId] = useState<number>();
+  const [clinicVisitId, setClinicVisitId] = useState<number>();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+    };
+    fetchUserId();
+  }, []);
+
+  // Extract parameters from URL on component mount
+  useEffect(() => {
+    const extractedLastVisitId = searchParams.get("visitId");
+    const extractedPatientId = searchParams.get('patientId');
+
+    console.log('URL Parameters:', {
+      visitId: extractedLastVisitId,
+      patientId: extractedPatientId
+    });
+
+
+    if (extractedLastVisitId) {
+      setClinicVisitId(parseInt(extractedLastVisitId));
+    }
+    if (extractedPatientId) {
+      setPatientId(parseInt(extractedPatientId));
+    }
+  }, [searchParams]);
 
   // Accepted file types
   const acceptedTypes = [
@@ -23,28 +80,30 @@ const FileUploadModal = () => {
   const maxFileSize = 10 * 1024 * 1024; // 10MB
 
   const openModal = () => setIsModalOpen(true);
+
   const closeModal = () => {
     setIsModalOpen(false);
     setUploadedFiles([]);
     setIsDragging(false);
+    setIsUploading(false);
   };
 
-  const handleFileSelection = (files) => {
+  const handleFileSelection = (files: FileList) => {
     const fileArray = Array.from(files);
-    const validFiles = [];
+    const validFiles: FileData[] = [];
 
-    fileArray.forEach((file) => {
+    fileArray.forEach((file: File) => {
       if (!acceptedTypes.includes(file.type)) {
         alert(`File type ${file.type} is not supported`);
         return;
       }
-      
+
       if (file.size > maxFileSize) {
         alert(`File ${file.name} is too large. Maximum size is 10MB`);
         return;
       }
 
-      const fileData = {
+      const fileData: FileData = {
         id: Date.now() + Math.random(),
         file: file,
         name: file.name,
@@ -56,11 +115,11 @@ const FileUploadModal = () => {
       // Create preview for images
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          setUploadedFiles(prev => 
-            prev.map(f => 
-              f.id === fileData.id 
-                ? { ...f, preview: e.target.result }
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+          setUploadedFiles((prev: FileData[]) =>
+            prev.map((f: FileData) =>
+              f.id === fileData.id
+                ? { ...f, preview: e.target?.result as string }
                 : f
             )
           );
@@ -74,33 +133,35 @@ const FileUploadModal = () => {
     setUploadedFiles(prev => [...prev, ...validFiles]);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
     const files = e.dataTransfer.files;
     handleFileSelection(files);
   };
 
-  const handleFileInput = (e) => {
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    handleFileSelection(files);
+    if (files) {
+      handleFileSelection(files);
+    }
   };
 
-  const removeFile = (fileId) => {
+  const removeFile = (fileId: number) => {
     setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
   };
 
-  const formatFileSize = (bytes) => {
+  const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -108,22 +169,83 @@ const FileUploadModal = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const getFileIcon = (fileType) => {
+  const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) return <Image className="w-8 h-8 text-blue-500" />;
     if (fileType === 'application/pdf') return <FileText className="w-8 h-8 text-red-500" />;
     return <File className="w-8 h-8 text-gray-500" />;
   };
 
-  const handleUpload = () => {
+  // Upload function that creates payload and calls API
+  const uploadFilesToServer = async (files: FileData[], clinicId: number, patientId: number, clinicVisitId: number, type: string = "Images") => {
+    // Create FormData payload
+    const payload = new FormData();
+
+    // Add required fields to payload
+    payload.append('ClinicId', clinicId.toString());
+    payload.append('PatientId', patientId.toString());
+    payload.append('ClinicVisitId', clinicVisitId.toString());
+    payload.append('Type', type);
+
+    // Add files to payload
+    files.forEach((fileObj) => {
+      payload.append('Files', fileObj.file);
+    });
+
+    // Log payload info for debugging
+    console.log('Creating upload payload:');
+    console.log('ClinicId:', clinicId);
+    console.log('PatientId:', patientId);
+    console.log('ClinicVisitId:', clinicVisitId);
+    console.log('Type:', type);
+    console.log('Files:', files.map(f => f.name));
+
+    // Call the API with payload
+    const response = await Uploaebulk(payload);
+    return response;
+  };
+
+  const handleUpload = async () => {
     if (uploadedFiles.length === 0) {
       alert('Please select files to upload');
       return;
     }
-    
-    // Here you would typically upload the files to your server
-    console.log('Uploading files:', uploadedFiles);
-    alert(`Successfully uploaded ${uploadedFiles.length} file(s)!`);
-    closeModal();
+
+    // Check if required data is available
+    if (!currentUserId || !patientId || !clinicVisitId) {
+      console.error('Missing required parameters:', {
+        currentUserId,
+        patientId,
+        clinicVisitId
+      });
+      alert('Missing required information. Please ensure patientId and visitId are in the URL parameters.');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Call upload function with proper parameters
+      const response = await uploadFilesToServer(
+        uploadedFiles,
+        currentUserId, // Using currentUserId as clinicId
+        patientId,
+        clinicVisitId,
+        "Images" // Fixed type as "Images"
+      );
+      toast.success(response.data.message)
+      if (onUploadSuccess) {
+        onUploadSuccess(response);
+      }
+      closeModal();
+
+    } catch (error) {
+      console.error('Upload failed:', error);
+      if (onUploadError) {
+        onUploadError(error);
+      }
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -132,14 +254,14 @@ const FileUploadModal = () => {
       <div className="bg-white rounded-lg p-4 max-w-md mx-auto">
         <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
           <img
-            src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+            src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
             alt="ARTHROSE Logo"
             className="max-w-20 max-h-20 rounded"
           />
         </div>
-        <button 
+        <button
           onClick={openModal}
-          className="w-full bg-yellow text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors"
+          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors"
         >
           Attach Images
         </button>
@@ -147,14 +269,15 @@ const FileUploadModal = () => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-2xl font-bold text-gray-800">Upload Files</h2>
-              <button 
+              <button
                 onClick={closeModal}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                disabled={isUploading}
+                className="text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -164,11 +287,10 @@ const FileUploadModal = () => {
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
               {/* Upload Area */}
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  isDragging 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragging
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-gray-400'
+                  } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -182,7 +304,8 @@ const FileUploadModal = () => {
                 </p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+                  disabled={isUploading}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Browse Files
                 </button>
@@ -193,6 +316,7 @@ const FileUploadModal = () => {
                   accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.doc,.docx"
                   onChange={handleFileInput}
                   className="hidden"
+                  disabled={isUploading}
                 />
                 <p className="text-sm text-gray-500 mt-4">
                   Supported formats: PNG, JPG, GIF, WebP, PDF, TXT, DOC, DOCX (Max 10MB each)
@@ -206,13 +330,13 @@ const FileUploadModal = () => {
                     Selected Files ({uploadedFiles.length})
                   </h4>
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {uploadedFiles.map((file) => (
+                    {uploadedFiles.map((file: FileData) => (
                       <div key={file.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
                         {/* File Preview/Icon */}
                         <div className="flex-shrink-0">
                           {file.preview ? (
-                            <img 
-                              src={file.preview} 
+                            <img
+                              src={file.preview}
                               alt={file.name}
                               className="w-12 h-12 object-cover rounded"
                             />
@@ -220,7 +344,7 @@ const FileUploadModal = () => {
                             getFileIcon(file.type)
                           )}
                         </div>
-                        
+
                         {/* File Info */}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
@@ -230,16 +354,29 @@ const FileUploadModal = () => {
                             {formatFileSize(file.size)}
                           </p>
                         </div>
-                        
+
                         {/* Remove Button */}
                         <button
                           onClick={() => removeFile(file.id)}
-                          className="text-red-500 hover:text-red-700 transition-colors"
+                          disabled={isUploading}
+                          className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Progress Info */}
+              {isUploading && (
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                    <span className="text-blue-700">
+                      Uploading {uploadedFiles.length} file(s)...
+                    </span>
                   </div>
                 </div>
               )}
@@ -249,20 +386,26 @@ const FileUploadModal = () => {
             <div className="flex items-center justify-end space-x-4 p-6 border-t bg-gray-50">
               <button
                 onClick={closeModal}
-                className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                disabled={isUploading}
+                className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpload}
-                disabled={uploadedFiles.length === 0}
-                className={`px-6 py-2 rounded-lg transition-colors ${
-                  uploadedFiles.length > 0
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                disabled={uploadedFiles.length === 0 || isUploading}
+                className={`px-6 py-2 rounded-lg transition-colors flex items-center space-x-2 ${uploadedFiles.length > 0 && !isUploading
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
               >
-                Upload {uploadedFiles.length > 0 && `(${uploadedFiles.length})`}
+                {isUploading && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>
+                  {isUploading
+                    ? 'Uploading...'
+                    : `Upload ${uploadedFiles.length > 0 ? `(${uploadedFiles.length})` : ''}`
+                  }
+                </span>
               </button>
             </div>
           </div>

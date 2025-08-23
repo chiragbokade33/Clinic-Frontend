@@ -263,7 +263,7 @@ const page = () => {
                     <div className="p-6 mb-6">
                         <div className="flex items-center justify-center mb-4">
                             <img
-                                src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+                                src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                 alt="ARTHROSE Logo"
                                 className="w-40 sm:w-40 object-contain"
                             />

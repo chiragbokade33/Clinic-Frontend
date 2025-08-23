@@ -191,7 +191,7 @@ const PublicHeader = () => {
       <header className="sticky top-0 z-50 text-white px-6 py-2 flex justify-between items-center" style={{ backgroundColor: '#0331B5' }}>
         <div className="text-2xl font-bold flex items-center">
           <img
-            src="/4bee03c0d8dd0050e8c60768d5eee76960b8b352.png"
+            src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
             alt="hfiles logo"
             className="w-[154px] mr-2 cursor-pointer"
             style={{ backgroundColor: '#0331B5' }}

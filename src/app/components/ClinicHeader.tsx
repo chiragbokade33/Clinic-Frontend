@@ -217,7 +217,7 @@ const ClinicHeader = () => {
 
           <p className="text-white font-medium">{userName}</p>
           <img
-            src="/0e7f5f4a77770635e93d82998df96f869b6624bf.png"
+            src="/proffile.jpg"
             alt="Profile"
             className="h-10 w-10 rounded-full border-2 border-yellow-400 cursor-pointer"
             onClick={() => setDropdownOpen(!dropdownOpen)}

@@ -94,14 +94,18 @@ const ClinicSidebar = ({ className = "" }) => {
           </div>
         ) : (
           <div className="w-40 flex flex-col items-center">
-            <div className="w-16 h-16 bg-white rounded-full border flex items-center justify-center mb-2 overflow-hidden shadow-md">
+            <div className="w-20 h-20 bg-white rounded-full border flex items-center justify-center mb-2 overflow-hidden shadow-md">
               <img
-                src="/c320115f6850bb4e112784af2aaf059259d7bfe9.jpg"
+                src="/199252fb761b753127d3ca8360be7b85a4128097.png"
                 alt="NorthStar Logo"
-                className="w-full h-full object-cover"
+                className="w-27 h-27 object-cover"
               />
             </div>
-            <span className="text-blue-800 font-bold text-lg">Arthrose</span>
+            <div className="text-center">
+              <span className="block text-blue-800 font-bold text-lg">High 5</span>
+              <span className="block text-blue-800 font-bold text-lg">Performance</span>
+            </div>
+
           </div>
         )}
       </div>
