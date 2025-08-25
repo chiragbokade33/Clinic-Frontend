@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint",
+  "vercel-build": "npm ci && npm run build"
+},
   "dependencies": {
     "@fontsource/montserrat": "^5.2.6",
     "@fontsource/poppins": "^5.2.6",
