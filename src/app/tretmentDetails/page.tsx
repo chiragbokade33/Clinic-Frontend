@@ -1201,6 +1201,7 @@ const page = () => {
             return null;
         }
     };
+    
     // UPDATED: handleFinalSend function to send actual files
    const handleFinalSend = async () => {
     const extractedLastVisitId = searchParams.get("visitId");
