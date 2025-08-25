@@ -523,19 +523,14 @@ const page = () => {
             tempDiv.innerHTML = `
             <div class="prescription-container" style="max-width: 800px; margin: 0 auto; background: white; padding: 30px;">
                 <!-- Header Section -->
-                <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
-                    <div class="logo" style="width: 80px; height: 80px; background: #D2B48C; border-radius: 50%; margin-right: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #8B4513; font-weight: bold;">
-                        AR
-                    </div>
-                    <div class="clinic-info">
-                        <h1 style="color: #8B4513; font-size: 28px; font-weight: bold; margin-bottom: 5px; margin: 0;">
-                            ${data.clinicInfo.name}
-                        </h1>
-                        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">
-                            ${data.clinicInfo.subtitle}
-                        </p>
-                    </div>
+                < <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
+                <div class="logo" style="width: 180px; height: 100px; margin-right: 20px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png" 
+                        alt="Clinic Logo"
+                        style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
+            </div>
+
 
                 <!-- Patient Information Grid -->
                 <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
@@ -671,7 +666,7 @@ const page = () => {
 
             // Optional: Preview the PDF in a new tab
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
+            window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -695,19 +690,15 @@ const page = () => {
             tempDiv.innerHTML = `
             <div class="treatment-container" style="max-width: 800px; margin: 0 auto; background: white; padding: 30px;">
                 <!-- Header Section -->
-                <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
-                    <div class="logo" style="width: 80px; height: 80px; background: #D2B48C; border-radius: 50%; margin-right: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #8B4513; font-weight: bold;">
-                        AR
-                    </div>
-                    <div class="clinic-info">
-                        <h1 style="color: #8B4513; font-size: 28px; font-weight: bold; margin-bottom: 5px; margin: 0;">
-                            ${data.clinicInfo.name}
-                        </h1>
-                        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">
-                            ${data.clinicInfo.subtitle}
-                        </p>
-                    </div>
+        <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
+                <div class="logo" style="width: 180px; height: 100px; margin-right: 20px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png" 
+                        alt="Clinic Logo"
+                        style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
+            </div>
+
+
 
                 <!-- Patient Information -->
                  <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
@@ -830,7 +821,7 @@ const page = () => {
             console.log('✅ Treatment Plan PDF generated successfully!', fileName);
 
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
+            window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -855,19 +846,14 @@ const page = () => {
             tempDiv.innerHTML = `
             <div class="invoice-container" style="max-width: 800px; margin: 0 auto; background: white; padding: 30px;">
                 <!-- Header Section -->
-                <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
-                    <div class="logo" style="width: 80px; height: 80px; background: #D2B48C; border-radius: 50%; margin-right: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #8B4513; font-weight: bold;">
-                        AR
-                    </div>
-                    <div class="clinic-info">
-                        <h1 style="color: #8B4513; font-size: 28px; font-weight: bold; margin-bottom: 5px; margin: 0;">
-                            ${data.clinicInfo.name}
-                        </h1>
-                        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">
-                            ${data.clinicInfo.subtitle}
-                        </p>
-                    </div>
+                 <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
+                <div class="logo" style="width: 180px; height: 100px; margin-right: 20px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png" 
+                        alt="Clinic Logo"
+                        style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
+            </div>
+
 
                 <!-- Patient Information Grid -->
                 <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
@@ -1012,7 +998,7 @@ const page = () => {
 
             // Optional: Preview the PDF in a new tab
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
+            window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -1038,19 +1024,14 @@ const page = () => {
             tempDiv.innerHTML = `
             <div class="receipt-container" style="max-width: 800px; margin: 0 auto; background: white; padding: 30px;">
                 <!-- Header Section -->
-                <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
-                    <div class="logo" style="width: 80px; height: 80px; background: #D2B48C; border-radius: 50%; margin-right: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #8B4513; font-weight: bold;">
-                        AR
-                    </div>
-                    <div class="clinic-info">
-                        <h1 style="color: #8B4513; font-size: 28px; font-weight: bold; margin-bottom: 5px; margin: 0;">
-                            ${data.clinicInfo.name}
-                        </h1>
-                        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">
-                            ${data.clinicInfo.subtitle}
-                        </p>
-                    </div>
+                 <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
+                <div class="logo" style="width: 180px; height: 100px; margin-right: 20px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png" 
+                        alt="Clinic Logo"
+                        style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
+            </div>
+
 
                 <!-- Patient Information Grid -->
                 <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
@@ -1192,7 +1173,7 @@ const page = () => {
 
             // Optional: Preview the PDF in a new tab
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
+            window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -1201,120 +1182,120 @@ const page = () => {
             return null;
         }
     };
-    
+
     // UPDATED: handleFinalSend function to send actual files
-   const handleFinalSend = async () => {
-    const extractedLastVisitId = searchParams.get("visitId");
-    const extractedPatientId = searchParams.get("patientId");
+    const handleFinalSend = async () => {
+        const extractedLastVisitId = searchParams.get("visitId");
+        const extractedPatientId = searchParams.get("patientId");
 
-    // Build FormData
-    const formData = new FormData();
-    formData.append("ClinicId", String(currentUserId));
-    formData.append("PatientId", extractedPatientId || "");
-    formData.append("ClinicVisitId", extractedLastVisitId || "");
-    formData.append("PaymentMethod", paymentMethod || "CreditCard");
+        // Build FormData
+        const formData = new FormData();
+        formData.append("ClinicId", String(currentUserId));
+        formData.append("PatientId", extractedPatientId || "");
+        formData.append("ClinicVisitId", extractedLastVisitId || "");
+        formData.append("PaymentMethod", paymentMethod || "CreditCard");
 
-    // Get checked documents and append files
-    const checkedDocuments = Object.keys(checkedItems).filter((key) => checkedItems[key]);
+        // Get checked documents and append files
+        const checkedDocuments = Object.keys(checkedItems).filter((key) => checkedItems[key]);
 
-    checkedDocuments.forEach((key, index) => {
-        formData.append(`Documents[${index}].Type`, key.charAt(0).toUpperCase() + key.slice(1));
-        formData.append(`Documents[${index}].SendToPatient`, "true");
+        checkedDocuments.forEach((key, index) => {
+            formData.append(`Documents[${index}].Type`, key.charAt(0).toUpperCase() + key.slice(1));
+            formData.append(`Documents[${index}].SendToPatient`, "true");
 
-        // Append actual file based on document type using if/else
-        let file = null;
+            // Append actual file based on document type using if/else
+            let file = null;
 
-        if (key === "prescription") {
-            file = prescriptionFile;
-        } else if (key === "Treatment") {
-            file = treatmentPlanFile;
-        } else if (key === "invoice") {
-            file = invoiceFile;
-        } else if (key === "Receipt") {
-            file = receiptFile;
-        } else if (key === "Images") {
-            file = reportImagesFile;
-        }
+            if (key === "prescription") {
+                file = prescriptionFile;
+            } else if (key === "Treatment") {
+                file = treatmentPlanFile;
+            } else if (key === "invoice") {
+                file = invoiceFile;
+            } else if (key === "Receipt") {
+                file = receiptFile;
+            } else if (key === "Images") {
+                file = reportImagesFile;
+            }
 
-        if (file) {
-            formData.append(`Documents[${index}].PdfFile`, file);
-            console.log(`📎 Added ${key} file:`, file.name, file.size, "bytes");
-        } else {
-            console.warn(`⚠️ No file found for ${key}`);
-        }
-    });
-
-    // Debug: Log FormData contents
-    console.log("🚀 Sending documents:", checkedDocuments);
-    console.log("📋 FormData entries:");
-    for (let [key, value] of formData.entries()) {
-        if (value instanceof File) {
-            console.log(`${key}: File(${value.name}, ${value.size} bytes)`);
-        } else {
-            console.log(`${key}: ${value}`);
-        }
-    }
-
-    try {
-        await UploadeallData(formData);
-        console.log("✅ Documents successfully uploaded!");
-        setIsSendModalOpen(false);
-
-        // Optional: Clear file states after successful upload
-        setPrescriptionFile(null);
-        setTreatmentPlanFile(null);
-        setInvoiceFile(null);
-        setReceiptFile(null);
-        setReportImagesFile(null);
-
-        // Clear checked items
-        setCheckedItems({
-            prescription: false,
-            Images: false,
-            Receipt: false,
-            invoice: false,
-            Treatment: false,
+            if (file) {
+                formData.append(`Documents[${index}].PdfFile`, file);
+                console.log(`📎 Added ${key} file:`, file.name, file.size, "bytes");
+            } else {
+                console.warn(`⚠️ No file found for ${key}`);
+            }
         });
-    } catch (error) {
-        console.error("❌ Error uploading documents:", error);
-    }
-};
+
+        // Debug: Log FormData contents
+        console.log("🚀 Sending documents:", checkedDocuments);
+        console.log("📋 FormData entries:");
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(`${key}: File(${value.name}, ${value.size} bytes)`);
+            } else {
+                console.log(`${key}: ${value}`);
+            }
+        }
+
+        try {
+            await UploadeallData(formData);
+            console.log("✅ Documents successfully uploaded!");
+            setIsSendModalOpen(false);
+
+            // Optional: Clear file states after successful upload
+            setPrescriptionFile(null);
+            setTreatmentPlanFile(null);
+            setInvoiceFile(null);
+            setReceiptFile(null);
+            setReportImagesFile(null);
+
+            // Clear checked items
+            setCheckedItems({
+                prescription: false,
+                Images: false,
+                Receipt: false,
+                invoice: false,
+                Treatment: false,
+            });
+        } catch (error) {
+            console.error("❌ Error uploading documents:", error);
+        }
+    };
 
 
     // Enhanced handleCheckboxChange function
     const handleCheckboxChange = (itemName: string) => {
-    console.log("Checkbox clicked:", itemName);
+        console.log("Checkbox clicked:", itemName);
 
-    setCheckedItems((prev: Record<string, boolean>) => {
-        const newCheckedState = {
-            ...prev,
-            [itemName]: !prev[itemName],
-        };
+        setCheckedItems((prev: Record<string, boolean>) => {
+            const newCheckedState = {
+                ...prev,
+                [itemName]: !prev[itemName],
+            };
 
-        console.log("Previous state:", prev[itemName]);
-        console.log("New state:", newCheckedState[itemName]);
+            console.log("Previous state:", prev[itemName]);
+            console.log("New state:", newCheckedState[itemName]);
 
-        // Normalize item name for comparison
-        const normalized = itemName.toLowerCase();
+            // Normalize item name for comparison
+            const normalized = itemName.toLowerCase();
 
-        // Trigger PDF generation only when checked (not unchecked)
-        if (!prev[itemName]) {
-            console.log(`Triggering ${itemName} PDF generation...`);
+            // Trigger PDF generation only when checked (not unchecked)
+            if (!prev[itemName]) {
+                console.log(`Triggering ${itemName} PDF generation...`);
 
-            if (normalized === "prescription") {
-                handlePrescriptionCheck();
-            } else if (normalized === "treatment") {
-                handleTreatmentPlanCheck();
-            } else if (normalized === "invoice") {
-                handleInvoiceCheck();
-            } else if (normalized === "receipt") {
-                handleReceiptCheck();
+                if (normalized === "prescription") {
+                    handlePrescriptionCheck();
+                } else if (normalized === "treatment") {
+                    handleTreatmentPlanCheck();
+                } else if (normalized === "invoice") {
+                    handleInvoiceCheck();
+                } else if (normalized === "receipt") {
+                    handleReceiptCheck();
+                }
             }
-        }
 
-        return newCheckedState;
-    });
-};
+            return newCheckedState;
+        });
+    };
 
 
     const CheckboxItem = ({ itemName, label, checked, onChange }) => (
