@@ -1,7 +1,7 @@
 // Api EndPoints
 
-export const API_CLINIC_DATA = "https://localhost:7227/api/";
-// export const API_CLINIC_DATA = "https://hfileslabnetcorenextjsbackend-production.up.railway.app/api/";
+// export const API_CLINIC_DATA = "https://localhost:7227/api/";
+export const API_CLINIC_DATA = "https://hfileslabnetcorenextjsbackend-production.up.railway.app/api/";
 
 
 
@@ -86,7 +86,8 @@ export const endPoints = {
     CommonAddJson : {
         AddJson : API_CLINIC_DATA + "clinic/patient/records",
         GetJsonDataList : (clinicId:number,patientId:number,clinicVisitId:number) => `${API_CLINIC_DATA}clinic/${clinicId}/patient/${patientId}/visit/${clinicVisitId}/records`,
-        FinalUploade : API_CLINIC_DATA + "clinic/patient/documents/upload"
+        FinalUploade : API_CLINIC_DATA + "clinic/patient/documents/upload",
+        ClinicHistory : (clinicId:number , patientId:number) => `${API_CLINIC_DATA}clinic/${clinicId}/patient/${patientId}/history`
     },
 
     Prescrition :{
