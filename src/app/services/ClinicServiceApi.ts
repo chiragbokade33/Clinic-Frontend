@@ -272,6 +272,11 @@ export const UploadeallData = async (payload: FormData) => {
 };
 
 
+export const HistoryList = async (clinicId:number, patientId :number) =>{
+    return axiosInstance.get(`${endPoints.CommonAddJson.ClinicHistory(clinicId,patientId)}`)
+}
+
+
 //  Prescripation Added
 
 export const AddPrescripation = async (payloade:any) =>{

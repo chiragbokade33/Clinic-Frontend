@@ -523,7 +523,7 @@ const page = () => {
             tempDiv.innerHTML = `
             <div class="prescription-container" style="max-width: 800px; margin: 0 auto; background: white; padding: 30px;">
                 <!-- Header Section -->
-                < <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
+                 <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
                 <div class="logo" style="width: 180px; height: 100px; margin-right: 20px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
                     <img src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png" 
                         alt="Clinic Logo"
@@ -1407,10 +1407,17 @@ const page = () => {
                         <span className="text-lg font-medium text-black">
                             Manage treatment plans, prescriptions, and reports effortlessly.
                         </span>
-                        <button className="flex items-center gap-2 px-3 py-1 border border-black rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => router.push("/ClinicShareReports")}>
+                        <button
+                            className="flex items-center gap-2 px-3 py-1 border border-black rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                            onClick={() => {
+                                const extractedPatientId = searchParams.get("patientId");
+                                router.push(`/ClinicShareReports?patientId=${extractedPatientId}`);
+                            }}
+                        >
                             <span className="text-sm font-medium">History</span>
                             <FontAwesomeIcon icon={faHistory} className="w-4 h-4" />
                         </button>
+
                     </div>
 
                     <div className="p-6">
