@@ -170,8 +170,8 @@ const SharedReportsDashboard = () => {
                         <div key={recordIndex} className="flex flex-col items-center">
                           <div
                             className={`relative w-40 h-46 bg-white rounded-lg border border-gray-300 overflow-hidden transition-shadow ${record.url && record.url.trim() !== ''
-                                ? 'cursor-pointer hover:shadow-md'
-                                : 'opacity-75 cursor-not-allowed'
+                              ? 'cursor-pointer hover:shadow-md'
+                              : 'opacity-75 cursor-not-allowed'
                               }`}
                             onClick={() => handleCardClick(record.url, record.type)}
                           >
