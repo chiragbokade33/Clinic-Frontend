@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import React, { useState, useRef, useCallback, useEffect, ChangeEvent } from 'react';
 import { Upload, FileText, Check, Camera, X, Download, CloudUpload } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import PublicDefault from '../components/publicDefault';
+import PublicDefault from '../components/PublicDefault';
 import { AddPdfPublic } from '../services/ClinicServiceApi';
 import { toast, ToastContainer } from 'react-toastify';
 
