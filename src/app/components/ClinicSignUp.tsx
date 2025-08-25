@@ -48,7 +48,7 @@ const ClinicSignUp = () => {
         const response = await SignUp(payload);
         if (response?.data?.message) {
           toast.success(`${response.data.message}`);
-          router.push("/thankYou");
+          router.push("/thankyou");
         }
       } catch (error) {
         console.error("Sign Up Error:", error);
