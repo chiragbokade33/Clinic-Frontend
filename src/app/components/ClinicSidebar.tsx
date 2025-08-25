@@ -162,7 +162,7 @@ const ClinicSidebar = ({ className = "" }) => {
                 {!collapsed && <span className="ml-4">Patient list</span>}
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 href="/labForms"
                 className={`flex items-center px-4 py-2 rounded-lg transition-colors ${isActive("/labForms")
@@ -173,7 +173,7 @@ const ClinicSidebar = ({ className = "" }) => {
                 <FontAwesomeIcon icon={faFileAlt} className="w-5 h-5" />
                 {!collapsed && <span className="ml-4">Forms</span>}
               </Link>
-            </li>
+            </li> */}
           </ul>
         </nav>
 
