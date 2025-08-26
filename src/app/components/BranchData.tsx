@@ -267,7 +267,7 @@ const BranchData: React.FC<BranchDataProps> = ({
                   src={
                     branch.profilePhoto && branch.profilePhoto !== "No image preview available"
                       ? `${branch.profilePhoto}`
-                      : "/c320115f6850bb4e112784af2aaf059259d7bfe9.jpg"
+                      : "/199252fb761b753127d3ca8360be7b85a4128097.png"
                   }
                   alt={branch.clinicName}
                   className="w-full h-full rounded-full object-cover"

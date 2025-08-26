@@ -73,7 +73,7 @@ const page = () => {
   // Formik & Yup schema
   const formik = useFormik({
     initialValues: {
-      clinicName: "North Star",
+      clinicName: "",
       email: "",
       phoneNumber: "",
       pincode: "",
