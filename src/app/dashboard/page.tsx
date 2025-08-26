@@ -31,7 +31,7 @@ const HealthcareDashboard = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(1);
   const [currentUserId, setCurrentUserId] = useState<number>() as any;
   const [appointments, setAppointments] = useState() as any;
-  const [todayAppoinment, SetTodayAppoinmnet] = useState()as any;
+  const [todayAppoinment, SetTodayAppoinmnet] = useState() as any;
   const [miss, SetMiss] = useState() as any;
 
   // New state variables for HF ID verification
@@ -48,7 +48,7 @@ const HealthcareDashboard = () => {
   const [editingStatus, setEditingStatus] = useState("");
   const [editingTreatment, setEditingTreatment] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-  const [userName , setUserName]= useState() as any;
+  const [userName, setUserName] = useState() as any;
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -492,50 +492,51 @@ const HealthcareDashboard = () => {
             </select>
           </div>
           <div className='border border-black '></div>
+          <div className="flex-1 overflow-y-auto mt-3 max-h-[calc(50vh-50px)] custom-scrollbar">
+            <div className="space-y-3 mt-3">
+              {appointments && appointments.length > 0 ? (
+                appointments.map((appointment: any) => (
+                  <div
+                    key={appointment.id}
+                    className={`flex items-center space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${selectedAppointment === appointment.id
+                      ? 'bg-blue-100 border border-blue-200'
+                      : 'hover:bg-gray-50 border border-transparent'
+                      }`}
+                    onClick={() => {
+                      setSelectedAppointment(appointment.id);
+                      // Reset edit mode when switching patients
+                      setIsEditing(false);
+                      setEditingStatus("");
+                      setEditingTreatment("");
+                    }}
+                  >
+                    {/* Profile Image */}
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
+                      <img
+                        src="/98c4113b37688d826fc939709728223539f249dd.jpg"
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-          <div className="space-y-3 mt-3">
-            {appointments && appointments.length > 0 ? (
-              appointments.map((appointment: any) => (
-                <div
-                  key={appointment.id}
-                  className={`flex items-center space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${selectedAppointment === appointment.id
-                    ? 'bg-blue-100 border border-blue-200'
-                    : 'hover:bg-gray-50 border border-transparent'
-                    }`}
-                  onClick={() => {
-                    setSelectedAppointment(appointment.id);
-                    // Reset edit mode when switching patients
-                    setIsEditing(false);
-                    setEditingStatus("");
-                    setEditingTreatment("");
-                  }}
-                >
-                  {/* Profile Image */}
-                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
-                    <img
-                      src="/98c4113b37688d826fc939709728223539f249dd.jpg"
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                    {/* Patient Info */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-800 truncate font-poppins-600">{appointment.visitorUsername}</h4>
+                      <p className="text-sm text-gray-600 truncate font-medium font-poppins-500">{appointment.visitorPhoneNumber}</p>
+                    </div>
 
-                  {/* Patient Info */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-800 truncate font-poppins-600">{appointment.visitorUsername}</h4>
-                    <p className="text-sm text-gray-600 truncate font-medium font-poppins-500">{appointment.visitorPhoneNumber}</p>
+                    {/* Time Badge */}
+                    <div className={`px-3 py-1 rounded-lg text-sm font-semibold flex-shrink-0 font-poppins-600 ${getTimeColor(appointment.status || 'morning')}`}>
+                      {appointment.appointmentTime}
+                    </div>
                   </div>
-
-                  {/* Time Badge */}
-                  <div className={`px-3 py-1 rounded-lg text-sm font-semibold flex-shrink-0 font-poppins-600 ${getTimeColor(appointment.status || 'morning')}`}>
-                    {appointment.appointmentTime}
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No appointments available
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                No appointments available
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
