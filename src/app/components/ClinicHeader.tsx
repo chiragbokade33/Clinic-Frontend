@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { toast, ToastContainer } from 'react-toastify';
 import { faBell, faCalendarAlt, faLessThan } from '@fortawesome/free-solid-svg-icons';
 import { LogOut, RotateCcw } from 'lucide-react';
-import { getUsername } from '../hooks/GetitemsLocal';
+import { getUserId, getUsername } from '../hooks/GetitemsLocal';
+import { ListUser } from '../services/ClinicServiceApi';
 
 const getStoredUserId = () => {
   if (typeof window !== "undefined") {
@@ -52,6 +53,16 @@ const ClinicHeader = () => {
   const [Role] = useState<string | null>(getStoredRole);
   // const [username] = useState<string | null>(getStoredUserName);
   const [userName, setUserName] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<number>();
+  const [adminList, setAdminsList] = useState() as any;
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setCurrentUserId(id);
+    };
+    fetchUserId();
+  }, []);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -60,6 +71,18 @@ const ClinicHeader = () => {
     };
     fetchUserId();
   }, []);
+
+  const CardList = async () => {
+    const id = await getUserId();
+    setCurrentUserId(id);
+    const res = await ListUser(Number(id));
+    setAdminsList(res?.data?.data?.superAdmin);
+  };
+
+  useEffect(() => {
+    CardList();
+  }, [currentUserId]);
+
 
 
 
@@ -217,11 +240,12 @@ const ClinicHeader = () => {
 
           <p className="text-white font-medium">{userName}</p>
           <img
-            src="/proffile.jpg"
+            src={adminList?.profilePhoto || "/proffile.jpg"}
             alt="Profile"
             className="h-10 w-10 rounded-full border-2 border-yellow-400 cursor-pointer"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           />
+
           {dropdownOpen && (
             <div
               className={`absolute right-0 top-3 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 transition-all duration-200 ${dropdownAnimating ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
