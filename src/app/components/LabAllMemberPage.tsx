@@ -123,7 +123,7 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
                 src={
                   adminsList.profilePhoto && adminsList.profilePhoto !== "No image preview available"
                     ? `${adminsList.profilePhoto}`
-                    : "/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
+                    : "/98c4113b37688d826fc939709728223539f249dd.jpg"
                 }
                 alt={adminsList.name}
                 className="w-20 h-20 rounded-sm object-cover"
