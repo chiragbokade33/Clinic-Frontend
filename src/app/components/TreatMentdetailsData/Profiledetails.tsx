@@ -45,7 +45,7 @@ const Profiledetails: React.FC<{ profileData: ProfileData }> = ({ profileData })
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="text-sm font-medium text-gray-600">Blood Group :</span>
                                             <span className="bg-white border border-black text-black text-sm font-medium px-2.5 py-0.5 rounded">
-                                                {profileData?.bloodGroup}
+                                                {profileData?.bloodGroup || "NA"}
                                             </span>
                                         </div>
                                     </div>

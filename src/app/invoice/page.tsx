@@ -205,9 +205,10 @@ const Invoice = () => {
                 <div className="bg-white p-3 sm:p-4">
                     <div className="flex items-center justify-between">
                         {/* Back Button */}
-                        <div className="flex items-center">
+                        <div className="flex items-center cursor-pointer">
                             <button
                                 className="mr-1 sm:mr-2 p-1.5 sm:p-2 rounded-lg transition-colors flex items-center"
+                                 onClick={() => router.push("/clinicpatient")}
                             >
                                 <FontAwesomeIcon icon={faChevronLeft} className="w-2 h-2 mr-2" />
                                 <span className="text-md sm:text-md font-bold text-[#333333]">Back</span>

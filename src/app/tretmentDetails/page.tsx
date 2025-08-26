@@ -1359,12 +1359,19 @@ const page = () => {
                                         key={consentForm.clinicConsentFormId}
                                         className="relative p-4 rounded-xl border border-black transition-all cursor-pointer w-full max-w-md mx-auto"
                                         onClick={() => {
+                                            const extractedHfid = searchParams.get("hfid");
+
                                             if (consentForm?.consentFormUrl) {
-                                                router.push(`/consentForm?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${consentForm.title}&pdf=${consentForm.consentFormUrl}`);
+                                                router.push(
+                                                    `/consentForm?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${consentForm.title}&pdf=${consentForm.consentFormUrl}&hfid=${extractedHfid}`
+                                                );
                                             } else {
-                                                router.push(`/publicConsentForm?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${consentForm.title}`);
+                                                router.push(
+                                                    `/publicConsentForm?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${consentForm.title}&hfid=${extractedHfid}`
+                                                );
                                             }
                                         }}
+
                                     >
                                         <div className="w-full h-20 rounded-lg flex items-center justify-center mb-3">
                                             <img

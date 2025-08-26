@@ -5,7 +5,7 @@ import React, { useState, useRef, useCallback, useEffect, ChangeEvent } from 're
 import { Upload, FileText, Check, Camera, X, Download, CloudUpload } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PublicDefault from '../components/PublicDefault';
-import { AddPdfPublic } from '../services/ClinicServiceApi';
+import { AddPdfPublic, ListProfile } from '../services/ClinicServiceApi';
 import { toast, ToastContainer } from 'react-toastify';
 
 // Type definitions
@@ -56,6 +56,22 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const formRef = useRef<HTMLDivElement>(null);
+    const [profileData, setProfileData] = useState() as any;
+
+        useEffect(() => {
+            const listDataProfile = async () => {
+                const extractedHfid = searchParams.get("hfid");
+                if (!extractedHfid) return;
+                try {
+                    const response = await ListProfile(extractedHfid);
+                    setProfileData(response.data.data);
+                } catch (error) {
+                    console.error("Error fetching profile:", error);
+                }
+            };
+    
+            listDataProfile();
+        }, [searchParams]);
 
     // Cleanup camera stream and object URLs on component unmount
     useEffect(() => {
@@ -651,7 +667,7 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
                         {/* Consent Content */}
                         <div className="space-y-4 text-sm text-gray-700 mb-8 mx-3">
                             <div className="font-montserrat-300">
-                                <strong className="text-black font-bold">I: {formData.patientName || 'Ankit Kuchara'}</strong> understand that the treatment of dental conditions
+                                <strong className="text-black font-bold">I: {formData.patientName || profileData?.fullName}</strong> understand that the treatment of dental conditions
                                 pertaining to the Temporomandibular joint (TMJ) includes certain risks. I
                                 willingly accept to undergo the following for successful treatment:
                             </div>
