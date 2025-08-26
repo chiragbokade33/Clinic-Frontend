@@ -595,7 +595,7 @@ const HealthcareDashboard = () => {
 
                 {/* Updated Treatment Field using separate state */}
                 <div className="flex items-center gap-4 py-2">
-                  <label className="text-black font-semibold font-poppins-600 w-28">
+                  <label className="text-black font-semibold font-poppins-600 w-22">
                     Treatment :
                   </label>
                   {!isEditing ? (
