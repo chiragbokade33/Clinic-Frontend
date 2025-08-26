@@ -47,8 +47,7 @@ const errorHandler = (error: any) => {
   const status = error?.response?.status;
   const message =
     error?.response?.data?.data?.message ||
-    error?.response?.data?.message ||
-    "Something went wrong";
+    error?.response?.data?.message ;
 
   if (status === 401) {
     if (typeof window !== "undefined") {
