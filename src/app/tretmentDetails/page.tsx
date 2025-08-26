@@ -1264,38 +1264,38 @@ const page = () => {
 
     // Enhanced handleCheckboxChange function
     const handleCheckboxChange = (itemName: string) => {
-        console.log("Checkbox clicked:", itemName);
+    console.log("Checkbox clicked:", itemName);
 
         setCheckedItems((prev: Record<string, boolean>) => {
-            const newCheckedState = {
-                ...prev,
-                [itemName]: !prev[itemName],
-            };
+        const newCheckedState = {
+            ...prev,
+            [itemName]: !prev[itemName],
+        };
 
-            console.log("Previous state:", prev[itemName]);
-            console.log("New state:", newCheckedState[itemName]);
+        console.log("Previous state:", prev[itemName]);
+        console.log("New state:", newCheckedState[itemName]);
 
             // Normalize item name for comparison
             const normalized = itemName.toLowerCase();
 
-            // Trigger PDF generation only when checked (not unchecked)
-            if (!prev[itemName]) {
-                console.log(`Triggering ${itemName} PDF generation...`);
-
-                if (normalized === "prescription") {
+        // Trigger PDF generation only when checked (not unchecked)
+        if (!prev[itemName]) {
+            console.log(`Triggering ${itemName} PDF generation...`);
+            
+                    if (normalized === "prescription") {
                     handlePrescriptionCheck();
-                } else if (normalized === "treatment") {
+                    } else if (normalized === "treatment") {
                     handleTreatmentPlanCheck();
-                } else if (normalized === "invoice") {
+                    } else if (normalized === "invoice") {
                     handleInvoiceCheck();
-                } else if (normalized === "receipt") {
+                    } else if (normalized === "receipt") {
                     handleReceiptCheck();
-                }
-            }
+                    } 
+        }
 
-            return newCheckedState;
-        });
-    };
+        return newCheckedState;
+    });
+};
 
 
     const CheckboxItem = ({ itemName, label, checked, onChange }) => (
