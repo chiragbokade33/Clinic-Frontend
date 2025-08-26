@@ -5,7 +5,7 @@ import { faTimes, faEye, faEyeSlash, faLock, faSquarePlus } from '@fortawesome/f
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast, ToastContainer } from "react-toastify";
-import { AddMember, HfidCheck } from '../services/ClinicServiceApi';
+import { AddMember, HfidCheck, ListBranchData } from '../services/ClinicServiceApi';
 import { getUserId } from '../hooks/GetitemsLocal';
 
 type AddTeamMemberModalProps = {
@@ -22,6 +22,7 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
   const [isHFIDValid, setIsHFIDValid] = useState(false);
 
   const [currentUserId, setCurrentUserId] = useState<number>();
+  const [ListBranchs, setListBranchs] = useState();
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -36,6 +37,17 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
       formik.setFieldValue('branchId', currentUserId.toString());
     }
   }, [currentUserId]);
+
+  const ListBranch = async () => {
+    const res = await ListBranchData();
+    setListBranchs(res?.data?.data?.clinics);
+  }
+
+
+  useEffect(() => {
+    ListBranch();
+  }, [])
+
 
   const validateHFID = async (hfid: string) => {
     try {
@@ -162,16 +174,23 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
 
             {/* Branch Selection */}
             <div className="relative">
-              <input
-                type="text"
+              <select
                 name="branchId"
-                value={currentUserId ? currentUserId.toString() : formik.values.branchId}
-                readOnly
+                value={formik.values.branchId}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className={`flex-1 w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${formik.touched.branchId && formik.errors.branchId
                   ? 'border-red-500'
                   : 'border-gray-300'
                   }`}
-              />
+              >
+                <option value="">Select Branch</option>
+                {ListBranchs && ListBranchs?.map((clinic: any) => (
+                  <option key={clinic.clinicId} value={clinic.clinicId.toString()}>
+                    {clinic.clinicName}
+                  </option>
+                ))}
+              </select>
 
               {formik.touched.branchId && formik.errors.branchId && (
                 <p className="text-red-500 text-sm mt-1">{formik.errors.branchId}</p>
@@ -241,7 +260,7 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ isOpen, onClose
               <div className="bg-blue-100 rounded-lg flex flex-col sm:flex-row sm:items-center border w-full p-4">
                 <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden mx-auto sm:mx-0 sm:mr-4">
                   <img
-                    src="/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
+                    src="/199252fb761b753127d3ca8360be7b85a4128097.png"
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />

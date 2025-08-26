@@ -53,7 +53,7 @@ const Profiledetails: React.FC<{ profileData: ProfileData }> = ({ profileData })
                                     {/* More Details */}
                                     <div className="mt-3 flex justify-end">
                                         <button className="text-black underline font-semibold text-sm hover:text-gray-700">
-                                            More Details
+                                            {/* More Details */}
                                         </button>
                                     </div>
                                 </div>
