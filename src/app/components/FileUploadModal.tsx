@@ -255,7 +255,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
         <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
           <img
             src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
-            alt="ARTHROSE Logo"
+            alt="High5 Logo"
             className="max-w-20 max-h-20 rounded"
           />
         </div>

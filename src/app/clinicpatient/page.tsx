@@ -85,7 +85,7 @@ const PatientListInterface = () => {
       setPatients(patientsData);
       setTotalPatients(total);
     } catch (error) {
-      console.error('Error fetching patients:', error);
+      console.error('Error fetching clients:', error);
       setPatients([]);
       setTotalPatients(0);
     } finally {
@@ -216,7 +216,7 @@ const PatientListInterface = () => {
   const handleSeeMore = (patient: any) => {
     // Create URL search parameters
     const params = new URLSearchParams();
-    
+
     // Add patient data to URL parameters
     if (patient.patientId || patient.id) {
       params.append('patientId', patient.patientId || patient.id);
@@ -227,12 +227,12 @@ const PatientListInterface = () => {
     if (patient.lastVisitDate) {
       params.append('lastVisitDate', patient.lastVisitDate);
     }
-    
-      // Add visitId from the visits array (using the first visit if available)
+
+    // Add visitId from the visits array (using the first visit if available)
     if (patient.visits && patient.visits.length > 0 && patient.visits[0].visitId) {
       params.append('visitId', patient.visits[0].visitId);
     }
-    
+
     // Navigate to treatment details page with parameters
     const queryString = params.toString();
     router.push(`/tretmentDetails${queryString ? `?${queryString}` : ''}`);
@@ -244,7 +244,7 @@ const PatientListInterface = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}
           <div className="flex items-center justify-between">
-            <h1 className="text-4xl font-semibold text-gray-900 mx-5">Patient's list:</h1>
+            <h1 className="text-4xl font-semibold text-gray-900 mx-5">Client's list:</h1>
 
             {/* Search Bar */}
             <div className="relative">
@@ -269,7 +269,7 @@ const PatientListInterface = () => {
           {/* Subtitle and Filter Status */}
           <div className="mt-4 mb-6 flex items-center">
             <p className="flex-1 text-center text-blue-800 text-lg font-medium">
-              "All your clinic's reports in one place!"
+              "All your client's details in one place!"
             </p>
             <div className="w-8 h-8 bg-[#238B02] rounded-md flex items-center justify-center ml-3">
               <FontAwesomeIcon icon={faInfoCircle} className="text-white text-sm" />
@@ -283,7 +283,7 @@ const PatientListInterface = () => {
             {/* Card Header */}
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-700">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-medium text-gray-900">Patient Directory</h2>
+                <h2 className="text-lg font-medium text-gray-900">Client Directory</h2>
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-800 font-bold">Total: {totalPatients}</span>
 
@@ -292,8 +292,8 @@ const PatientListInterface = () => {
                     <button
                       onClick={() => setShowDatePicker(!showDatePicker)}
                       className={`flex items-center justify-center w-10 h-10 border rounded-lg transition-colors ${appliedStartDate || appliedEndDate
-                          ? 'border-blue-500 bg-blue-50 text-blue-600'
-                          : 'border-gray-300 hover:bg-gray-50'
+                        ? 'border-blue-500 bg-blue-50 text-blue-600'
+                        : 'border-gray-300 hover:bg-gray-50'
                         }`}
                     >
                       <Calendar className="h-5 w-5" />
@@ -346,19 +346,21 @@ const PatientListInterface = () => {
 
             {/* Table Header */}
             <div className="bg-white px-6 py-3 border-b border-gray-700 mx-auto">
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid grid-cols-6 gap-4">
                 <div className="text-sm font-medium text-gray-700">Name</div>
                 <div className="text-sm font-medium text-gray-700">HF_id</div>
                 <div className="text-sm font-medium text-gray-700">Last Visit</div>
+                <div className="text-sm font-medium text-gray-700">Package</div>
                 <div className="text-sm font-medium text-gray-700">Payment</div>
                 <div className="text-sm font-medium text-gray-700">View</div>
               </div>
             </div>
 
+
             {/* Loading State */}
             {loading && (
               <div className="px-6 py-8 text-center">
-                <div className="text-gray-500">Loading patients...</div>
+                <div className="text-gray-500">Loading clients...</div>
               </div>
             )}
 
@@ -367,15 +369,15 @@ const PatientListInterface = () => {
               <div className="px-6 py-8 text-center">
                 <div className="text-gray-500">
                   {filteredPatients.length === 0 && patients.length > 0
-                    ? 'No patients found matching your search criteria.'
-                    : 'No patients found.'}
+                    ? 'No clients found matching your search criteria.'
+                    : 'No clients found.'}
                 </div>
                 {(searchQuery || appliedStartDate || appliedEndDate) && (
                   <button
                     onClick={clearAllFilters}
                     className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
                   >
-                    Clear filters to show all patients
+                    Clear filters to show all clients
                   </button>
                 )}
               </div>
@@ -387,10 +389,9 @@ const PatientListInterface = () => {
                 {currentPatients.map((patient: any, index: number) => (
                   <div
                     key={`${patient.hfid}-${index}`}
-                    className={`px-6 py-4 hover:bg-gray-50 transition-colors ${patient.highlighted ? 'bg-blue-50' : 'bg-white'
-                      }`}
+                    className={`group px-6 py-4 hover:bg-blue-100 transition-colors ${patient.highlighted ? 'bg-blue-50' : 'bg-white'}`}
                   >
-                    <div className="grid grid-cols-5 gap-4 items-center">
+                    <div className="grid grid-cols-6 gap-4 items-center">
                       {/* Name with Avatar */}
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
@@ -407,18 +408,28 @@ const PatientListInterface = () => {
                         {patient.lastVisitDate || 'N/A'}
                       </div>
 
+                      {/* Package Name */}
+                      <div className="text-sm text-gray-700">
+                        {'Weight Loss'}
+                      </div>
+
                       {/* Payment Status */}
-                      <div className={`text-sm font-medium ${patient.paymentColor || 'text-gray-700'}`}>
-                        {patient.payment || "-"}
+                      <div
+                        className={`text-sm font-medium ${patient.payment
+                          ? patient.paymentColor || 'text-gray-700'
+                          : 'text-red-500'
+                          }`}
+                      >
+                        {patient.payment || "Pending"}
                       </div>
 
                       {/* View Button */}
                       <div>
                         <button
-                          className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors ${patient.highlighted
-                              ? 'text-white bg-[#238B02] border-[#238B02]'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                            }`}
+                          className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors
+                bg-[#CAE5FF] text-[#353935] border-[#CAE5FF]
+                group-hover:bg-[#238B02] group-hover:border-[#238B02] group-hover:text-white
+                hover:bg-[#238B02] hover:border-[#238B02] hover:text-white cursor-pointer`}
                           onClick={() => handleSeeMore(patient)}
                         >
                           See more
@@ -429,6 +440,7 @@ const PatientListInterface = () => {
                 ))}
               </div>
             )}
+
           </div>
 
           {/* Enhanced Pagination */}
@@ -440,8 +452,8 @@ const PatientListInterface = () => {
                   onClick={goToPrevious}
                   disabled={currentPage === 1}
                   className={`p-2 rounded-md transition-colors ${currentPage === 1
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-700 hover:bg-gray-100'
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-100'
                     }`}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -456,8 +468,8 @@ const PatientListInterface = () => {
                       <button
                         onClick={() => goToPage(page as number)}
                         className={`w-8 h-8 rounded-md flex items-center justify-center text-sm font-medium transition-colors ${currentPage === page
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                           }`}
                       >
                         {page}
@@ -471,8 +483,8 @@ const PatientListInterface = () => {
                   onClick={goToNext}
                   disabled={currentPage === totalPages}
                   className={`p-2 rounded-md transition-colors ${currentPage === totalPages
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-700 hover:bg-gray-100'
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-100'
                     }`}
                 >
                   <ChevronRight className="h-4 w-4" />

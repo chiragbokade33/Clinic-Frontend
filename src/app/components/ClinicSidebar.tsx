@@ -74,7 +74,7 @@ const ClinicSidebar = ({ className = "" }) => {
         } transition-all duration-300 ease-in-out overflow-y-auto h-screen ${className} shadow-md`}
     >
       {/* Toggle Button */}
-      <button
+      {/* <button
         onClick={toggleSidebar}
         className=" hover:bg-blue-300 rounded-lg m-2 transition-colors"
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -84,7 +84,7 @@ const ClinicSidebar = ({ className = "" }) => {
         ) : (
           <FontAwesomeIcon icon={faArrowLeft} size="lg" />
         )}
-      </button>
+      </button> */}
 
       {/* Logo */}
       <div className="flex justify-center py-3">
@@ -159,7 +159,7 @@ const ClinicSidebar = ({ className = "" }) => {
                   }`}
               >
                 <FontAwesomeIcon icon={faListUl} className="w-5 h-5" />
-                {!collapsed && <span className="ml-4">Patient list</span>}
+                {!collapsed && <span className="ml-4">Client list</span>}
               </Link>
             </li>
             {/* <li>

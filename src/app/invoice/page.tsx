@@ -165,9 +165,9 @@ const Invoice = () => {
                 grandTotal: totalCost,
                 paid: totalCost,
                 clinicInfo: {
-                    name: "ARTHROSE",
+                    name: "High5",
                     subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
-                    website: "www.arthrosetmjindia.com"
+                    website: "www.high5performance.in"
                 }
             };
 
@@ -245,7 +245,7 @@ const Invoice = () => {
                         <div className="flex items-center justify-center mb-4">
                             <img
                                 src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
-                                alt="ARTHROSE Logo"
+                                alt="High5 Logo"
                                 className="w-40 sm:w-40 object-contain"
                             />
                         </div>
@@ -254,7 +254,7 @@ const Invoice = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="space-y-2">
                                 <div className="flex">
-                                    <span className="font-semibold w-24">Patient Name :</span>
+                                    <span className="font-semibold w-24">Client Name :</span>
                                     <span>{profileData?.fullName}</span>
                                 </div>
                                 <div className="flex">
@@ -449,16 +449,16 @@ const Invoice = () => {
                     <div className="mt-2 sm:mt-2 flex justify-end mb-3">
                         <div className="text-center">
                             <div className="w-24 sm:w-32 h-12 sm:h-16 border-b border-gray-300 mb-2 flex items-end justify-center">
-                                <span className="text-blue-600 font-script text-sm sm:text-lg mb-2">Dr. Varun R Kunte</span>
+                                <span className="text-blue-600 font-script text-sm sm:text-lg mb-2">Priyanka</span>
                             </div>
-                            <p className="text-xs sm:text-sm font-medium">Dr. Varun R Kunte</p>
+                            <p className="text-xs sm:text-sm font-medium">Priyanka</p>
                         </div>
                     </div>
                     <div className='border border-black mx-1 sm:mx-3'></div>
 
                     {/* Footer */}
                     <div className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between text-xs sm:text-sm text-gray-600 gap-2">
-                        <span>www.arthrosetmjindia.com</span>
+                        <span>www.high5performance.in</span>
                         <span>www.hfiles.in</span>
                     </div>
                 </div>

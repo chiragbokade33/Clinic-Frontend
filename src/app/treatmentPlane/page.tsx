@@ -125,7 +125,7 @@ const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSe
                 {/* Header */}
                 <div className="relative p-4 border-b">
                     <h2 className="text-lg font-bold text-black text-center">
-                        All Treatments
+                        All Packages
                     </h2>
                     <button
                         onClick={onClose}
@@ -138,7 +138,7 @@ const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSe
                 {/* Treatments List */}
                 <div className="p-4">
                     <div className='mt-3 mb-3 text-gray-700'>
-                        <p>Treatment</p>
+                        <p>Package</p>
                     </div>
 
                     <div className='border border-gray-500'></div>
@@ -150,7 +150,7 @@ const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSe
                             <div className="space-y-3">
                                 {treatmentList.length === 0 ? (
                                     <div className="text-center py-4 text-gray-500">
-                                        No treatments found
+                                        No packages found
                                     </div>
                                 ) : (
                                     treatmentList.map((treatment: TreatmentData, index: number) => (
@@ -210,11 +210,11 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
         validationSchema: Yup.object({
             treatmentName: Yup.string()
                 .trim()
-                .required("Treatment name is required"),
+                .required("Package name is required"),
             cost: Yup.number()
                 .typeError("Cost must be a number")
                 .positive("Cost must be greater than 0")
-                .required("Treatment cost is required"),
+                .required("Package cost is required"),
         }),
         onSubmit: async (values, { resetForm }) => {
             try {
@@ -230,7 +230,7 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                 };
 
                 const response: ApiResponse<any> = await Treatment(payload);
-                toast.success(response.data.message || "Treatment added successfully");
+                toast.success(response.data.message || "Package added successfully");
 
                 if (onSuccess) {
                     onSuccess({
@@ -241,8 +241,8 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                 resetForm();
                 onClose();
             } catch (error) {
-                console.error("Error saving treatment:", error);
-                toast.error("Error saving treatment");
+                console.error("Error saving package:", error);
+                toast.error("Error saving package");
             }
         },
     });
@@ -262,7 +262,7 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                 {/* Header */}
                 <div className="p-6 text-center ">
                     <h2 className="text-xl font-semibold text-blue-800">
-                        Add a New Treatment
+                        Add a New Package
                     </h2>
                     <div className="w-24 border-t-2 border-blue-800 mx-auto mt-2"></div>
                 </div>
@@ -274,7 +274,7 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                             {/* Treatment Name */}
                             <div className="flex flex-col sm:flex-row items-center gap-3">
                                 <label className="w-40 text-sm font-medium text-gray-700">
-                                    Treatment Name :
+                                    Package Name :
                                 </label>
                                 <div className="flex-1">
                                     <input
@@ -283,7 +283,7 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                                         value={formik.values.treatmentName}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
-                                        placeholder="Enter Treatment Name"
+                                        placeholder="Enter Package Name"
                                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.treatmentName &&
                                             formik.errors.treatmentName
                                             ? "border-red-500 focus:ring-red-500"
@@ -302,7 +302,7 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                             {/* Treatment Cost */}
                             <div className="flex flex-col sm:flex-row items-center gap-3">
                                 <label className="w-40 text-sm font-medium text-gray-700">
-                                    Treatment Cost :
+                                    Package Cost :
                                 </label>
                                 <div className="flex-1">
                                     <input
@@ -433,7 +433,7 @@ const Page: React.FC = () => {
         validationSchema: Yup.object({
             treatmentName: Yup.string()
                 .trim()
-                .required("Treatment name is required"),
+                .required("Package name is required"),
             qty: Yup.number()
                 .typeError("Quantity must be a number")
                 .positive("Quantity must be greater than 0")
@@ -467,7 +467,7 @@ const Page: React.FC = () => {
                     if (existingTreatment) {
                         // Update existing treatment
                         await UpdateData(currentUserId, editingTreatmentId, payload);
-                        toast.success("Treatment updated successfully");
+                        toast.success("Package updated successfully");
 
                         // Update local state
                         setTreatments(treatments.map(t =>
@@ -485,7 +485,7 @@ const Page: React.FC = () => {
                     } else {
                         // Add new treatment with preserved treatmentId (from drawer selection)
                         await UpdateData(currentUserId, editingTreatmentId, payload);
-                        toast.success("Treatment added successfully");
+                        toast.success("Package added successfully");
 
                         // Add to local state with preserved treatmentId
                         const newTreatment: TreatmentData = {
@@ -506,7 +506,7 @@ const Page: React.FC = () => {
                         : 1;
 
                     await UpdateData(currentUserId, newTreatmentId, payload);
-                    toast.success("Treatment added successfully");
+                    toast.success("Package added successfully");
 
                     // Only add to local state after successful API call
                     const newTreatment: TreatmentData = {
@@ -525,8 +525,8 @@ const Page: React.FC = () => {
                 setShowMedicationForm(false);
                 setEditingTreatmentId(null);
             } catch (error) {
-                console.error("Error processing treatment:", error);
-                toast.error(editingTreatmentId !== null ? "Error updating treatment" : "Error adding treatment");
+                console.error("Error processing package:", error);
+                toast.error(editingTreatmentId !== null ? "Error updating package" : "Error adding package");
             }
         },
     });
@@ -549,7 +549,7 @@ const Page: React.FC = () => {
 
                 const updatedTreatment = {
                     ...treatment,
-                    [field === "qty" ? "quantityPerDay" : field === "name" ? "treatmentName" : field]: updatedValue,
+                    [field === "qty" ? "quantityPerDay" : field === "name" ? "packageName" : field]: updatedValue,
                 };
 
                 // Recalculate total if cost or quantity changed
@@ -608,7 +608,7 @@ const Page: React.FC = () => {
 
     const deleteTreatment = (treatmentId: number): void => {
         setTreatments(treatments.filter(t => t.treatmentId !== treatmentId));
-        toast.success("Treatment removed");
+        toast.success("Package removed");
     };
 
     // Calculate totals - Updated to use correct field names
@@ -693,7 +693,7 @@ const Page: React.FC = () => {
                         </div>
 
                         <div className="flex flex-col items-center">
-                            <h1 className="text-xl sm:text-2xl font-bold text-blue-800">Treatment plan</h1>
+                            <h1 className="text-xl sm:text-2xl font-bold text-blue-800">Package plan</h1>
                             <div className="w-20 sm:w-24 border border-blue-500 mx-auto mt-1"></div>
                         </div>
 
@@ -710,7 +710,7 @@ const Page: React.FC = () => {
                             </div>
 
                             <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
-                                Treatment Plan Information
+                                Package Plan Information
                             </Drawer>
                         </div>
                     </div>
@@ -722,7 +722,7 @@ const Page: React.FC = () => {
                         <div className="flex justify-center">
                             <img
                                src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
-                                alt="ARTHROSE Logo"
+                                alt="High% Logo"
                                 className="w-60 sm:w-80 object-contain"
                             />
                         </div>
@@ -733,7 +733,7 @@ const Page: React.FC = () => {
                         <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 text-xs sm:text-sm">
                             <div className="space-y-2">
                                 <div className="flex flex-col sm:flex-row">
-                                    <span className="font-medium w-full sm:w-32">Patient Name:</span>
+                                    <span className="font-medium w-full sm:w-32">Client Name:</span>
                                     <span>{profileData?.fullName}</span>
                                 </div>
                                 <div className="flex flex-col sm:flex-row">
@@ -745,8 +745,8 @@ const Page: React.FC = () => {
                                     <span>{profileData?.dob}</span>
                                 </div>
                                 <div className="flex flex-col sm:flex-row">
-                                    <span className="font-medium w-full sm:w-32">Consultant Doctor:</span>
-                                    <span>Dr. Varun R Kunte</span>
+                                    <span className="font-medium w-full sm:w-32">Consultant Coach:</span>
+                                    <span>Priyanka</span>
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -781,7 +781,7 @@ const Page: React.FC = () => {
                     <div className="p-3 sm:p-6 min-w-7xl mx-auto">
                         <div className="bg-white">
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-base sm:text-lg font-bold">Treatment</h3>
+                                <h3 className="text-base sm:text-lg font-bold">Package</h3>
                             </div>
 
                             {/* Treatment Table - Updated to use correct field names */}
@@ -790,7 +790,7 @@ const Page: React.FC = () => {
                                     <thead>
                                         <tr className="border-b border-gray-700">
                                             <th className="px-2 py-2 text-left text-sm font-medium w-16 border-gray-700">S.No.</th>
-                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium">Treatment Name</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium">Package Name</th>
                                             <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-20">Qty/Day</th>
                                             <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Cost (₹)</th>
                                             <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Status</th>
@@ -897,7 +897,7 @@ const Page: React.FC = () => {
                                             <input
                                                 type="text"
                                                 name="treatmentName"
-                                                placeholder="Treatment Name..."
+                                                placeholder="Package Name..."
                                                 value={addTreatmentFormik.values.treatmentName}
                                                 onChange={addTreatmentFormik.handleChange}
                                                 onBlur={addTreatmentFormik.handleBlur}
@@ -1009,7 +1009,7 @@ const Page: React.FC = () => {
                                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 self-start"
                                 >
                                     <FontAwesomeIcon icon={faPlus} className="w-3 h-3" />
-                                    New Treatment
+                                    New Package
                                 </button>
                                 <button
                                     onClick={openSavedPrescriptions}
@@ -1025,9 +1025,9 @@ const Page: React.FC = () => {
                         <div className="mt-8 sm:mt-12 flex justify-end">
                             <div className="text-center">
                                 <div className="w-24 sm:w-32 h-12 sm:h-16 border-b border-gray-300 mb-2 flex items-end justify-center">
-                                    <span className="text-blue-600 font-script text-sm sm:text-lg mb-2">Dr. Varun R Kunte</span>
+                                    <span className="text-blue-600 font-script text-sm sm:text-lg mb-2">Priyanka</span>
                                 </div>
-                                <p className="text-xs sm:text-sm font-medium">Dr. Varun R Kunte</p>
+                                <p className="text-xs sm:text-sm font-medium">Priyanka</p>
                             </div>
                         </div>
                     </div>
@@ -1036,7 +1036,7 @@ const Page: React.FC = () => {
 
                     {/* Footer */}
                     <div className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between text-xs sm:text-sm text-gray-600 gap-2">
-                        <span>www.arthrosetmjindia.com</span>
+                        <span>www.high5performance.in</span>
                         <span>www.hfiles.in</span>
                     </div>
                 </div>
@@ -1056,12 +1056,12 @@ const Page: React.FC = () => {
 
 
                                 if (!currentUserId) {
-                                    toast.error("Clinic ID not found");
+                                    toast.error("High5 ID not found");
                                     return;
                                 }
 
                                 if (!extractedPatientId) {
-                                    toast.error("Patient ID not found");
+                                    toast.error("Client ID not found");
                                     return;
                                 }
 
@@ -1084,7 +1084,7 @@ const Page: React.FC = () => {
                                         tid: "T5QAHYBM6", // You might want to get this from profileData if available
                                         dob: profileData?.dob || "",
                                         mobile: profileData?.phoneNumber || "",
-                                        doctor: "Dr. Varun R Kunte",
+                                        doctor: "Priyanka",
                                         city: profileData?.city || ""
                                     },
                                     treatments: treatments.map(treatment => ({
@@ -1097,9 +1097,9 @@ const Page: React.FC = () => {
                                     totalCost: totalCost,
                                     grandTotal: grandTotal,
                                     clinicInfo: {
-                                        name: "ARTHROSE",
-                                        subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
-                                        website: "www.arthrosetmjindia.com"
+                                        name: "High5",
+                                        subtitle: "Performance & Rehab",
+                                        website: "www.high5performance.in"
                                     }
                                 };
 
@@ -1127,7 +1127,7 @@ const Page: React.FC = () => {
                                 Saving...
                             </>
                         ) : (
-                            "Save Treatment Plan"
+                            "Save Package Plan"
                         )}
                     </button>
                 </div>

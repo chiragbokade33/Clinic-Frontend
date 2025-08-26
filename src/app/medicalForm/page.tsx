@@ -361,7 +361,7 @@ const MedicalAssessmentForm = () => {
 
                                 {/* Right Side Name */}
                                 <span className="text-blue-600 font-semibold cursor-pointer ml-auto flex items-center gap-1">
-                                    Dr. Varun R Kunte
+                                    Priyanka
                                     <FontAwesomeIcon icon={faChevronDown} className="text-sm" />
                                 </span>
                             </div>

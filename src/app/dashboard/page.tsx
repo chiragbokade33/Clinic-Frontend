@@ -109,7 +109,7 @@ const HealthcareDashboard = () => {
     visitorName: Yup.string()
       .min(2, 'Name must be at least 2 characters')
       .max(50, 'Name must be less than 50 characters')
-      .required('Visitor name is required'),
+      .required('Client name is required'),
 
     phone: Yup.string()
       .matches(
@@ -291,8 +291,8 @@ const HealthcareDashboard = () => {
         }
 
       } catch (error) {
-        console.error('Error saving patient:', error);
-        const modalType = isModalOpen ? 'add patient' : 'book follow-up appointment';
+        console.error('Error saving client:', error);
+        const modalType = isModalOpen ? 'add client' : 'book follow-up appointment';
         toast.error(`Error ${modalType}. Please try again.`);
       } finally {
         setSubmitting(false);
@@ -556,7 +556,7 @@ const HealthcareDashboard = () => {
                   {selectedPatient.visitorUsername}
                 </h3>
                 <p className="text-sm text-gray-600 font-poppins-600 font-medium mt-1">
-                  {selectedPatient.hfid || 'N/A'}
+                  {selectedPatient.hfid || 'Not a Registered High5 Client'}
                 </p>
               </div>
 
@@ -818,7 +818,7 @@ const HealthcareDashboard = () => {
 
                 {/* Bottom Text */}
                 <div className="text-[14px] text-center text-blue-800 mt-1">
-                  patients missed their appointments today.
+                  clients missed their appointments today.
                 </div>
               </div>
 
@@ -848,7 +848,7 @@ const HealthcareDashboard = () => {
                 onClick={() => setIsModalOpen(true)}
               >
                 <FontAwesomeIcon icon={faUserPlus} className="w-5 h-5" />
-                <span>Add Patient</span>
+                <span>Add Client</span>
               </button>
             </div>
           </div>
@@ -905,7 +905,7 @@ const HealthcareDashboard = () => {
                             setHfidError('');
                           }}
                           onBlur={patientFormik.handleBlur}
-                          placeholder="Patient's HF id."
+                          placeholder="Client's HF id."
                           className={`w-full border rounded-md px-4 py-2 focus:outline-none ${hasError(patientFormik, 'patientId')
                             ? 'border-red-500 bg-red-50'
                             : hfidVerified
@@ -1166,7 +1166,7 @@ const HealthcareDashboard = () => {
                               ? 'border-red-500 bg-red-50'
                               : 'border-gray-700'
                               }`}
-                            placeholder="Enter visitor name"
+                            placeholder="Enter client name"
                           />
                           {getErrorMessage(appointmentFormik, 'visitorName') && (
                             <p className="text-red-500 text-sm mt-1">
@@ -1392,7 +1392,7 @@ const HealthcareDashboard = () => {
                             setHfidError('');
                           }}
                           onBlur={patientFormik.handleBlur}
-                          placeholder="Patient's HF id."
+                          placeholder="Client's HF id."
                           className={`w-full border rounded-md px-4 py-2 focus:outline-none ${hasError(patientFormik, 'patientId')
                             ? 'border-red-500 bg-red-50'
                             : hfidVerified

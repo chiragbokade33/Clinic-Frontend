@@ -154,7 +154,7 @@ const page = () => {
                             gender: parsed.patient.gender,
                             receiptId: parsed.patient.receiptId || parsed.patient.prfid,
                             dob: parsed.patient.dob,
-                            doctor: parsed.patient.doctor || "Dr. Varun R Kunte",
+                            doctor: parsed.patient.doctor || "Priyanka",
                             mobile: parsed.patient.mobile,
                             city: parsed.patient.city
                         },
@@ -341,7 +341,7 @@ const page = () => {
         console.log('Treatment Plan checkbox clicked - Generating PDF...');
 
         if (!treatmentData || !treatmentData.patient) {
-            console.warn("No treatment data found!");
+            console.warn("No package data found!");
             return;
         }
 
@@ -391,7 +391,7 @@ const page = () => {
                     gender: invoiceData.patient.gender,
                     receiptId: `RC${Math.floor(Math.random() * 9999)}`,
                     dob: invoiceData.patient.dob,
-                    doctor: "Dr. Varun R Kunte",
+                    doctor: "Priyanka",
                     mobile: invoiceData.patient.mobile,
                     city: invoiceData.patient.city
                 },
@@ -559,7 +559,7 @@ const page = () => {
                         <span style="color: #666;">${data.patient.mobile}</span>
                     </div>
                     <div class="info-field" style="display: flex; align-items: center;">
-                        <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Consultant Doctor:</label>
+                        <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Consultant Coach:</label>
                         <span style="color: #666;">${data.patient.doctor}</span>
                     </div>
                     <div class="info-field" style="display: flex; align-items: center;">
@@ -727,7 +727,7 @@ const page = () => {
                         <span style="color: #666;">${data.patient.mobile}</span>
                     </div>
                     <div class="info-field" style="display: flex; align-items: center;">
-                        <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Consultant Doctor:</label>
+                        <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Consultant Coach:</label>
                         <span style="color: #666;">${data.patient.doctor}</span>
                     </div>
                     <div class="info-field" style="display: flex; align-items: center;">
@@ -940,7 +940,7 @@ const page = () => {
                         <div style="width: 150px; height: 60px; border-bottom: 1px solid #333; margin-bottom: 10px; display: flex; align-items: end; justify-content: center; font-family: cursive; font-size: 18px; color: #333;">
                             Dr. Kunte
                         </div>
-                        <div style="font-weight: bold; color: #333;">Dr. Varun R Kunte</div>
+                        <div style="font-weight: bold; color: #333;">Priyanka</div>
                     </div>
                 </div>
             </div>
@@ -1060,7 +1060,7 @@ const page = () => {
                         <span style="color: #666;">${data.patient.mobile}</span>
                     </div>
                     <div style="display: flex; align-items: center;">
-                        <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Consultant Doctor:</label>
+                        <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Consultant Coach:</label>
                         <span style="color: #666;">${data.patient.doctor}</span>
                     </div>
                     <div style="display: flex; align-items: center;">
@@ -1344,7 +1344,7 @@ const page = () => {
                         className="w-full flex items-center justify-between p-4 border-b border-black transition-colors"
                     >
                         <span className="text-lg font-medium text-black">
-                            View and Edit the consent forms filled by the patient.
+                            View and Edit the consent forms filled by the client.
                         </span>
                         <ChevronDown
                             className={`w-5 h-5 text-gray-500 transition-transform ${isConsentDropdownOpen ? 'rotate-180' : ''}`}
@@ -1376,7 +1376,7 @@ const page = () => {
                                         <div className="w-full h-20 rounded-lg flex items-center justify-center mb-3">
                                             <img
                                                 src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
-                                                alt="ARTHROSE Logo"
+                                                alt="High5 Logo"
                                                 className="max-w-full max-h-full rounded"
                                             />
                                         </div>
@@ -1412,7 +1412,7 @@ const page = () => {
                 <div className="bg-white rounded-xl border border-black mb-6 mt-4">
                     <div className="flex items-center justify-between p-4 border-b border-black">
                         <span className="text-lg font-medium text-black">
-                            Manage treatment plans, prescriptions, and reports effortlessly.
+                            Manage package plans, prescriptions, and reports effortlessly.
                         </span>
                         <button
                             className="flex items-center gap-2 px-3 py-1 border border-black rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -1430,7 +1430,7 @@ const page = () => {
                     <div className="p-6">
                         <div className="mb-8">
                             <h3 className="text-lg flex justify-end font-medium text-blue-800 mb-4">
-                                patient's treatment plan :
+                                Client's package Plan :
                             </h3>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -1441,7 +1441,7 @@ const page = () => {
                                         <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
                                             <img
                                                 src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
-                                                alt="ARTHROSE Logo"
+                                                alt="High5 Logo"
                                                 className="max-w-20 max-h-20 rounded"
                                             />
                                         </div>
@@ -1464,7 +1464,7 @@ const page = () => {
                                         <div className="h-45 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
                                             <img
                                                 src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
-                                                alt="ARTHROSE Logo"
+                                                alt="High5 Logo"
                                                 className="max-w-20 max-h-20 rounded"
                                             />
                                         </div>
@@ -1496,7 +1496,7 @@ const page = () => {
                             <div className="h-45 w-40 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
                                 <img
                                     src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
-                                    alt="ARTHROSE Logo"
+                                    alt="High5 Logo"
                                     className="max-w-20 max-h-20 rounded"
                                 />
                             </div>
@@ -1519,7 +1519,7 @@ const page = () => {
                             <div className="h-45 w-40 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
                                 <img
                                     src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
-                                    alt="ARTHROSE Logo"
+                                    alt="High5 Logo"
                                     className="max-w-20 max-h-20 rounded"
                                 />
                             </div>

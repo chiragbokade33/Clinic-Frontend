@@ -725,7 +725,7 @@ const PrescriptionForm = () => {
                     prfid: "T5QAHYBM6", // You may want to get this from profileData if available
                     dob: profileData?.dob || "",
                     mobile: profileData?.phoneNumber || "",
-                    doctor: "Dr. Varun R Kunte", // You may want to make this dynamic
+                    doctor: "Priyanka", // You may want to make this dynamic
                     city: profileData?.city || ""
                 },
                 medications: medications.map(med => ({
@@ -736,9 +736,9 @@ const PrescriptionForm = () => {
                     instruction: med.description || ""
                 })),
                 clinicInfo: {
-                    name: "ARTHROSE",
+                    name: "High5",
                     subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
-                    website: "www.arthrosetmjindia.com"
+                    website: "www.high5performance.in"
                 },
                 timestamp: new Date().toISOString(),
                 prescriptionId: `PRESC_${Date.now()}`
@@ -816,7 +816,7 @@ const PrescriptionForm = () => {
                         <div className="flex justify-center">
                             <img
                                src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
-                                alt="ARTHROSE Logo"
+                                alt="High5 Logo"
                                 className="w-60 sm:w-80 object-contain"
                             />
                         </div>
@@ -839,8 +839,8 @@ const PrescriptionForm = () => {
                                     <span>{profileData?.dob}</span>
                                 </div>
                                 <div className="flex flex-col sm:flex-row">
-                                    <span className="font-medium w-full sm:w-32">Consultant Doctor:</span>
-                                    <span>Dr. Varun R Kunte</span>
+                                    <span className="font-medium w-full sm:w-32">Consultant Coach:</span>
+                                    <span>Priyanka</span>
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -1034,9 +1034,9 @@ const PrescriptionForm = () => {
                         <div className="mt-8 sm:mt-12 flex justify-end">
                             <div className="text-center">
                                 <div className="w-24 sm:w-32 h-12 sm:h-16 border-b border-gray-300 mb-2 flex items-end justify-center">
-                                    <span className="text-blue-600 font-script text-sm sm:text-lg mb-2">Dr. Varun R Kunte</span>
+                                    <span className="text-blue-600 font-script text-sm sm:text-lg mb-2">Priyanka</span>
                                 </div>
-                                <p className="text-xs sm:text-sm font-medium">Dr. Varun R Kunte</p>
+                                <p className="text-xs sm:text-sm font-medium">Priyanka</p>
                             </div>
                         </div>
                     </div>
@@ -1045,7 +1045,7 @@ const PrescriptionForm = () => {
 
                     {/* Footer */}
                     <div className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between text-xs sm:text-sm text-gray-600 gap-2">
-                        <span>www.arthrosetmjindia.com</span>
+                        <span>www.high5performance.in</span>
                         <span>www.hfiles.in</span>
                     </div>
                 </div>
