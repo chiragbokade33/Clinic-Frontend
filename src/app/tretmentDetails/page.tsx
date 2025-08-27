@@ -689,7 +689,7 @@ const page = () => {
 
             // Optional: Preview the PDF in a new tab
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
+            // window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -844,7 +844,7 @@ const page = () => {
             console.log('✅ Treatment Plan PDF generated successfully!', fileName);
 
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
+            // window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -1021,7 +1021,7 @@ const page = () => {
 
             // Optional: Preview the PDF in a new tab
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
+            // window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -1196,7 +1196,7 @@ const page = () => {
 
             // Optional: Preview the PDF in a new tab
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
+            // window.open(pdfUrl, '_blank');
 
             return file;
 
