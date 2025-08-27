@@ -9,7 +9,7 @@ import Drawer from '../components/clinicInfoDrawer'
 import DefaultLayout from '../components/DefaultLayout'
 import { useFormik } from 'formik'
 import * as Yup from "yup";
-import { JsonAdded, ListProfile, ListTreatemnet, Treatment, UpdateData } from '../services/ClinicServiceApi'
+import { JsonAdded, ListJsondata, ListProfile, ListTreatemnet, Treatment, UpdateData } from '../services/ClinicServiceApi'
 import { toast, ToastContainer } from 'react-toastify'
 import { getUserId } from '../hooks/GetitemsLocal'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -22,6 +22,9 @@ interface TreatmentData {
     quantityPerDay?: number;
     status?: string;
     total?: number;
+    sessions?: number;
+    duration?: number;
+    frequency?: number;
 }
 
 interface TreatmentDrawerProps {
@@ -47,9 +50,9 @@ interface TreatmentFormValues {
 interface AddTreatmentFormValues {
     treatmentName: string;
     cost: string;
-    duration:string;
-    frequency:string;
-    sessions:string;
+    duration: string;
+    frequency: string;
+    sessions: string;
 }
 
 interface ApiResponse<T> {
@@ -76,7 +79,7 @@ const STATUS_UI_TO_API: Record<string, string> = {
     "Cancelled": "Cancelled",
 };
 
-// Treatment Drawer Component
+// Treatment Drawer Component - UPDATED with enhanced layout
 const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSelectTreatment, onAddNew }) => {
     const [treatmentList, setTreatmentList] = useState<TreatmentData[]>([]);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
@@ -113,6 +116,27 @@ const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSe
         }
     }, [isOpen, currentUserId]);
 
+    // Helper function to format duration
+    const formatDuration = (duration: number | undefined): string => {
+        if (!duration) return "N/A";
+        switch (duration) {
+            case 1: return "1 Month";
+            case 3: return "3 Months";
+            case 6: return "6 Months";
+            default: return `${duration} Months`;
+        }
+    };
+
+    // Helper function to format frequency
+    const formatFrequency = (quantityPerDay: number | undefined): string => {
+        if (!quantityPerDay) return "N/A";
+        switch (quantityPerDay) {
+            case 2: return "2 Days/week";
+            case 3: return "3 Days/week";
+            default: return `${quantityPerDay} Days/week`;
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -123,8 +147,8 @@ const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSe
                 onClick={onClose}
             />
 
-            {/* Drawer */}
-            <div className="fixed inset-y-0 right-0 w-170 bg-white shadow-xl overflow-y-auto transform transition-transform duration-300">
+            {/* Drawer - Made wider to accommodate more information */}
+            <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl overflow-y-auto transform transition-transform duration-300">
                 {/* Header */}
                 <div className="relative p-4 border-b">
                     <h2 className="text-lg font-bold text-black text-center">
@@ -141,37 +165,89 @@ const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSe
                 {/* Treatments List */}
                 <div className="p-4">
                     <div className='mt-3 mb-3 text-gray-700'>
-                        <p>Package</p>
+                        <p className="font-medium">Available Packages</p>
                     </div>
 
-                    <div className='border border-gray-500'></div>
-                    <div className=" mx-auto  font-sans">
+                    <div className='border border-gray-300'></div>
+                    <div className="mx-auto font-sans">
                         {loading ? (
-                            <div className="text-center py-4">Loading treatments...</div>
+                            <div className="text-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                                <p className="mt-2 text-gray-600">Loading packages...</p>
+                            </div>
                         ) : (
-                            /* List of Treatments */
-                            <div className="space-y-3">
+                            /* Enhanced List of Treatments */
+                            <div className="space-y-4 mt-4">
                                 {treatmentList.length === 0 ? (
-                                    <div className="text-center py-4 text-gray-500">
-                                        No packages found
+                                    <div className="text-center py-8 text-gray-500">
+                                        <div className="text-4xl mb-2">📦</div>
+                                        <p>No packages found</p>
+                                        <p className="text-sm text-gray-400 mt-1">Create a new package to get started</p>
                                     </div>
                                 ) : (
                                     treatmentList.map((treatment: TreatmentData, index: number) => (
                                         <div
                                             key={treatment.treatmentId}
-                                            className={`flex justify-between items-center py-2 px-1 cursor-pointer hover:bg-gray-50
-                                ${index < treatmentList.length - 1 ? 'border-b border-gray-200' : ''}`}
+                                            className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200"
                                             onClick={() => onSelectTreatment(treatment)}
                                         >
-                                            {/* Treatment Name */}
-                                            <div className="pr-4">
-                                                <h3 className="font-medium text-sm text-gray-700 leading-tight">
+                                            {/* Package Name */}
+                                            <div className="mb-3">
+                                                <h3 className="font-semibold text-base text-gray-800 line-clamp-2">
                                                     {treatment.treatmentName}
                                                 </h3>
                                             </div>
-                                            {/* Treatment Cost */}
-                                            <div className="text-sm font-semibold text-right text-gray-800">
-                                                ₹{treatment.cost.toLocaleString()}
+
+                                            {/* Package Details Grid */}
+                                            <div className="grid grid-cols-2 gap-3 mb-3">
+                                                {/* Duration */}
+                                                <div className="bg-blue-50 rounded-md p-2">
+                                                    <div className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+                                                        Duration
+                                                    </div>
+                                                    <div className="text-sm font-semibold text-blue-800">
+                                                        {formatDuration(treatment.duration)}
+                                                    </div>
+                                                </div>
+
+                                                {/* Frequency */}
+                                                <div className="bg-green-50 rounded-md p-2">
+                                                    <div className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                                                        Frequency
+                                                    </div>
+                                                    <div className="text-sm font-semibold text-green-800">
+                                                        {formatFrequency(treatment.quantityPerDay)}
+                                                    </div>
+                                                </div>
+
+                                                {/* Sessions */}
+                                                <div className="bg-purple-50 rounded-md p-2">
+                                                    <div className="text-xs font-medium text-purple-600 uppercase tracking-wide">
+                                                        Sessions
+                                                    </div>
+                                                    <div className="text-sm font-semibold text-purple-800">
+                                                        {treatment.sessions || "N/A"}
+                                                    </div>
+                                                </div>
+
+                                                {/* Cost */}
+                                                <div className="bg-orange-50 rounded-md p-2">
+                                                    <div className="text-xs font-medium text-orange-600 uppercase tracking-wide">
+                                                        Cost
+                                                    </div>
+                                                    <div className="text-sm font-semibold text-orange-800">
+                                                        ₹{treatment.cost.toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Select Button */}
+                                            <div className="pt-2 border-t border-gray-100">
+                                                <div className="text-center">
+                                                    <span className="text-xs text-blue-600 font-medium">
+                                                        Click to select this package
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     ))
@@ -179,13 +255,15 @@ const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSe
                             </div>
                         )}
                     </div>
-                    <div className='flex justify-end'>
+
+                    <div className='flex justify-center mt-6'>
                         {/* Add New Button */}
                         <button
                             onClick={onAddNew}
-                            className="w-40 mt-6 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg font-medium text-sm"
+                            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black px-6 py-3 rounded-lg font-medium text-sm shadow-md transition-all duration-200 flex items-center justify-center gap-2"
                         >
-                            Add New
+                            <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
+                            Create New Package
                         </button>
                     </div>
                 </div>
@@ -219,15 +297,15 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                 .typeError("Cost must be a number")
                 .positive("Cost must be greater than 0")
                 .required("Package cost is required"),
-            duration: Yup.number()
-                .typeError("Duration must be a number")
-                .positive("Duration must be greater than 0")
-                .required("Duration is required"),
-            frequency: Yup.string().required("Frequency is required"),
-            sessions: Yup.number()
-                .typeError("Sessions must be a number")
-                .positive("Sessions must be greater than 0")
-                .required("Sessions are required"),
+            // duration: Yup.number()
+            //     .typeError("Duration must be a number")
+            //     .positive("Duration must be greater than 0")
+            //     .required("Duration is required"),
+            // frequency: Yup.string().required("Frequency is required"),
+            // sessions: Yup.number()
+            //     .typeError("Sessions must be a number")
+            //     .positive("Sessions must be greater than 0")
+            //     .required("Sessions are required"),
         }),
         onSubmit: async (values, { resetForm }) => {
             try {
@@ -246,7 +324,7 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                 };
 
                 const response: ApiResponse<any> = await Treatment(payload);
-                toast.success(response.data.message );
+                toast.success(response.data.message);
 
                 if (onSuccess) {
                     onSuccess({
@@ -303,8 +381,8 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                                         onBlur={formik.handleBlur}
                                         placeholder="Enter Package Name"
                                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.treatmentName && formik.errors.treatmentName
-                                                ? "border-red-500 focus:ring-red-500"
-                                                : "border-gray-300 focus:ring-blue-500"
+                                            ? "border-red-500 focus:ring-red-500"
+                                            : "border-gray-300 focus:ring-blue-500"
                                             } transition`}
                                     />
                                     {formik.touched.treatmentName &&
@@ -332,8 +410,8 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                                         step="0.01"
                                         min="0"
                                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.cost && formik.errors.cost
-                                                ? "border-red-500 focus:ring-red-500"
-                                                : "border-gray-300 focus:ring-blue-500"
+                                            ? "border-red-500 focus:ring-red-500"
+                                            : "border-gray-300 focus:ring-blue-500"
                                             } transition`}
                                     />
                                     {formik.touched.cost && formik.errors.cost && (
@@ -356,8 +434,8 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
                                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.duration && formik.errors.duration
-                                                ? "border-red-500 focus:ring-red-500"
-                                                : "border-gray-300 focus:ring-blue-500"
+                                            ? "border-red-500 focus:ring-red-500"
+                                            : "border-gray-300 focus:ring-blue-500"
                                             } transition`}
                                     >
                                         <option value="" disabled>
@@ -389,11 +467,12 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
                                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.frequency && formik.errors.frequency
-                                                ? "border-red-500 focus:ring-red-500"
-                                                : "border-gray-300 focus:ring-blue-500"
+                                            ? "border-red-500 focus:ring-red-500"
+                                            : "border-gray-300 focus:ring-blue-500"
                                             } transition`}
                                     >
                                         <option value="">Select Frequency</option>
+                                        <option value="1">1 Day/week</option>
                                         <option value="2">2 Days/week</option>
                                         <option value="3">3 Days/week</option>
                                     </select>
@@ -420,8 +499,8 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                                         placeholder="Enter Sessions"
                                         min="1"
                                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.sessions && formik.errors.sessions
-                                                ? "border-red-500 focus:ring-red-500"
-                                                : "border-gray-300 focus:ring-blue-500"
+                                            ? "border-red-500 focus:ring-red-500"
+                                            : "border-gray-300 focus:ring-blue-500"
                                             } transition`}
                                     />
                                     {formik.touched.sessions && formik.errors.sessions && (
@@ -503,6 +582,61 @@ const Page: React.FC = () => {
     const router = useRouter();
 
     useEffect(() => {
+        const FetchDatajson = async () => {
+            const extractedHfid = searchParams.get("hfid");
+            const extractedLastVisitId = searchParams.get("visitId");
+            const extractedPatientId = searchParams.get('patientId');
+
+            if (!extractedHfid || !extractedPatientId || !extractedLastVisitId) return;
+
+            const id = await getUserId();
+            setCurrentUserId(id);
+
+            try {
+                const response = await ListJsondata(id, extractedPatientId, extractedLastVisitId);
+                const apiData = response.data.data;
+                console.log("Full API Response:", apiData);
+
+                // Find Treatment type entry
+                const treatmentEntry = apiData.find((item: { type: string; }) => item.type === "Treatment");
+
+                if (treatmentEntry) {
+                    const parsed = JSON.parse(treatmentEntry.jsonData);
+                    console.log("Parsed Treatment Data:", parsed);
+
+                    // Transform the treatments data to match TreatmentData interface
+                    const transformedTreatments: TreatmentData[] = parsed.treatments.map((treatment: any, index: number) => ({
+                        treatmentId: index + 1, // Generate ID since API data doesn't have it
+                        treatmentName: treatment.name,
+                        cost: treatment.cost,
+                        status: STATUS_UI_TO_API[treatment.status] || treatment.status, // Convert to API format
+                        total: treatment.total,
+                        sessions: treatment.sessions,
+                        duration: treatment.duration === "1 Month" ? 1 :
+                            treatment.duration === "3 Months" ? 3 :
+                                treatment.duration === "6 Months" ? 6 : 1,
+                        frequency: treatment.frequency === "2 Days/week" ? 1 :
+                            treatment.frequency === "2 Days/week" ? 2 :
+                                treatment.frequency === "3 Days/week" ? 3 : 2
+                    }));
+
+                    // Set the treatments data using the correct state setter
+                    setTreatments(transformedTreatments);
+                    console.log("Transformed Treatments:", transformedTreatments);
+                } else {
+                    console.log("No Treatment entry found in API data");
+                    setTreatments([]); // Set empty array if no data found
+                }
+            } catch (error) {
+                console.error("Error fetching treatment data:", error);
+                setTreatments([]); // Set empty array on error
+            }
+        };
+
+        FetchDatajson();
+    }, [searchParams]);
+
+    useEffect(() => {
         const listDataProfile = async () => {
             const extractedHfid = searchParams.get("hfid");
             const extractedLastVisitId = searchParams.get("visitId");
@@ -559,7 +693,7 @@ const Page: React.FC = () => {
             status: "Not Started",
             sessions: "",
             duration: "",
-            frequency: ""
+            quantityPerDay: ""
         },
         validationSchema: Yup.object({
             treatmentName: Yup.string()
@@ -570,12 +704,12 @@ const Page: React.FC = () => {
                 .positive("Cost must be greater than 0")
                 .required("Cost is required"),
             status: Yup.string().required("Status is required"),
-            sessions: Yup.number()
-                .typeError("Sessions must be a number")
-                .positive("Sessions must be greater than 0")
-                .required("Sessions is required"),
-            duration: Yup.string().required("Duration is required"),
-            frequency: Yup.string().required("Frequency is required")
+            // sessions: Yup.number()
+            //     .typeError("Sessions must be a number")
+            //     .positive("Sessions must be greater than 0")
+            //     .required("Sessions is required"),
+            // duration: Yup.string().required("Duration is required"),
+            // frequency: Yup.string().required("Frequency is required")
         }),
         onSubmit: async (values, { resetForm }) => {
             if (!currentUserId) {
@@ -584,15 +718,15 @@ const Page: React.FC = () => {
             }
 
             try {
-                // Create payload for API with new fields
+                // Create payload for API with new fields - UPDATED: total equals cost
                 const payload = {
                     treatmentName: values.treatmentName.trim(),
                     cost: parseFloat(values.cost),
-                    total: parseInt(values.qty) * parseFloat(values.cost),
+                    total: parseFloat(values.cost), // ✅ Changed: total now equals cost
                     status: STATUS_UI_TO_API[values.status] || values.status,
                     sessions: parseInt(values.sessions),
                     duration: parseInt(values.duration),
-                    frequency: parseInt(values.frequency)
+                    quantityPerDay: parseInt(values.quantityPerDay)
                 };
 
                 if (editingTreatmentId !== null) {
@@ -604,7 +738,7 @@ const Page: React.FC = () => {
                         await UpdateData(currentUserId, editingTreatmentId, payload);
                         toast.success("Package updated successfully");
 
-                        // Update local state
+                        // Update local state - UPDATED: total equals cost
                         setTreatments(treatments.map(t =>
                             t.treatmentId === editingTreatmentId
                                 ? {
@@ -612,10 +746,10 @@ const Page: React.FC = () => {
                                     treatmentName: values.treatmentName.trim(),
                                     cost: parseFloat(values.cost),
                                     status: STATUS_UI_TO_API[values.status] || values.status,
-                                    total: parseInt(values.qty) * parseFloat(values.cost),
+                                    total: parseFloat(values.cost), // ✅ Changed: total now equals cost
                                     sessions: parseInt(values.sessions),
                                     duration: parseInt(values.duration),
-                                    frequency: parseInt(values.frequency)
+                                    quantityPerDay: parseInt(values.quantityPerDay)
                                 }
                                 : t
                         ));
@@ -624,16 +758,16 @@ const Page: React.FC = () => {
                         await UpdateData(currentUserId, editingTreatmentId, payload);
                         toast.success("Package added successfully");
 
-                        // Add to local state with preserved treatmentId
+                        // Add to local state with preserved treatmentId - UPDATED: total equals cost
                         const newTreatment: TreatmentData = {
                             treatmentId: editingTreatmentId,
                             treatmentName: values.treatmentName.trim(),
                             cost: parseFloat(values.cost),
                             status: STATUS_UI_TO_API[values.status] || values.status,
-                            total: parseInt(values.qty) * parseFloat(values.cost),
+                            total: parseFloat(values.cost), // ✅ Changed: total now equals cost
                             sessions: parseInt(values.sessions),
                             duration: parseInt(values.duration),
-                            frequency: parseInt(values.frequency)
+                            quantityPerDay: parseInt(values.quantityPerDay)
                         };
 
                         setTreatments([...treatments, newTreatment]);
@@ -647,16 +781,16 @@ const Page: React.FC = () => {
                     await UpdateData(currentUserId, newTreatmentId, payload);
                     toast.success("Package added successfully");
 
-                    // Only add to local state after successful API call
+                    // Only add to local state after successful API call - UPDATED: total equals cost
                     const newTreatment: TreatmentData = {
                         treatmentId: newTreatmentId,
                         treatmentName: values.treatmentName.trim(),
                         cost: parseFloat(values.cost),
                         status: STATUS_UI_TO_API[values.status] || values.status,
-                        total: parseInt(values.qty) * parseFloat(values.cost),
+                        total: parseFloat(values.cost), // ✅ Changed: total now equals cost
                         sessions: parseInt(values.sessions),
                         duration: parseInt(values.duration),
-                        frequency: parseInt(values.frequency)
+                        quantityPerDay: parseInt(values.quantityPerDay)
                     };
 
                     setTreatments([...treatments, newTreatment]);
@@ -682,7 +816,7 @@ const Page: React.FC = () => {
                 let updatedValue = value;
 
                 // Handle field-specific transformations
-                if (field === "cost"  || field === "sessions" || field === "duration" || field === "frequency") {
+                if (field === "cost" || field === "sessions" || field === "duration" || field === "quantityPerDay") {
                     updatedValue = parseFloat(value.toString()) || 0;
                 } else if (field === "status") {
                     updatedValue = STATUS_UI_TO_API[value as string] || value;
@@ -693,9 +827,9 @@ const Page: React.FC = () => {
                     [field === "qty" ? "quantityPerDay" : field === "name" ? "treatmentName" : field]: updatedValue,
                 };
 
-                // Recalculate total if cost or quantity changed
+                // UPDATED: Set total equal to cost when cost changes
                 if (field === "cost") {
-                    updatedTreatment.total = (updatedTreatment.quantityPerDay || 0) * updatedTreatment.cost;
+                    updatedTreatment.total = updatedTreatment.cost; // ✅ Changed: total now equals cost
                 }
 
                 return updatedTreatment;
@@ -717,11 +851,8 @@ const Page: React.FC = () => {
                         break;
                     case 'cost':
                         payload.cost = parseFloat(value.toString()) || 0;
-                        // Also update total since cost changed
-                        const currentTreatmentForCost = updatedTreatments.find(t => t.treatmentId === treatmentId);
-                        if (currentTreatmentForCost && currentTreatmentForCost.quantityPerDay !== undefined) {
-                            payload.total = currentTreatmentForCost.quantityPerDay * currentTreatmentForCost.cost;
-                        }
+                        // UPDATED: Set total equal to cost
+                        payload.total = parseFloat(value.toString()) || 0; // ✅ Changed: total now equals cost
                         break;
                     case 'status':
                         payload.status = STATUS_UI_TO_API[value as string] || value;
@@ -732,8 +863,8 @@ const Page: React.FC = () => {
                     case 'duration':
                         payload.duration = parseInt(value.toString()) || 0;
                         break;
-                    case 'frequency':
-                        payload.frequency = parseInt(value.toString()) || 0;
+                    case 'quantityPerDay':
+                        payload.quantityPerDay = parseInt(value.toString()) || 0;
                         break;
                     default:
                         console.warn(`Unknown field: ${field}`);
@@ -753,9 +884,9 @@ const Page: React.FC = () => {
         toast.success("Package removed");
     };
 
-    // Calculate totals - Updated to use correct field names
+    // Calculate totals - UPDATED: Use cost directly instead of cost * quantityPerDay
     const totalCost = treatments.reduce((sum, treatment) =>
-        sum + (treatment.cost * (treatment.quantityPerDay || 0)), 0);
+        sum + treatment.cost, 0); // ✅ Changed: sum cost directly
     const grandTotal = totalCost; // You can add additional charges here if needed
 
     // Updated: selectTreatment function to handle API data structure with new fields
@@ -771,7 +902,7 @@ const Page: React.FC = () => {
             status: STATUS_API_TO_UI[selectedTreatment.status || ""] || selectedTreatment.status || "Not Started",
             sessions: selectedTreatment.sessions?.toString() || "",
             duration: selectedTreatment.duration?.toString() || "",
-            frequency: selectedTreatment.frequency?.toString() || ""
+            quantityPerDay: selectedTreatment.quantityPerDay?.toString() || ""
         });
 
         setEditingTreatmentId(selectedTreatment.treatmentId);
@@ -784,16 +915,17 @@ const Page: React.FC = () => {
             ? Math.max(...treatments.map(t => t.treatmentId)) + 1
             : 1;
 
+        // UPDATED: total equals cost
         const newTreatment: TreatmentData = {
             treatmentId: newTreatmentId,
             treatmentName: newTreatmentData.treatmentName,
             quantityPerDay: 1,
             cost: newTreatmentData.cost,
             status: 'NotStarted',
-            total: newTreatmentData.cost,
+            total: newTreatmentData.cost, // ✅ Changed: total now equals cost
             sessions: 10,
             duration: 1,
-            frequency: 2
+            quantityPerDay: 2
         };
         setTreatments([...treatments, newTreatment]);
         setIsAddTreatmentModalOpen(false);
@@ -820,7 +952,7 @@ const Page: React.FC = () => {
             status: STATUS_API_TO_UI[treatment.status || ""] || treatment.status || "Not Started",
             sessions: treatment.sessions?.toString() || "",
             duration: treatment.duration?.toString() || "",
-            frequency: treatment.frequency?.toString() || ""
+            quantityPerDay: treatment.quantityPerDay?.toString() || ""
         });
         setEditingTreatmentId(treatment.treatmentId);
         setShowMedicationForm(true);
@@ -980,12 +1112,13 @@ const Page: React.FC = () => {
                                                 </td>
                                                 <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <select
-                                                        value={treatment.frequency || ''}
-                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'frequency', e.target.value)}
-                                                        onClick={(e) => e.stopPropagation()}
+                                                        value={treatment.quantityPerDay || ''}
+                                                        // onChange={(e) => updateTreatment(treatment.treatmentId, 'quantityPerDay', e.target.value)}
+                                                        // onClick={(e) => e.stopPropagation()}
                                                         className="w-full border-none outline-none bg-transparent text-sm"
                                                     >
                                                         <option value="">Select Frequency</option>
+                                                        <option value="1">1 Day/week</option>
                                                         <option value="2">2 Days/week</option>
                                                         <option value="3">3 Days/week</option>
                                                     </select>
@@ -1028,7 +1161,7 @@ const Page: React.FC = () => {
                                                     </select>
                                                 </td>
                                                 <td className="border-l border-gray-700 px-2 py-2 text-sm text-right">
-                                                    ₹{(treatment.cost * (treatment.quantityPerDay || 0)).toFixed(2)}
+                                                    ₹{treatment.cost.toFixed(2)}
                                                 </td>
                                             </tr>
                                         ))}
@@ -1102,9 +1235,9 @@ const Page: React.FC = () => {
                                                     ? 'border-red-500' : 'border-gray-500'
                                                     }`}
                                             />
-                                            {addTreatmentFormik.touched.sessions && addTreatmentFormik.errors.sessions && (
+                                            {/* {addTreatmentFormik.touched.sessions && addTreatmentFormik.errors.sessions && (
                                                 <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.sessions}</p>
-                                            )}
+                                            )} */}
                                         </div>
                                     </div>
 
@@ -1112,21 +1245,22 @@ const Page: React.FC = () => {
                                     <div className="flex items-end gap-4">
                                         <div className="w-1/5">
                                             <select
-                                                name="frequency"
-                                                value={addTreatmentFormik.values.frequency}
+                                                name="quantityPerDay"
+                                                value={addTreatmentFormik.values.quantityPerDay}
                                                 onChange={addTreatmentFormik.handleChange}
                                                 onBlur={addTreatmentFormik.handleBlur}
-                                                className={`w-full border px-3 py-2 text-sm rounded focus:outline-none focus:border-blue-500 ${addTreatmentFormik.touched.frequency && addTreatmentFormik.errors.frequency
+                                                className={`w-full border px-3 py-2 text-sm rounded focus:outline-none focus:border-blue-500 ${addTreatmentFormik.touched.quantityPerDay && addTreatmentFormik.errors.quantityPerDay
                                                     ? 'border-red-500' : 'border-gray-500'
                                                     }`}
                                             >
                                                 <option value="">Select Frequency</option>
+                                                <option value="1">1 Day/week</option>
                                                 <option value="2">2 Days/week</option>
                                                 <option value="3">3 Days/week</option>
                                             </select>
-                                            {addTreatmentFormik.touched.frequency && addTreatmentFormik.errors.frequency && (
+                                            {/* {addTreatmentFormik.touched.frequency && addTreatmentFormik.errors.frequency && (
                                                 <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.frequency}</p>
-                                            )}
+                                            )} */}
                                         </div>
                                         <div className="w-1/5">
                                             <select
@@ -1143,9 +1277,9 @@ const Page: React.FC = () => {
                                                 <option value="3">3 Months</option>
                                                 <option value="6">6 Months</option>
                                             </select>
-                                            {addTreatmentFormik.touched.duration && addTreatmentFormik.errors.duration && (
+                                            {/* {addTreatmentFormik.touched.duration && addTreatmentFormik.errors.duration && (
                                                 <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.duration}</p>
-                                            )}
+                                            )} */}
                                         </div>
                                         <div className="w-1/5">
                                             <input
@@ -1299,7 +1433,7 @@ const Page: React.FC = () => {
                                         duration: treatment.duration === 1 ? "1 Month" : treatment.duration === 3 ? "3 Months" : treatment.duration === 6 ? "6 Months" : "",
                                         cost: treatment.cost,
                                         status: STATUS_API_TO_UI[treatment.status || ""] || treatment.status || "Not started",
-                                        total: treatment.cost * (treatment.quantityPerDay || 1)
+                                        total: treatment.cost // ✅ Changed: total now equals cost
                                     })),
                                     totalCost: totalCost,
                                     grandTotal: grandTotal,
