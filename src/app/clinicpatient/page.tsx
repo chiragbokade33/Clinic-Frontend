@@ -410,7 +410,7 @@ const PatientListInterface = () => {
 
                       {/* Package Name */}
                       <div className="text-sm text-gray-700">
-                        {'Weight Loss'}
+                        {patient.treatmentNames || 'N/A'}
                       </div>
 
                       {/* Payment Status */}
@@ -420,7 +420,7 @@ const PatientListInterface = () => {
                           : 'text-red-500'
                           }`}
                       >
-                        {patient.payment || "Pending"}
+                        {patient.paymentStatus || "Pending"}
                       </div>
 
                       {/* View Button */}
