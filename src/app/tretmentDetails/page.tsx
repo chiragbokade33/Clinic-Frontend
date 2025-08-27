@@ -38,6 +38,7 @@ const page = () => {
     const [receiptApiData, setReceiptApiData] = useState(null);
     const [reportImagesData, setReportImagesData] = useState(null);
 
+
     // File storage states (NEW)
     const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null);
     const [treatmentPlanFile, setTreatmentPlanFile] = useState<File | null>(null);
@@ -211,7 +212,9 @@ const page = () => {
     useEffect(() => {
         const listDataProfile = async () => {
             const extractedHfid = searchParams.get("hfid");
+             const extractedPatientId = searchParams.get('patientId');
             if (!extractedHfid) return;
+                
             try {
                 const response = await ListProfile(extractedHfid);
                 setProfileData(response.data.data);
@@ -1335,7 +1338,7 @@ const page = () => {
     return (
         <DefaultLayout>
             <div className='mx-auto p-4'>
-                <Profiledetails profileData={profileData} />
+                <Profiledetails profileData={profileData}/>
 
                 {/* Consent Forms Section */}
                 <div className="bg-white rounded-xl border border-black">

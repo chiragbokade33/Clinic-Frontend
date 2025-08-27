@@ -1,7 +1,7 @@
 // Api EndPoints
 
-// export const API_CLINIC_DATA = "https://localhost:7227/api/";
-export const API_CLINIC_DATA = "https://hfileslabnetcorenextjsbackend-production.up.railway.app/api/";
+export const API_CLINIC_DATA = "https://localhost:7227/api/";
+// export const API_CLINIC_DATA = "https://hfileslabnetcorenextjsbackend-production.up.railway.app/api/";
 
 
 
@@ -94,5 +94,9 @@ export const endPoints = {
         AddPrescripation : API_CLINIC_DATA + "clinic/prescription",
         GetPrescripationList : (clinicId:number) => `${API_CLINIC_DATA}clinic/${clinicId}/prescriptions`,
         PrescriptionClinic : (clinicId:number, prescriptionId :number) => `${API_CLINIC_DATA}clinic/${clinicId}/prescription/${prescriptionId}`
-    } 
+    } ,
+
+    ClinicMedicalHistory : {
+        GetMedicalList : (clinicId:number ,patientId:number ) => `${API_CLINIC_DATA}clinics/${clinicId}/clients/${patientId}/medical/history`
+    }
 };

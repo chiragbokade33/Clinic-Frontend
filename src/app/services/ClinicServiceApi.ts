@@ -290,3 +290,9 @@ export const GetListData = async (clinicId:number) =>{
 export const UpdatePrescipation = async (clinicId:number, prescriptionId:number , payloade:any) =>{
     return axiosInstance.patch(`${endPoints.Prescrition.PrescriptionClinic(clinicId,prescriptionId)}`,payloade)
 }
+
+// MEdicalHistory 
+
+export const ListMedical = async (clinicId:number,patientId :number) =>{
+    return axiosInstance.get(`${endPoints.ClinicMedicalHistory.GetMedicalList(clinicId,patientId)}`)
+}

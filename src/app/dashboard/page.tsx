@@ -246,10 +246,10 @@ const HealthcareDashboard = () => {
 
         // Create consentFormTitles array based on selected checkboxes
         const consentFormTitles = [];
-        if (values.dtrConsent) consentFormTitles.push("DTR Consent");
-        if (values.tmdConsent) consentFormTitles.push("TMD/TMJP Consent");
-        if (values.photoConsent) consentFormTitles.push("Photo Consent");
-        if (values.arthroseConsent) consentFormTitles.push("Arthrose Functional Screening Consent");
+        if (values.dtrConsent) consentFormTitles.push("High 5 Registration Form");
+        if (values.tmdConsent) consentFormTitles.push("High 5 Waiver Form");
+        if (values.photoConsent) consentFormTitles.push("High 5 Terms and Conditions");
+        if (values.arthroseConsent) consentFormTitles.push("High 5 Postnatal Questionnaire");
 
         // Create payload for both APIs (same structure)
         const payload = {
@@ -949,7 +949,7 @@ const HealthcareDashboard = () => {
                             onChange={patientFormik.handleChange}
                             className="accent-yellow-400"
                           />
-                          <span>DTR Consent</span>
+                          <span>High 5 Registration Form</span>
                         </label>
                         <label className="flex items-center space-x-2">
                           <input
@@ -959,7 +959,7 @@ const HealthcareDashboard = () => {
                             onChange={patientFormik.handleChange}
                             className="accent-yellow-400"
                           />
-                          <span>TMD/TMJP Consent</span>
+                          <span>High 5 Waiver Form</span>
                         </label>
                         <label className="flex items-center space-x-2">
                           <input
@@ -969,7 +969,7 @@ const HealthcareDashboard = () => {
                             onChange={patientFormik.handleChange}
                             className="accent-yellow-400"
                           />
-                          <span>Photo Consent</span>
+                          <span>High 5 Terms and Conditions</span>
                         </label>
                         <label className="flex items-center space-x-2">
                           <input
@@ -979,7 +979,7 @@ const HealthcareDashboard = () => {
                             onChange={patientFormik.handleChange}
                             className="accent-yellow-400"
                           />
-                          <span>Arthrose Functional Screening Consent</span>
+                          <span>High 5 Postnatal Questionnaire</span>
                         </label>
                       </div>
                     </div>
@@ -1435,7 +1435,7 @@ const HealthcareDashboard = () => {
                             onChange={patientFormik.handleChange}
                             className="accent-yellow-400"
                           />
-                          <span>DTR Consent</span>
+                          <span>High 5 Registration Form</span>
                         </label>
                         <label className="flex items-center space-x-2">
                           <input
@@ -1445,7 +1445,7 @@ const HealthcareDashboard = () => {
                             onChange={patientFormik.handleChange}
                             className="accent-yellow-400"
                           />
-                          <span>TMD Consent</span>
+                          <span>High 5 Waiver Form</span>
                         </label>
                         <label className="flex items-center space-x-2">
                           <input
@@ -1455,7 +1455,7 @@ const HealthcareDashboard = () => {
                             onChange={patientFormik.handleChange}
                             className="accent-yellow-400"
                           />
-                          <span>Photo Consent</span>
+                          <span>High 5 Terms and Conditions</span>
                         </label>
                         <label className="flex items-center space-x-2">
                           <input
@@ -1465,7 +1465,7 @@ const HealthcareDashboard = () => {
                             onChange={patientFormik.handleChange}
                             className="accent-yellow-400"
                           />
-                          <span>Arthrose Functional Screening Consent</span>
+                          <span>High 5 Postnatal Questionnaire</span>
                         </label>
                       </div>
                     </div>

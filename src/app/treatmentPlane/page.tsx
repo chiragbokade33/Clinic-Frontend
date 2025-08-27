@@ -47,6 +47,9 @@ interface TreatmentFormValues {
 interface AddTreatmentFormValues {
     treatmentName: string;
     cost: string;
+    duration:string;
+    frequency:string;
+    sessions:string;
 }
 
 interface ApiResponse<T> {
@@ -78,7 +81,7 @@ const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSe
     const [treatmentList, setTreatmentList] = useState<TreatmentData[]>([]);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-     const router = useRouter();
+    const router = useRouter();
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -206,15 +209,25 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
         initialValues: {
             treatmentName: "",
             cost: "",
+            duration: "",
+            frequency: "",
+            sessions: "",
         },
         validationSchema: Yup.object({
-            treatmentName: Yup.string()
-                .trim()
-                .required("Package name is required"),
+            treatmentName: Yup.string().trim().required("Package name is required"),
             cost: Yup.number()
                 .typeError("Cost must be a number")
                 .positive("Cost must be greater than 0")
                 .required("Package cost is required"),
+            duration: Yup.number()
+                .typeError("Duration must be a number")
+                .positive("Duration must be greater than 0")
+                .required("Duration is required"),
+            frequency: Yup.string().required("Frequency is required"),
+            sessions: Yup.number()
+                .typeError("Sessions must be a number")
+                .positive("Sessions must be greater than 0")
+                .required("Sessions are required"),
         }),
         onSubmit: async (values, { resetForm }) => {
             try {
@@ -227,22 +240,27 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                     clinicId: currentUserId,
                     treatmentName: values.treatmentName.trim(),
                     cost: parseFloat(values.cost),
+                    duration: parseInt(values.duration),
+                    frequency: parseInt(values.frequency), // ✅ only number extracted
+                    sessions: parseInt(values.sessions),
                 };
 
                 const response: ApiResponse<any> = await Treatment(payload);
-                toast.success(response.data.message || "Package added successfully");
+                toast.success(response.data.message );
 
                 if (onSuccess) {
                     onSuccess({
                         treatmentName: values.treatmentName.trim(),
-                        cost: parseFloat(values.cost)
+                        cost: parseFloat(values.cost),
+                        duration: parseInt(values.duration),
+                        frequency: parseInt(values.frequency),
+                        sessions: parseInt(values.sessions),
                     });
                 }
                 resetForm();
                 onClose();
             } catch (error) {
                 console.error("Error saving package:", error);
-                toast.error("Error saving package");
             }
         },
     });
@@ -284,10 +302,9 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
                                         placeholder="Enter Package Name"
-                                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.treatmentName &&
-                                            formik.errors.treatmentName
-                                            ? "border-red-500 focus:ring-red-500"
-                                            : "border-gray-300 focus:ring-blue-500"
+                                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.treatmentName && formik.errors.treatmentName
+                                                ? "border-red-500 focus:ring-red-500"
+                                                : "border-gray-300 focus:ring-blue-500"
                                             } transition`}
                                     />
                                     {formik.touched.treatmentName &&
@@ -315,13 +332,101 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
                                         step="0.01"
                                         min="0"
                                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.cost && formik.errors.cost
-                                            ? "border-red-500 focus:ring-red-500"
-                                            : "border-gray-300 focus:ring-blue-500"
+                                                ? "border-red-500 focus:ring-red-500"
+                                                : "border-gray-300 focus:ring-blue-500"
                                             } transition`}
                                     />
                                     {formik.touched.cost && formik.errors.cost && (
                                         <p className="text-red-500 text-xs mt-1">
                                             {formik.errors.cost}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Duration */}
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
+                                <label className="w-40 text-sm font-medium text-gray-700">
+                                    Duration :
+                                </label>
+                                <div className="flex-1">
+                                    <select
+                                        name="duration"
+                                        value={formik.values.duration}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.duration && formik.errors.duration
+                                                ? "border-red-500 focus:ring-red-500"
+                                                : "border-gray-300 focus:ring-blue-500"
+                                            } transition`}
+                                    >
+                                        <option value="" disabled>
+                                            Select Duration
+                                        </option>
+                                        <option value="1">1 Month</option>
+                                        <option value="2">3 Months</option>
+                                        <option value="6">6 Months</option>
+                                    </select>
+
+                                    {formik.touched.duration && formik.errors.duration && (
+                                        <p className="text-red-500 text-xs mt-1">
+                                            {formik.errors.duration}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+
+                            {/* Frequency */}
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
+                                <label className="w-40 text-sm font-medium text-gray-700">
+                                    Frequency :
+                                </label>
+                                <div className="flex-1">
+                                    <select
+                                        name="frequency"
+                                        value={formik.values.frequency}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.frequency && formik.errors.frequency
+                                                ? "border-red-500 focus:ring-red-500"
+                                                : "border-gray-300 focus:ring-blue-500"
+                                            } transition`}
+                                    >
+                                        <option value="">Select Frequency</option>
+                                        <option value="2">2 Days/week</option>
+                                        <option value="3">3 Days/week</option>
+                                    </select>
+                                    {formik.touched.frequency && formik.errors.frequency && (
+                                        <p className="text-red-500 text-xs mt-1">
+                                            {formik.errors.frequency}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Sessions */}
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
+                                <label className="w-40 text-sm font-medium text-gray-700">
+                                    Sessions :
+                                </label>
+                                <div className="flex-1">
+                                    <input
+                                        type="number"
+                                        name="sessions"
+                                        value={formik.values.sessions}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        placeholder="Enter Sessions"
+                                        min="1"
+                                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${formik.touched.sessions && formik.errors.sessions
+                                                ? "border-red-500 focus:ring-red-500"
+                                                : "border-gray-300 focus:ring-blue-500"
+                                            } transition`}
+                                    />
+                                    {formik.touched.sessions && formik.errors.sessions && (
+                                        <p className="text-red-500 text-xs mt-1">
+                                            {formik.errors.sessions}
                                         </p>
                                     )}
                                 </div>
@@ -360,6 +465,7 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
         </div>
     );
 };
+
 
 const Page: React.FC = () => {
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
@@ -685,7 +791,7 @@ const Page: React.FC = () => {
                         <div className="flex items-center cursor-pointer">
                             <button
                                 className="mr-1 sm:mr-2 p-1.5 sm:p-2 rounded-lg transition-colors flex items-center"
-                                 onClick={() => router.push("/clinicpatient")}
+                                onClick={() => router.push("/clinicpatient")}
                             >
                                 <FontAwesomeIcon icon={faChevronLeft} className="w-2 h-2 mr-2" />
                                 <span className="text-md sm:text-md font-bold text-[#333333]">Back</span>
@@ -721,7 +827,7 @@ const Page: React.FC = () => {
                     <div className="p-3 sm:p-6">
                         <div className="flex justify-center">
                             <img
-                               src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
+                                src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                 alt="High% Logo"
                                 className="w-60 sm:w-80 object-contain"
                             />
