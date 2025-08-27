@@ -212,9 +212,9 @@ const page = () => {
     useEffect(() => {
         const listDataProfile = async () => {
             const extractedHfid = searchParams.get("hfid");
-             const extractedPatientId = searchParams.get('patientId');
+            const extractedPatientId = searchParams.get('patientId');
             if (!extractedHfid) return;
-                
+
             try {
                 const response = await ListProfile(extractedHfid);
                 setProfileData(response.data.data);
@@ -1267,38 +1267,38 @@ const page = () => {
 
     // Enhanced handleCheckboxChange function
     const handleCheckboxChange = (itemName: string) => {
-    console.log("Checkbox clicked:", itemName);
+        console.log("Checkbox clicked:", itemName);
 
         setCheckedItems((prev: Record<string, boolean>) => {
-        const newCheckedState = {
-            ...prev,
-            [itemName]: !prev[itemName],
-        };
+            const newCheckedState = {
+                ...prev,
+                [itemName]: !prev[itemName],
+            };
 
-        console.log("Previous state:", prev[itemName]);
-        console.log("New state:", newCheckedState[itemName]);
+            console.log("Previous state:", prev[itemName]);
+            console.log("New state:", newCheckedState[itemName]);
 
             // Normalize item name for comparison
             const normalized = itemName.toLowerCase();
 
-        // Trigger PDF generation only when checked (not unchecked)
-        if (!prev[itemName]) {
-            console.log(`Triggering ${itemName} PDF generation...`);
-            
-                    if (normalized === "prescription") {
-                    handlePrescriptionCheck();
-                    } else if (normalized === "treatment") {
-                    handleTreatmentPlanCheck();
-                    } else if (normalized === "invoice") {
-                    handleInvoiceCheck();
-                    } else if (normalized === "receipt") {
-                    handleReceiptCheck();
-                    } 
-        }
+            // Trigger PDF generation only when checked (not unchecked)
+            if (!prev[itemName]) {
+                console.log(`Triggering ${itemName} PDF generation...`);
 
-        return newCheckedState;
-    });
-};
+                if (normalized === "prescription") {
+                    handlePrescriptionCheck();
+                } else if (normalized === "treatment") {
+                    handleTreatmentPlanCheck();
+                } else if (normalized === "invoice") {
+                    handleInvoiceCheck();
+                } else if (normalized === "receipt") {
+                    handleReceiptCheck();
+                }
+            }
+
+            return newCheckedState;
+        });
+    };
 
 
     const CheckboxItem = ({ itemName, label, checked, onChange }) => (
@@ -1338,7 +1338,7 @@ const page = () => {
     return (
         <DefaultLayout>
             <div className='mx-auto p-4'>
-                <Profiledetails profileData={profileData}/>
+                <Profiledetails profileData={profileData} />
 
                 {/* Consent Forms Section */}
                 <div className="bg-white rounded-xl border border-black">

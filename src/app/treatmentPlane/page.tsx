@@ -467,6 +467,30 @@ const AddTreatmentModal: React.FC<AddTreatmentModalProps> = ({ isOpen, onClose, 
 };
 
 
+// First, update your TreatmentData interface to include the new fields
+interface TreatmentData {
+    treatmentId: number;
+    treatmentName: string;
+    quantityPerDay?: number;
+    cost: number;
+    status: string;
+    total: number;
+    sessions?: number;
+    duration?: number;
+    frequency?: number;
+}
+
+// Update TreatmentFormValues interface
+interface TreatmentFormValues {
+    treatmentName: string;
+    qty: string;
+    cost: string;
+    status: string;
+    sessions: string;
+    duration: string;
+    frequency: string;
+}
+
 const Page: React.FC = () => {
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
     const [isTreatmentDrawerOpen, setIsTreatmentDrawerOpen] = useState<boolean>(false);
@@ -477,7 +501,6 @@ const Page: React.FC = () => {
     const [profileData, setProfileData] = useState() as any;
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const router = useRouter();
-
 
     useEffect(() => {
         const listDataProfile = async () => {
@@ -528,27 +551,31 @@ const Page: React.FC = () => {
         loadExistingTreatments();
     }, [currentUserId]);
 
-    // Formik for adding treatments
+    // Updated Formik for adding treatments with new fields
     const addTreatmentFormik = useFormik<TreatmentFormValues>({
         initialValues: {
             treatmentName: "",
-            qty: "",
             cost: "",
-            status: "Not Started"
+            status: "Not Started",
+            sessions: "",
+            duration: "",
+            frequency: ""
         },
         validationSchema: Yup.object({
             treatmentName: Yup.string()
                 .trim()
                 .required("Package name is required"),
-            qty: Yup.number()
-                .typeError("Quantity must be a number")
-                .positive("Quantity must be greater than 0")
-                .required("Quantity is required"),
             cost: Yup.number()
                 .typeError("Cost must be a number")
                 .positive("Cost must be greater than 0")
                 .required("Cost is required"),
-            status: Yup.string().required("Status is required")
+            status: Yup.string().required("Status is required"),
+            sessions: Yup.number()
+                .typeError("Sessions must be a number")
+                .positive("Sessions must be greater than 0")
+                .required("Sessions is required"),
+            duration: Yup.string().required("Duration is required"),
+            frequency: Yup.string().required("Frequency is required")
         }),
         onSubmit: async (values, { resetForm }) => {
             if (!currentUserId) {
@@ -557,13 +584,15 @@ const Page: React.FC = () => {
             }
 
             try {
-                // Create payload for API
+                // Create payload for API with new fields
                 const payload = {
                     treatmentName: values.treatmentName.trim(),
-                    quantityPerDay: parseInt(values.qty),
                     cost: parseFloat(values.cost),
                     total: parseInt(values.qty) * parseFloat(values.cost),
-                    status: STATUS_UI_TO_API[values.status] || values.status
+                    status: STATUS_UI_TO_API[values.status] || values.status,
+                    sessions: parseInt(values.sessions),
+                    duration: parseInt(values.duration),
+                    frequency: parseInt(values.frequency)
                 };
 
                 if (editingTreatmentId !== null) {
@@ -581,10 +610,12 @@ const Page: React.FC = () => {
                                 ? {
                                     ...t,
                                     treatmentName: values.treatmentName.trim(),
-                                    quantityPerDay: parseInt(values.qty),
                                     cost: parseFloat(values.cost),
                                     status: STATUS_UI_TO_API[values.status] || values.status,
-                                    total: parseInt(values.qty) * parseFloat(values.cost)
+                                    total: parseInt(values.qty) * parseFloat(values.cost),
+                                    sessions: parseInt(values.sessions),
+                                    duration: parseInt(values.duration),
+                                    frequency: parseInt(values.frequency)
                                 }
                                 : t
                         ));
@@ -597,10 +628,12 @@ const Page: React.FC = () => {
                         const newTreatment: TreatmentData = {
                             treatmentId: editingTreatmentId,
                             treatmentName: values.treatmentName.trim(),
-                            quantityPerDay: parseInt(values.qty),
                             cost: parseFloat(values.cost),
                             status: STATUS_UI_TO_API[values.status] || values.status,
-                            total: parseInt(values.qty) * parseFloat(values.cost)
+                            total: parseInt(values.qty) * parseFloat(values.cost),
+                            sessions: parseInt(values.sessions),
+                            duration: parseInt(values.duration),
+                            frequency: parseInt(values.frequency)
                         };
 
                         setTreatments([...treatments, newTreatment]);
@@ -618,10 +651,12 @@ const Page: React.FC = () => {
                     const newTreatment: TreatmentData = {
                         treatmentId: newTreatmentId,
                         treatmentName: values.treatmentName.trim(),
-                        quantityPerDay: parseInt(values.qty),
                         cost: parseFloat(values.cost),
                         status: STATUS_UI_TO_API[values.status] || values.status,
-                        total: parseInt(values.qty) * parseFloat(values.cost)
+                        total: parseInt(values.qty) * parseFloat(values.cost),
+                        sessions: parseInt(values.sessions),
+                        duration: parseInt(values.duration),
+                        frequency: parseInt(values.frequency)
                     };
 
                     setTreatments([...treatments, newTreatment]);
@@ -647,7 +682,7 @@ const Page: React.FC = () => {
                 let updatedValue = value;
 
                 // Handle field-specific transformations
-                if (field === "cost" || field === "qty") {
+                if (field === "cost"  || field === "sessions" || field === "duration" || field === "frequency") {
                     updatedValue = parseFloat(value.toString()) || 0;
                 } else if (field === "status") {
                     updatedValue = STATUS_UI_TO_API[value as string] || value;
@@ -655,11 +690,11 @@ const Page: React.FC = () => {
 
                 const updatedTreatment = {
                     ...treatment,
-                    [field === "qty" ? "quantityPerDay" : field === "name" ? "packageName" : field]: updatedValue,
+                    [field === "qty" ? "quantityPerDay" : field === "name" ? "treatmentName" : field]: updatedValue,
                 };
 
                 // Recalculate total if cost or quantity changed
-                if (field === "cost" || field === "qty") {
+                if (field === "cost") {
                     updatedTreatment.total = (updatedTreatment.quantityPerDay || 0) * updatedTreatment.cost;
                 }
 
@@ -680,14 +715,6 @@ const Page: React.FC = () => {
                     case 'name':
                         payload.treatmentName = value;
                         break;
-                    case 'qty':
-                        payload.quantityPerDay = parseFloat(value.toString()) || 0;
-                        // Also update total since qty changed
-                        const currentTreatment = updatedTreatments.find(t => t.treatmentId === treatmentId);
-                        if (currentTreatment && currentTreatment.quantityPerDay !== undefined) {
-                            payload.total = currentTreatment.quantityPerDay * currentTreatment.cost;
-                        }
-                        break;
                     case 'cost':
                         payload.cost = parseFloat(value.toString()) || 0;
                         // Also update total since cost changed
@@ -698,6 +725,15 @@ const Page: React.FC = () => {
                         break;
                     case 'status':
                         payload.status = STATUS_UI_TO_API[value as string] || value;
+                        break;
+                    case 'sessions':
+                        payload.sessions = parseInt(value.toString()) || 0;
+                        break;
+                    case 'duration':
+                        payload.duration = parseInt(value.toString()) || 0;
+                        break;
+                    case 'frequency':
+                        payload.frequency = parseInt(value.toString()) || 0;
                         break;
                     default:
                         console.warn(`Unknown field: ${field}`);
@@ -722,7 +758,7 @@ const Page: React.FC = () => {
         sum + (treatment.cost * (treatment.quantityPerDay || 0)), 0);
     const grandTotal = totalCost; // You can add additional charges here if needed
 
-    // Updated: selectTreatment function to handle API data structure
+    // Updated: selectTreatment function to handle API data structure with new fields
     const selectTreatment = (selectedTreatment: TreatmentData): void => {
         // Check if this treatmentId already exists in current treatments
         const existingTreatment = treatments.find(t => t.treatmentId === selectedTreatment.treatmentId);
@@ -732,7 +768,10 @@ const Page: React.FC = () => {
             treatmentName: selectedTreatment.treatmentName,
             qty: selectedTreatment.quantityPerDay?.toString() || "1",
             cost: selectedTreatment.cost?.toString() || "",
-            status: STATUS_API_TO_UI[selectedTreatment.status || ""] || selectedTreatment.status || "Not Started"
+            status: STATUS_API_TO_UI[selectedTreatment.status || ""] || selectedTreatment.status || "Not Started",
+            sessions: selectedTreatment.sessions?.toString() || "",
+            duration: selectedTreatment.duration?.toString() || "",
+            frequency: selectedTreatment.frequency?.toString() || ""
         });
 
         setEditingTreatmentId(selectedTreatment.treatmentId);
@@ -751,7 +790,10 @@ const Page: React.FC = () => {
             quantityPerDay: 1,
             cost: newTreatmentData.cost,
             status: 'NotStarted',
-            total: newTreatmentData.cost
+            total: newTreatmentData.cost,
+            sessions: 10,
+            duration: 1,
+            frequency: 2
         };
         setTreatments([...treatments, newTreatment]);
         setIsAddTreatmentModalOpen(false);
@@ -775,7 +817,10 @@ const Page: React.FC = () => {
             treatmentName: treatment.treatmentName,
             qty: treatment.quantityPerDay?.toString() || "",
             cost: treatment.cost?.toString() || "",
-            status: STATUS_API_TO_UI[treatment.status || ""] || treatment.status || "Not Started"
+            status: STATUS_API_TO_UI[treatment.status || ""] || treatment.status || "Not Started",
+            sessions: treatment.sessions?.toString() || "",
+            duration: treatment.duration?.toString() || "",
+            frequency: treatment.frequency?.toString() || ""
         });
         setEditingTreatmentId(treatment.treatmentId);
         setShowMedicationForm(true);
@@ -883,21 +928,23 @@ const Page: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Treatment Table */}
+                    {/* Treatment Table - Updated with new columns */}
                     <div className="p-3 sm:p-6 min-w-7xl mx-auto">
                         <div className="bg-white">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-base sm:text-lg font-bold">Package</h3>
                             </div>
 
-                            {/* Treatment Table - Updated to use correct field names */}
+                            {/* Treatment Table - Updated to include new fields */}
                             <div className="overflow-x-auto">
                                 <table className="w-full border-t border-gray-700">
                                     <thead>
                                         <tr className="border-b border-gray-700">
-                                            <th className="px-2 py-2 text-left text-sm font-medium w-16 border-gray-700">S.No.</th>
+                                            <th className="px-2 py-2 text-left text-sm font-medium w-12 border-gray-700">S.No.</th>
                                             <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium">Package Name</th>
-                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-20">Qty/Day</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-20">Sessions</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Frequency</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-20">Duration</th>
                                             <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Cost (₹)</th>
                                             <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Status</th>
                                             <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Total (₹)</th>
@@ -924,12 +971,37 @@ const Page: React.FC = () => {
                                                 <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <input
                                                         type="number"
-                                                        value={treatment.quantityPerDay || 0}
-                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'qty', e.target.value)}
+                                                        value={treatment.sessions || 0}
+                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'sessions', e.target.value)}
                                                         onClick={(e) => e.stopPropagation()}
                                                         className="w-full border-none outline-none bg-transparent text-sm text-center"
                                                         min="1"
                                                     />
+                                                </td>
+                                                <td className="border-l border-gray-700 px-2 py-2 text-sm">
+                                                    <select
+                                                        value={treatment.frequency || ''}
+                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'frequency', e.target.value)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="w-full border-none outline-none bg-transparent text-sm"
+                                                    >
+                                                        <option value="">Select Frequency</option>
+                                                        <option value="2">2 Days/week</option>
+                                                        <option value="3">3 Days/week</option>
+                                                    </select>
+                                                </td>
+                                                <td className="border-l border-gray-700 px-2 py-2 text-sm">
+                                                    <select
+                                                        value={treatment.duration || ''}
+                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'duration', e.target.value)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="w-full border-none outline-none bg-transparent text-sm"
+                                                    >
+                                                        <option value="">Select Duration</option>
+                                                        <option value="1">1 Month</option>
+                                                        <option value="3">3 Months</option>
+                                                        <option value="6">6 Months</option>
+                                                    </select>
                                                 </td>
                                                 <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <input
@@ -972,6 +1044,8 @@ const Page: React.FC = () => {
                                                         <td className="border-l border-gray-700 px-2 py-4 text-sm">&nbsp;</td>
                                                         <td className="border-l border-gray-700 px-2 py-4 text-sm">&nbsp;</td>
                                                         <td className="border-l border-gray-700 px-2 py-4 text-sm">&nbsp;</td>
+                                                        <td className="border-l border-gray-700 px-2 py-4 text-sm">&nbsp;</td>
+                                                        <td className="border-l border-gray-700 px-2 py-4 text-sm">&nbsp;</td>
                                                     </tr>
                                                 ))}
                                             </>
@@ -979,11 +1053,11 @@ const Page: React.FC = () => {
 
                                         {/* Total Row as part of table */}
                                         <tr className="border-t border-b border-gray-700 bg-gray-50">
-                                            <td className="px-2 py-3 text-sm border-gray-700" colSpan={2}></td>
+                                            <td className="px-2 py-3 text-sm border-gray-700" colSpan={4}></td>
                                             <td className="border-l border-gray-700 px-2 py-3 text-sm font-medium" colSpan={2}>
                                                 <strong>Total Cost: ₹{totalCost.toFixed(2)}</strong>
                                             </td>
-                                            <td className="border-l border-gray-700 px-2 py-3 text-sm font-medium" colSpan={2}>
+                                            <td className="border-l border-gray-700 px-2 py-3 text-sm font-medium" colSpan={3}>
                                                 <strong>Grand Total: ₹{grandTotal.toFixed(2)}</strong>
                                             </td>
                                         </tr>
@@ -992,7 +1066,7 @@ const Page: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Add Treatment Form and Button */}
+                        {/* Updated Add Treatment Form with new fields */}
                         <div className="flex justify-end items-start gap-4 mt-4">
                             {/* Treatment Form */}
                             {showMedicationForm && (
@@ -1015,28 +1089,65 @@ const Page: React.FC = () => {
                                                 <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.treatmentName}</p>
                                             )}
                                         </div>
-                                        <div className="w-1/4">
+                                        <div className="w-1/5">
                                             <input
                                                 type="number"
-                                                name="qty"
-                                                placeholder="Qty / Day"
-                                                value={addTreatmentFormik.values.qty}
+                                                name="sessions"
+                                                placeholder="Sessions"
+                                                value={addTreatmentFormik.values.sessions}
                                                 onChange={addTreatmentFormik.handleChange}
                                                 onBlur={addTreatmentFormik.handleBlur}
                                                 min="1"
-                                                className={`w-full border px-3 py-2 focus:outline-none focus:border-blue-500 text-sm rounded ${addTreatmentFormik.touched.qty && addTreatmentFormik.errors.qty
+                                                className={`w-full border px-3 py-2 focus:outline-none focus:border-blue-500 text-sm rounded ${addTreatmentFormik.touched.sessions && addTreatmentFormik.errors.sessions
                                                     ? 'border-red-500' : 'border-gray-500'
                                                     }`}
                                             />
-                                            {addTreatmentFormik.touched.qty && addTreatmentFormik.errors.qty && (
-                                                <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.qty}</p>
+                                            {addTreatmentFormik.touched.sessions && addTreatmentFormik.errors.sessions && (
+                                                <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.sessions}</p>
                                             )}
                                         </div>
                                     </div>
 
                                     {/* Second row */}
                                     <div className="flex items-end gap-4">
-                                        <div className="w-1/4">
+                                        <div className="w-1/5">
+                                            <select
+                                                name="frequency"
+                                                value={addTreatmentFormik.values.frequency}
+                                                onChange={addTreatmentFormik.handleChange}
+                                                onBlur={addTreatmentFormik.handleBlur}
+                                                className={`w-full border px-3 py-2 text-sm rounded focus:outline-none focus:border-blue-500 ${addTreatmentFormik.touched.frequency && addTreatmentFormik.errors.frequency
+                                                    ? 'border-red-500' : 'border-gray-500'
+                                                    }`}
+                                            >
+                                                <option value="">Select Frequency</option>
+                                                <option value="2">2 Days/week</option>
+                                                <option value="3">3 Days/week</option>
+                                            </select>
+                                            {addTreatmentFormik.touched.frequency && addTreatmentFormik.errors.frequency && (
+                                                <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.frequency}</p>
+                                            )}
+                                        </div>
+                                        <div className="w-1/5">
+                                            <select
+                                                name="duration"
+                                                value={addTreatmentFormik.values.duration}
+                                                onChange={addTreatmentFormik.handleChange}
+                                                onBlur={addTreatmentFormik.handleBlur}
+                                                className={`w-full border px-3 py-2 text-sm rounded focus:outline-none focus:border-blue-500 ${addTreatmentFormik.touched.duration && addTreatmentFormik.errors.duration
+                                                    ? 'border-red-500' : 'border-gray-500'
+                                                    }`}
+                                            >
+                                                <option value="">Select Duration</option>
+                                                <option value="1">1 Month</option>
+                                                <option value="3">3 Months</option>
+                                                <option value="6">6 Months</option>
+                                            </select>
+                                            {addTreatmentFormik.touched.duration && addTreatmentFormik.errors.duration && (
+                                                <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.duration}</p>
+                                            )}
+                                        </div>
+                                        <div className="w-1/5">
                                             <input
                                                 type="number"
                                                 name="cost"
@@ -1054,7 +1165,7 @@ const Page: React.FC = () => {
                                                 <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.cost}</p>
                                             )}
                                         </div>
-                                        <div className="w-1/4">
+                                        <div className="w-1/5">
                                             <select
                                                 name="status"
                                                 value={addTreatmentFormik.values.status}
@@ -1067,18 +1178,6 @@ const Page: React.FC = () => {
                                                 <option value="Completed">Completed</option>
                                                 <option value="Cancelled">Cancelled</option>
                                             </select>
-                                        </div>
-                                        <div className="w-1/4">
-                                            <input
-                                                type="text"
-                                                placeholder="Total..."
-                                                value={addTreatmentFormik.values.qty && addTreatmentFormik.values.cost
-                                                    ? `₹${(parseFloat(addTreatmentFormik.values.qty) * parseFloat(addTreatmentFormik.values.cost)).toFixed(2)}`
-                                                    : ''
-                                                }
-                                                readOnly
-                                                className="w-full border border-gray-500 px-3 py-2 focus:outline-none focus:border-blue-500 text-sm rounded bg-gray-100"
-                                            />
                                         </div>
                                     </div>
 
@@ -1160,7 +1259,6 @@ const Page: React.FC = () => {
                                 const extractedVisitId = searchParams.get("visitId");
                                 const extractedPatientId = searchParams.get('patientId');
 
-
                                 if (!currentUserId) {
                                     toast.error("High5 ID not found");
                                     return;
@@ -1181,7 +1279,7 @@ const Page: React.FC = () => {
                                     return;
                                 }
 
-                                // Prepare the treatment data in the required format
+                                // Prepare the treatment data in the required format with new fields
                                 const treatmentPlanData = {
                                     patient: {
                                         name: profileData?.fullName || "",
@@ -1196,6 +1294,9 @@ const Page: React.FC = () => {
                                     treatments: treatments.map(treatment => ({
                                         name: treatment.treatmentName,
                                         qtyPerDay: `${treatment.quantityPerDay || 1} QTY`,
+                                        sessions: treatment.sessions || 0,
+                                        frequency: treatment.frequency === 2 ? "2 Days/week" : treatment.frequency === 3 ? "3 Days/week" : "",
+                                        duration: treatment.duration === 1 ? "1 Month" : treatment.duration === 3 ? "3 Months" : treatment.duration === 6 ? "6 Months" : "",
                                         cost: treatment.cost,
                                         status: STATUS_API_TO_UI[treatment.status || ""] || treatment.status || "Not started",
                                         total: treatment.cost * (treatment.quantityPerDay || 1)
@@ -1260,5 +1361,4 @@ const Page: React.FC = () => {
         </DefaultLayout>
     )
 }
-
 export default Page

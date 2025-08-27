@@ -1,5 +1,5 @@
-import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation';
+import React from 'react'
 
 interface ProfileData {
     name: string;
@@ -9,23 +9,14 @@ interface ProfileData {
     hfId: string;
     bloodGroup: string;
     fullName: string;
+    patientId: string;
+    profileURL:string;
 }
 
 const Profiledetails: React.FC<{ profileData: ProfileData; }> = ({
     profileData,
 }) => {
     const router = useRouter();
-    const searchParams = useSearchParams(); // Hook to get query parameters
-
-    useEffect(() => {
-        const HistoryMedical = async () => {
-            const extractedHfid = searchParams.get("hfid");
-            const extractedPatientId = searchParams.get('patientId');
-            if (!extractedHfid) return;
-        };
-
-        HistoryMedical();
-    }, []);
 
 
     return (
@@ -48,7 +39,7 @@ const Profiledetails: React.FC<{ profileData: ProfileData; }> = ({
                     <div className="flex-shrink-0">
                         <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden">
                             <img
-                                src="/98c4113b37688d826fc939709728223539f249dd.jpg"
+                                src={profileData?.profileURL || "/98c4113b37688d826fc939709728223539f249dd.jpg"}
                                 alt="User profile"
                                 className="object-cover w-full h-full"
                             />
@@ -70,13 +61,13 @@ const Profiledetails: React.FC<{ profileData: ProfileData; }> = ({
                         {/* More Details */}
                         <div className="mt-3 flex justify-end">
                             <button
-  className="text-black underline font-semibold text-sm hover:text-gray-700"
-  onClick={() =>
-    router.push(`/medicalHistory?patientId=${searchParams.get("patientId")}`)
-  }
->
-  More Details
-</button>
+                                className="text-black underline font-semibold text-sm hover:text-gray-700"
+                                onClick={() =>
+                                    router.push(`/medicalHistory?patientId=${profileData?.patientId}`)
+                                }
+                            >
+                                More Details
+                            </button>
 
                         </div>
                     </div>
