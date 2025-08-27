@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import Drawer from '../components/clinicInfoDrawer';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AddPrescripation, GetListData, JsonAdded, ListProfile, UpdatePrescipation } from '../services/ClinicServiceApi';
+import { AddPrescripation, GetListData, JsonAdded, ListJsondata, ListProfile, UpdatePrescipation } from '../services/ClinicServiceApi';
 import { useFormik } from 'formik';
 import * as Yup from "yup";
 import { getUserId } from '../hooks/GetitemsLocal';
@@ -768,6 +768,63 @@ const PrescriptionForm = () => {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+    const FetchDatajson = async () => {
+        const extractedHfid = searchParams.get("hfid");
+        const extractedLastVisitId = searchParams.get("visitId");
+        const extractedPatientId = searchParams.get('patientId');
+        
+        if (!extractedHfid || !extractedLastVisitId || !extractedPatientId) {
+            console.log("Missing required parameters");
+            return;
+        }
+
+        try {
+            const id = await getUserId();
+            setCurrentUserId(id);
+            
+            const response = await ListJsondata(id, Number(extractedPatientId), Number(extractedLastVisitId));
+            const apiData = response.data.data;
+            console.log("Full API Response:", apiData);
+
+            // Find Prescription type (not Invoice)
+            const prescriptionEntry = apiData.find((item: { type: string; }) => item.type === "Prescription");
+            
+            if (prescriptionEntry) {
+                const parsed = JSON.parse(prescriptionEntry.jsonData);
+                console.log("Parsed prescription data:", parsed);
+                
+                // Transform medications data to match table format
+                if (parsed.medications && Array.isArray(parsed.medications)) {
+                    const transformedMedications = parsed.medications.map((med: any, index: number) => ({
+                        sno: index + 1,
+                        medication: med.name || '',
+                        description: med.instruction || '',
+                        dosage: med.dosage || '',
+                        frequency: med.frequency || '',
+                        timing: med.timing || ''
+                    }));
+                    
+                    // Set the medications data for the table
+                    setMedications(transformedMedications);
+                    console.log("Transformed medications:", transformedMedications);
+                } else {
+                    console.log("No medications found in prescription data");
+                    setMedications([]);
+                }
+            } else {
+                console.log("No Prescription entry found in API data");
+                setMedications([]);
+            }
+        } catch (error) {
+            console.error("Error fetching prescription data:", error);
+            setMedications([]);
+        }
+    };
+
+    FetchDatajson();
+}, [searchParams]);
 
     return (
         <DefaultLayout>

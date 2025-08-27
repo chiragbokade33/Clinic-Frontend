@@ -42,6 +42,9 @@ const page = () => {
     const [isSaving, setIsSaving] = useState(false);
     const router = useRouter();
 
+    // Add state for managing payment modes and cheque numbers for each row
+    const [paymentModes, setPaymentModes] = useState<{[key: string]: string}>({});
+    const [chequeNumbers, setChequeNumbers] = useState<{[key: string]: string}>({});
 
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     useEffect(() => {
@@ -88,8 +91,20 @@ const page = () => {
                 if (invoiceEntry) {
                     const parsed = JSON.parse(invoiceEntry.jsonData);
 
-                    // Set the services data (not treatments for invoice)
-                    setTreatmentData(parsed.services || []);
+                    // Set the services data and initialize payment modes
+                    const services = parsed.services || [];
+                    setTreatmentData(services);
+                    
+                    // Initialize payment modes and cheque numbers for each service
+                    const initialPaymentModes: {[key: string]: string} = {};
+                    const initialChequeNumbers: {[key: string]: string} = {};
+                    services.forEach((service: any, index: number) => {
+                        const serviceKey = `service_${index}`;
+                        initialPaymentModes[serviceKey] = service.ModeOfPayment || 'Cash';
+                        initialChequeNumbers[serviceKey] = service.ChequeNo || '';
+                    });
+                    setPaymentModes(initialPaymentModes);
+                    setChequeNumbers(initialChequeNumbers);
                 } else {
                     console.log("No Invoice entry found in API data");
                 }
@@ -104,6 +119,30 @@ const page = () => {
     console.log(treatmentData, "treatmentData")
 
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+    // Handle payment mode change
+    const handlePaymentModeChange = (serviceKey: string, mode: string) => {
+        setPaymentModes(prev => ({
+            ...prev,
+            [serviceKey]: mode
+        }));
+        
+        // Clear cheque number if not cheque mode
+        if (mode !== 'Cheque') {
+            setChequeNumbers(prev => ({
+                ...prev,
+                [serviceKey]: ''
+            }));
+        }
+    };
+
+    // Handle cheque number change
+    const handleChequeNumberChange = (serviceKey: string, chequeNo: string) => {
+        setChequeNumbers(prev => ({
+            ...prev,
+            [serviceKey]: chequeNo
+        }));
+    };
 
     const handleAddReceipt = () => {
         if (newReceipt.number && newReceipt.amount && newReceipt.mode) {
@@ -134,8 +173,6 @@ const page = () => {
         }
     };
 
-
-
     const handleSaveInvoice = async () => {
         try {
             setIsSaving(true);
@@ -150,9 +187,9 @@ const page = () => {
                 return;
             }
 
-            // Calculate total amount from treatments
-            const totalAmount = treatments.reduce((sum, treatment) => {
-                return sum + parseFloat(treatment.AmountPaidINR || 0);
+            // Calculate total amount from treatments with updated payment info
+            const totalAmount = treatmentData.reduce((sum: number, treatment: any, index: number) => {
+                return sum + parseFloat(treatment.total || 0);
             }, 0);
 
             // Convert amount to words (you may want to implement a proper function for this)
@@ -165,7 +202,7 @@ const page = () => {
             // Get the latest receipt or use default values
             const latestReceipt = treatments[treatments.length - 1] || treatments[0];
 
-            // Create receipt JSON data using the sample structure
+            // Create receipt JSON data using the sample structure with updated payment modes
             const receiptData = {
                 patient: {
                     name: profileData?.fullName || "",
@@ -189,6 +226,14 @@ const page = () => {
                     amountPaid: totalAmount,
                     amountInWords: convertToWords(totalAmount)
                 },
+                services: treatmentData.map((service: any, index: number) => {
+                    const serviceKey = `service_${index}`;
+                    return {
+                        ...service,
+                        ModeOfPayment: paymentModes[serviceKey] || 'Cash',
+                        ChequeNo: paymentModes[serviceKey] === 'Cheque' ? (chequeNumbers[serviceKey] || '') : '--'
+                    };
+                }),
                 clinicInfo: {
                     name: "High5",
                     subtitle: "CRANIOFACIAL PAIN & TMJ CENTRE",
@@ -220,6 +265,7 @@ const page = () => {
             setIsSaving(false);
         }
     };
+    
     return (
         <DefaultLayout>
             <div className="w-full max-w-4xl mx-auto p-4 bg-white min-h-screen">
@@ -350,25 +396,51 @@ const page = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {treatmentData.map((treatment:any) => (
-                                        <tr key={treatment.id}>
-                                            <td className="p-2 text-sm">
-                                                {new Date().toLocaleDateString("en-GB")}
-                                                {/* outputs: 22/08/2025 */}
-                                            </td>                                            <td className="border-l border-gray-400 p-2 text-sm">
-                                                {treatment.name}
-                                            </td>
-                                            <td className="border-l border-gray-400 p-2 text-sm">
-                                                {treatment.ModeOfPayment}
-                                            </td>
-                                            <td className="border-l border-gray-400 p-2 text-sm">
-                                                {treatment.ChequeNo || "--"}
-                                            </td>
-                                            <td className="border-l border-gray-400 p-2 text-sm">
-                                                {treatment.total}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {treatmentData.map((treatment: any, index: number) => {
+                                        const serviceKey = `service_${index}`;
+                                        const currentPaymentMode = paymentModes[serviceKey] || 'Cash';
+                                        const currentChequeNo = chequeNumbers[serviceKey] || '';
+                                        
+                                        return (
+                                            <tr key={`${treatment.id || index}`}>
+                                                <td className="p-2 text-sm">
+                                                    {new Date().toLocaleDateString("en-GB")}
+                                                </td>
+                                                <td className="border-l border-gray-400 p-2 text-sm">
+                                                    {treatment.name}
+                                                </td>
+                                                <td className="border-l border-gray-400 p-2 text-sm">
+                                                    <select
+                                                        value={currentPaymentMode}
+                                                        onChange={(e) => handlePaymentModeChange(serviceKey, e.target.value)}
+                                                        className="w-full p-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                                                    >
+                                                        <option value="Cash">Cash</option>
+                                                        <option value="Card">Card</option>
+                                                        <option value="UPI">UPI</option>
+                                                        <option value="Cheque">Cheque</option>
+                                                        <option value="Net Banking">Net Banking</option>
+                                                    </select>
+                                                </td>
+                                                <td className="border-l border-gray-400 p-2 text-sm">
+                                                    {currentPaymentMode === 'Cheque' ? (
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter cheque number"
+                                                            value={currentChequeNo}
+                                                            onChange={(e) => handleChequeNumberChange(serviceKey, e.target.value)}
+                                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-gray-400">--</span>
+                                                    )}
+                                                </td>
+                                                <td className="border-l border-gray-400 p-2 text-sm">
+                                                    {treatment.total}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -386,7 +458,6 @@ const page = () => {
                                         ? treatmentData.reduce((sum: any, service: { total: any; }) => sum + service.total, 0)
                                         : "1000.0"} /-
                                 </span>
-
                             </p>
                         </div>
                     </div>

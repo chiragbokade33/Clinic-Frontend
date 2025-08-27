@@ -77,7 +77,7 @@ const page = () => {
                         },
                         treatments: parsed.treatments.map((t: any) => ({
                             name: t.name,
-                            qtyPerDay: t.qtyPerDay,
+                            frequency: t.frequency,
                             cost: t.cost,
                             status: t.status,
                             total: t.total,
@@ -151,7 +151,7 @@ const page = () => {
                     const normalizedReceiptData = {
                         patient: {
                             name: parsed.patient.name,
-                            uhid: parsed.patient.hfid,
+                            uhid: parsed.patient.uhid,
                             gender: parsed.patient.gender,
                             receiptId: parsed.patient.receiptId || parsed.patient.prfid,
                             dob: parsed.patient.dob,
@@ -381,10 +381,38 @@ const page = () => {
             return `${amount.toLocaleString('en-IN')} Only`;
         };
 
+          const formatReceiptDate = (inputDate = null) => {
+        const date = inputDate ? new Date(inputDate) : new Date();
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            console.warn('Invalid date provided, using current date');
+            return new Date().toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+        
+        return date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short', 
+            year: 'numeric'
+        });
+    };
+
+
         // Priority logic for receipt data
-        if (receiptApiData) {
-            console.log('Using Receipt API data');
-            receiptDataForPDF = receiptApiData;
+          if (receiptApiData) {
+        console.log('Using Receipt API data');
+        receiptDataForPDF = {
+            ...receiptApiData,
+            receipt: {
+                ...receiptApiData.receipt,
+                // Ensure date is properly formatted
+                date: formatReceiptDate(receiptApiData.receipt.date)
+            }
+        };
         } else if (invoiceData) {
             console.log('Generating receipt from Invoice data');
             receiptDataForPDF = {
@@ -399,11 +427,7 @@ const page = () => {
                     city: invoiceData.patient.city
                 },
                 receipt: {
-                    date: new Date().toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                    }),
+                     date: formatReceiptDate(invoiceData.patient.date),
                     receiptNumber: `Rc.${Math.floor(Math.random() * 9999)}`,
                     modeOfPayment: paymentMethod,
                     chequeNo: paymentMethod === 'Cash' ? '-' : 'N/A',
@@ -426,11 +450,7 @@ const page = () => {
                     city: treatmentData.patient.city
                 },
                 receipt: {
-                    date: new Date().toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                    }),
+                    date: formatReceiptDate(),
                     receiptNumber: `Rc.${Math.floor(Math.random() * 9999)}`,
                     modeOfPayment: paymentMethod,
                     chequeNo: paymentMethod === 'Cash' ? '-' : 'N/A',
@@ -609,7 +629,7 @@ const page = () => {
                     </div>
                     <div class="doctor-signature" style="text-align: center;">
                         <div style="width: 150px; height: 60px; border-bottom: 1px solid #333; margin-bottom: 10px; display: flex; align-items: end; justify-content: center; font-family: cursive; font-size: 18px; color: #333;">
-                            Dr. Kunte
+                          Priyanka
                         </div>
                         <div style="font-weight: bold; color: #333;">${data.patient.doctor}</div>
                     </div>
@@ -669,7 +689,7 @@ const page = () => {
 
             // Optional: Preview the PDF in a new tab
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
+            window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -746,8 +766,8 @@ const page = () => {
                         <thead>
                             <tr>
                                 <th style="background: #f8f8f8; border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold; color: #333;">S.No.</th>
-                                <th style="background: #f8f8f8; border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold; color: #333;">Treatment Name</th>
-                                <th style="background: #f8f8f8; border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold; color: #333;">Qty/Day</th>
+                                <th style="background: #f8f8f8; border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold; color: #333;">Package</th>
+                                <th style="background: #f8f8f8; border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold; color: #333;">Frequency</th>
                                 <th style="background: #f8f8f8; border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold; color: #333;">Cost (₹)</th>
                                 <th style="background: #f8f8f8; border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold; color: #333;">Status</th>
                                 <th style="background: #f8f8f8; border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold; color: #333;">Total (₹)</th>
@@ -758,19 +778,19 @@ const page = () => {
                                 <tr style="${index % 2 === 1 ? 'background: #fafafa;' : ''}">
                                     <td style="border: 1px solid #ddd; padding: 12px;">${index + 1}</td>
                                     <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">${treatment.name}</td>
-                                    <td style="border: 1px solid #ddd; padding: 12px;">${treatment.qtyPerDay}</td>
-                                    <td style="border: 1px solid #ddd; padding: 12px; text-align: right;">${treatment.cost.toFixed(2)}</td>
+                                    <td style="border: 1px solid #ddd; padding: 12px;">${treatment.frequency}</td>
+                                    <td style="border: 1px solid #ddd; padding: 12px; text-align: left;">${treatment.cost.toFixed(2)}</td>
                                     <td style="border: 1px solid #ddd; padding: 12px; font-style: italic;">${treatment.status}</td>
-                                    <td style="border: 1px solid #ddd; padding: 12px; text-align: right; font-weight: bold;">${treatment.total.toFixed(2)}</td>
+                                    <td style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold;">${treatment.total.toFixed(2)}</td>
                                 </tr>
                             `).join('')}
                             <tr style="background: #f0f0f0; font-weight: bold;">
                                 <td colspan="3" style="border: 2px solid #333; padding: 15px;"></td>
-                                <td style="border: 2px solid #333; padding: 15px; text-align: right;">
+                                <td style="border: 2px solid #333; padding: 15px; text-align: left;">
                                     <strong>Total: ${data.totalCost.toFixed(2)}</strong>
                                 </td>
                                 <td style="border: 2px solid #333; padding: 15px;"></td>
-                                <td style="border: 2px solid #333; padding: 15px; text-align: right;">
+                                <td style="border: 2px solid #333; padding: 15px; text-align: left;">
                                     <strong>Grand Total: ${data.grandTotal.toFixed(2)}</strong>
                                 </td>
                             </tr>
@@ -786,7 +806,7 @@ const page = () => {
                     </div>
                     <div style="text-align: center;">
                         <div style="width: 150px; height: 60px; border-bottom: 1px solid #333; margin-bottom: 10px; display: flex; align-items: end; justify-content: center; font-family: cursive; font-size: 18px; color: #333;">
-                            Dr. Kunte
+                           Priyanka
                         </div>
                         <div style="font-weight: bold; color: #333;">${data.patient.doctor}</div>
                     </div>
@@ -824,7 +844,7 @@ const page = () => {
             console.log('✅ Treatment Plan PDF generated successfully!', fileName);
 
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
+            window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -914,7 +934,7 @@ const page = () => {
                                     <td style="border: 1px solid #ddd; padding: 12px; vertical-align: top;">
                                         <div style="font-weight: bold; color: #333;">${service.name}</div>
                                     </td>
-                                    <td style="border: 1px solid #ddd; padding: 12px; vertical-align: top;">${service.qtyPerDay}</td>
+                                    <td style="border: 1px solid #ddd; padding: 12px; vertical-align: top;">${service.frequency}</td>
                                     <td style="border: 1px solid #ddd; padding: 12px; vertical-align: top; text-align: right; font-weight: bold;">${service.cost.toFixed(2)}</td>
                                     <td style="border: 1px solid #ddd; padding: 12px; vertical-align: top; text-align: right; font-weight: bold;">${service.total.toFixed(2)}</td>
                                 </tr>
@@ -941,7 +961,7 @@ const page = () => {
                     </div>
                     <div class="doctor-signature" style="text-align: center;">
                         <div style="width: 150px; height: 60px; border-bottom: 1px solid #333; margin-bottom: 10px; display: flex; align-items: end; justify-content: center; font-family: cursive; font-size: 18px; color: #333;">
-                            Dr. Kunte
+                           Priyanka
                         </div>
                         <div style="font-weight: bold; color: #333;">Priyanka</div>
                     </div>
@@ -1001,7 +1021,7 @@ const page = () => {
 
             // Optional: Preview the PDF in a new tab
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
+            window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -1044,7 +1064,7 @@ const page = () => {
                     </div>
                     <div style="display: flex; align-items: center;">
                         <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">UHID:</label>
-                        <span style="color: #666;">${data.patient.hfid}</span>
+                        <span style="color: #666;">${data.patient.uhid}</span>
                     </div>
                     <div style="display: flex; align-items: center;">
                         <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Gender:</label>
@@ -1116,7 +1136,7 @@ const page = () => {
                     </div>
                     <div class="doctor-signature" style="text-align: center;">
                         <div style="width: 150px; height: 60px; border-bottom: 1px solid #333; margin-bottom: 10px; display: flex; align-items: end; justify-content: center; font-family: cursive; font-size: 18px; color: #333;">
-                            Dr. Kunte
+                            Priyanka
                         </div>
                         <div style="font-weight: bold; color: #333;">${data.patient.doctor}</div>
                     </div>
@@ -1176,7 +1196,7 @@ const page = () => {
 
             // Optional: Preview the PDF in a new tab
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
+            window.open(pdfUrl, '_blank');
 
             return file;
 
@@ -1365,15 +1385,29 @@ const page = () => {
                                             const extractedHfid = searchParams.get("hfid");
 
                                             if (consentForm?.consentFormUrl) {
+                                                // Common route for both cases if pdf exists
                                                 router.push(
-                                                    `/consentForm?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${consentForm.title}&pdf=${consentForm.consentFormUrl}&hfid=${extractedHfid}`
+                                                    `/consentForm?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${encodeURIComponent(
+                                                        consentForm.title
+                                                    )}&pdf=${encodeURIComponent(
+                                                        consentForm.consentFormUrl
+                                                    )}&hfid=${extractedHfid}`
                                                 );
-                                            } else {
+                                            } else if (consentForm?.title === "High 5 Waiver Form") {
                                                 router.push(
-                                                    `/publicConsentForm?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${consentForm.title}&hfid=${extractedHfid}`
+                                                    `/publicConsentForm?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${encodeURIComponent(
+                                                        consentForm.title
+                                                    )}&hfid=${extractedHfid}`
+                                                );
+                                            } else if (consentForm?.title === "High 5 Terms and Conditions") {
+                                                router.push(
+                                                    `/publicTerm&Condition?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${encodeURIComponent(
+                                                        consentForm.title
+                                                    )}&hfid=${extractedHfid}`
                                                 );
                                             }
                                         }}
+
 
                                     >
                                         <div className="w-full h-20 rounded-lg flex items-center justify-center mb-3">
@@ -1560,7 +1594,7 @@ const page = () => {
                 {isSendModalOpen && (
                     <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto border-2 border-gray-200">
-                            <div className="text-center mb-6 pb-4 border-b border-gray-300">
+                            <div className="relative text-center mb-6 pb-4 border-b border-gray-300">
                                 <h2 className="text-xl font-semibold text-gray-800">
                                     Check the following details before sending
                                 </h2>
@@ -1571,6 +1605,7 @@ const page = () => {
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
+
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div>

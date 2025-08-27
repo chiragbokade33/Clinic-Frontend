@@ -12,10 +12,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { getUserId } from '../hooks/GetitemsLocal';
 import { toast, ToastContainer } from 'react-toastify';
 
-// Updated type to match your actual data structure
+// Updated type to use frequency instead of qtyPerDay
 type Treatment = {
     name: string;
-    qtyPerDay: string;
+    frequency: string;
     cost: number;
     status: string;
     total: number;
@@ -25,7 +25,7 @@ const Invoice = () => {
     const [showForm, setShowForm] = useState(false);
     const [newTreatment, setNewTreatment] = useState({
         name: '',
-        qtyPerDay: '',
+        frequency: '',
         cost: '',
         total: ''
     });
@@ -84,7 +84,7 @@ const Invoice = () => {
             const id = await getUserId();
             setCurrentUserId(id);
             try {
-                const response = await ListJsondata(id, extractedPatientId, extractedLastVisitId);
+                const response = await ListJsondata(id, Number(extractedPatientId), Number(extractedLastVisitId));
                 const apiData = response.data.data;
 
                 // Find Treatment type
@@ -105,23 +105,38 @@ const Invoice = () => {
     // Fixed totalCost calculation with proper null checking
     const totalCost = treatmentData.reduce((sum, item) => sum + (item.total || 0), 0);
 
-    // Fixed handleAddTreatment function
+    // Helper function to format frequency input
+    const formatFrequency = (input: string): string => {
+        if (!input) return '1 time/day';
+        
+        // Check if input is just a number
+        const numMatch = input.match(/^\d+$/);
+        if (numMatch) {
+            const num = parseInt(numMatch[0]);
+            return `${num} Days/week`;
+        }
+        
+        // If it already contains text, return as is
+        return input;
+    };
+
+    // Updated handleAddTreatment function to use frequency with auto-formatting
     const handleAddTreatment = () => {
         if (newTreatment.name && newTreatment.cost) {
             const cost = parseFloat(newTreatment.cost) || 0;
-            const qtyPerDay = newTreatment.qtyPerDay || '1 QTY';
+            const frequency = formatFrequency(newTreatment.frequency);
             const total = cost;
 
             const newTreatmentItem: Treatment = {
                 name: newTreatment.name,
-                qtyPerDay: qtyPerDay,
+                frequency: frequency,
                 cost: cost,
                 status: "Not Started",
                 total: total
             };
 
             setTreatmentData([...treatmentData, newTreatmentItem]);
-            setNewTreatment({ name: '', qtyPerDay: '', cost: '', total: '' });
+            setNewTreatment({ name: '', frequency: '', cost: '', total: '' });
         }
     };
 
@@ -157,7 +172,7 @@ const Invoice = () => {
                 },
                 services: treatmentData.map(treatment => ({
                     name: treatment.name,
-                    qtyPerDay: treatment.qtyPerDay,
+                    frequency: treatment.frequency,
                     cost: treatment.cost,
                     total: treatment.total
                 })),
@@ -303,7 +318,7 @@ const Invoice = () => {
                     </div>
                     <div className='border border-black mx-auto'></div>
 
-                    {/* Fixed Invoice Table */}
+                    {/* Fixed Invoice Table - Updated column header */}
                     <div className="mb-6 mt-3">
                         <h3 className="text-center font-bold mb-4">Invoice</h3>
 
@@ -316,7 +331,7 @@ const Invoice = () => {
                                             Service/Product
                                         </th>
                                         <th className="border-l border-gray-400 p-2 text-left text-sm">
-                                            Qty/Day
+                                            Frequency
                                         </th>
                                         <th className="border-l border-gray-400 p-2 text-left text-sm">
                                             Cost (₹)
@@ -335,7 +350,7 @@ const Invoice = () => {
                                                     {treatment.name}
                                                 </td>
                                                 <td className="border-l border-gray-400 p-2 text-sm">
-                                                    {treatment.qtyPerDay}
+                                                    {treatment.frequency}
                                                 </td>
                                                 <td className="border-l border-gray-400 p-2 text-sm">
                                                     {treatment.cost.toFixed(1)}
@@ -369,17 +384,17 @@ const Invoice = () => {
                     </div>
                     <div className='border border-black mx-auto'></div>
 
-                    {/* Fixed Add Treatment Form */}
+                    {/* Updated Add Treatment Form with frequency input */}
                     <div className="mb-6 p-4 mt-3">
                         <div className={`flex ${showForm ? "justify-between" : "justify-end"} items-start`}>
                             {/* Show form only if true */}
                             {showForm && (
                                 <div className="w-full md:w-3/4">
-                                    {/* Row 1: Treatment Name + Qty/Day */}
+                                    {/* Row 1: Treatment Name + Frequency */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                         <input
                                             type="text"
-                                            placeholder="Treatment Name . . ."
+                                            placeholder="Service/Product . . ."
                                             value={newTreatment.name}
                                             onChange={(e) =>
                                                 setNewTreatment({ ...newTreatment, name: e.target.value })
@@ -388,10 +403,10 @@ const Invoice = () => {
                                         />
                                         <input
                                             type="text"
-                                            placeholder="Qty / Day"
-                                            value={newTreatment.qtyPerDay}
+                                            placeholder="Frequency (e.g., 2 = 2 Days/week)"
+                                            value={newTreatment.frequency}
                                             onChange={(e) =>
-                                                setNewTreatment({ ...newTreatment, qtyPerDay: e.target.value })
+                                                setNewTreatment({ ...newTreatment, frequency: e.target.value })
                                             }
                                             className="border border-gray-400 p-2 text-sm w-full"
                                         />
