@@ -237,10 +237,10 @@ const page = () => {
 
     // Checkbox states for consent forms
     const [consentFormsChecked, setConsentFormsChecked] = useState({
-        dtrConsent: false,
-        tmdTmjpConsent: false,
-        photoConsent: false,
-        arthroseScreeningConsent: false
+        high5RegistrationForm: false,
+        high5WaiverForm: false,
+        high5TermsAndConditions: false,
+        high5PostnatalQuestionnaire: false
     }) as any;
 
     const convertDateFormat = (dateString: { split: (arg0: string) => [any, any, any]; }) => {
@@ -1682,27 +1682,27 @@ const page = () => {
 
                             <div className="space-y-4 mb-6">
                                 <ConsentFormCheckboxItem
-                                    itemName="dtrConsent"
-                                    label="DTR Consent"
-                                    checked={consentFormsChecked.dtrConsent}
+                                    itemName="high5RegistrationForm"
+                                    label="High 5 Registration Form"
+                                    checked={consentFormsChecked.high5RegistrationForm}
                                     onChange={handleConsentFormCheckboxChange}
                                 />
                                 <ConsentFormCheckboxItem
-                                    itemName="tmdTmjpConsent"
-                                    label="TMD/TMJP Consent"
-                                    checked={consentFormsChecked.tmdTmjpConsent}
+                                    itemName="high5WaiverForm"
+                                    label="High 5 Waiver Form"
+                                    checked={consentFormsChecked.high5WaiverForm}
                                     onChange={handleConsentFormCheckboxChange}
                                 />
                                 <ConsentFormCheckboxItem
-                                    itemName="photoConsent"
-                                    label="Photo Consent"
-                                    checked={consentFormsChecked.photoConsent}
+                                    itemName="high5TermsAndConditions"
+                                    label="High 5 Terms and Conditions"
+                                    checked={consentFormsChecked.high5TermsAndConditions}
                                     onChange={handleConsentFormCheckboxChange}
                                 />
                                 <ConsentFormCheckboxItem
-                                    itemName="arthroseScreeningConsent"
-                                    label="Arthrose Functional Screening Consent"
-                                    checked={consentFormsChecked.arthroseScreeningConsent}
+                                    itemName="high5PostnatalQuestionnaire"
+                                    label="High 5 Postnatal Questionnaire"
+                                    checked={consentFormsChecked.high5PostnatalQuestionnaire}
                                     onChange={handleConsentFormCheckboxChange}
                                 />
                             </div>
