@@ -260,15 +260,27 @@ export const ListJsondata = async (clinicId:number,patientId:number,clinicVisitI
 }
 // api.ts
 export const UploadeallData = async (payload: FormData) => {
-  return axiosInstance.post(
-    `${endPoints.CommonAddJson.FinalUploade}`,
-    payload,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+    try {
+        console.log("🚀 Sending request to:", endPoints.CommonAddJson.FinalUploade);
+        
+        const response = await axiosInstance.post(
+            `${endPoints.CommonAddJson.FinalUploade}`,
+            payload
+            // Don't set Content-Type header - let browser handle it with boundary
+        );
+        
+        return response;
+    } catch (error:any) {
+        console.error("API Error Details:", {
+            message: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            url: error.config?.url
+        });
+        
+        throw error;
     }
-  );
 };
 
 

@@ -15,6 +15,7 @@ import Profiledetails from '../components/TreatMentdetailsData/Profiledetails';
 // Add these imports at the top of your component
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { toast, ToastContainer } from 'react-toastify';
 
 const page = () => {
     const [isConsentDropdownOpen, setIsConsentDropdownOpen] = useState(false);
@@ -24,7 +25,6 @@ const page = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isSending, setIsSending] = useState(false);
-
 
     // Enhanced state for tracking actions and PDF data
     const [actionPayload, setActionPayload] = useState([]);
@@ -40,14 +40,22 @@ const page = () => {
     const [receiptApiData, setReceiptApiData] = useState(null);
     const [reportImagesData, setReportImagesData] = useState(null);
 
-
-    // File storage states (NEW)
+    // File storage states
     const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null);
     const [treatmentPlanFile, setTreatmentPlanFile] = useState<File | null>(null);
     const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [reportImagesFile, setReportImagesFile] = useState<File | null>(null);
     const [imgAttechData, setImgAttechData] = useState();
+
+    // NEW: Add loading states for each document type
+    const [loadingStates, setLoadingStates] = useState({
+        prescription: false,
+        Images: false,
+        Receipt: false,
+        invoice: false,
+        Treatment: false
+    });
 
     useEffect(() => {
         const FetchDatajson = async () => {
@@ -83,7 +91,6 @@ const page = () => {
                 } else {
                     setImgAttechData([]);
                 }
-
 
                 // ✅ Find Treatment data
                 const treatmentEntry = apiData.find((item: { type: string }) => item.type === "Treatment");
@@ -198,7 +205,7 @@ const page = () => {
                     setReceiptApiData(normalizedReceiptData);
                 }
 
-                const reportImagesEntry = apiData.find((item: { type: string }) => item.type === "Images" || item.type === "Images" || item.type === "Reports");
+                const reportImagesEntry = apiData.find((item: { type: string }) => item.type === "Images" || item.type === "Reports");
                 if (reportImagesEntry) {
                     const parsed = JSON.parse(reportImagesEntry.jsonData);
                     const normalizedImagesData: any = {
@@ -225,7 +232,6 @@ const page = () => {
 
         FetchDatajson();
     }, [searchParams]);
-
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -338,11 +344,11 @@ const page = () => {
         setIsSendModalOpen(false);
     };
 
-    // UPDATED: Function to handle prescription checkbox click and generate PDF
+    // UPDATED: Make all PDF generation functions properly async
     const handlePrescriptionCheck = async () => {
         if (!prescriptionPdf) {
             console.warn("No prescription data found!");
-            return;
+            throw new Error("No prescription data available");
         }
 
         const actionData = {
@@ -358,20 +364,19 @@ const page = () => {
 
         console.log('Prescription Action Payload:', actionData);
 
-        // Generate PDF and get file
         const file = await generatePrescriptionPDF(prescriptionPdf);
-        if (file) {
-            setPrescriptionFile(file);
+        if (!file) {
+            throw new Error("Failed to generate prescription PDF");
         }
+
+        setPrescriptionFile(file);
+        console.log('✅ Prescription file set successfully');
     };
 
-    // UPDATED: Function to handle treatment plan checkbox click and generate PDF
     const handleTreatmentPlanCheck = async () => {
-        console.log('Treatment Plan checkbox clicked - Generating PDF...');
-
         if (!treatmentData || !treatmentData.patient) {
-            console.warn("No package data found!");
-            return;
+            console.warn("No treatment data found!");
+            throw new Error("No treatment data available");
         }
 
         const actionData = {
@@ -387,14 +392,15 @@ const page = () => {
 
         console.log('Treatment Plan Action Payload:', actionData);
 
-        // Generate PDF and get file
         const file = await generateTreatmentPlanPDF(treatmentData);
-        if (file) {
-            setTreatmentPlanFile(file);
+        if (!file) {
+            throw new Error("Failed to generate treatment plan PDF");
         }
+
+        setTreatmentPlanFile(file);
+        console.log('✅ Treatment plan file set successfully');
     };
 
-    // UPDATED: Function to handle receipt checkbox click and generate PDF
     const handleReceiptCheck = async () => {
         console.log('Receipt checkbox clicked - Generating PDF...');
 
@@ -410,7 +416,6 @@ const page = () => {
         const formatReceiptDate = (inputDate = null) => {
             const date = inputDate ? new Date(inputDate) : new Date();
 
-            // Check if date is valid
             if (isNaN(date.getTime())) {
                 console.warn('Invalid date provided, using current date');
                 return new Date().toLocaleDateString('en-GB', {
@@ -427,7 +432,6 @@ const page = () => {
             });
         };
 
-
         // Priority logic for receipt data
         if (receiptApiData) {
             console.log('Using Receipt API data');
@@ -435,7 +439,6 @@ const page = () => {
                 ...receiptApiData,
                 receipt: {
                     ...receiptApiData.receipt,
-                    // Ensure date is properly formatted
                     date: formatReceiptDate(receiptApiData.receipt.date)
                 }
             };
@@ -487,7 +490,7 @@ const page = () => {
             };
         } else {
             console.warn("No data available for receipt generation!");
-            return;
+            throw new Error("No data available for receipt generation");
         }
 
         const actionData = {
@@ -503,20 +506,19 @@ const page = () => {
 
         console.log('Receipt Action Payload:', actionData);
 
-        // Generate PDF and get file
         const file = await generateReceiptPDF(receiptDataForPDF);
-        if (file) {
-            setReceiptFile(file);
+        if (!file) {
+            throw new Error("Failed to generate receipt PDF");
         }
+
+        setReceiptFile(file);
+        console.log('✅ Receipt file set successfully');
     };
 
-    // UPDATED: Function to handle invoice checkbox click and generate PDF
     const handleInvoiceCheck = async () => {
-        console.log('Invoice checkbox clicked - Generating PDF...');
-
         if (!invoiceData) {
             console.warn("No invoice data found!");
-            return;
+            throw new Error("No invoice data available");
         }
 
         const invoiceDataForPDF = {
@@ -550,10 +552,214 @@ const page = () => {
 
         console.log('Invoice Action Payload:', actionData);
 
-        // Generate PDF and get file
         const file = await generateInvoicePDF(invoiceDataForPDF);
-        if (file) {
-            setInvoiceFile(file);
+        if (!file) {
+            throw new Error("Failed to generate invoice PDF");
+        }
+
+        setInvoiceFile(file);
+        console.log('✅ Invoice file set successfully');
+    };
+
+    // NEW: Add Images handler function
+    const handleImagesCheck = async () => {
+        if (!reportImagesData && !imgAttechData) {
+            console.warn("No images data found!");
+            throw new Error("No images data available");
+        }
+
+        let imagesDataForPDF;
+
+        if (reportImagesData) {
+            imagesDataForPDF = reportImagesData;
+        } else if (imgAttechData && imgAttechData.length > 0) {
+            imagesDataForPDF = {
+                patient: profileData ? {
+                    name: profileData.firstName + ' ' + profileData.lastName,
+                    uhid: profileData.hfid,
+                    gender: profileData.gender,
+                    dob: profileData.dob,
+                    mobile: profileData.mobile,
+                    city: profileData.city
+                } : {
+                    name: 'N/A',
+                    uhid: 'N/A',
+                    gender: 'N/A',
+                    dob: 'N/A',
+                    mobile: 'N/A',
+                    city: 'N/A'
+                },
+                images: imgAttechData,
+                totalImages: imgAttechData.length,
+                clinicInfo: {
+                    website: 'www.hfiles.in'
+                },
+                uploadDate: new Date().toISOString()
+            };
+        } else {
+            console.warn("No images available for PDF generation!");
+            throw new Error("No images available for PDF generation");
+        }
+
+        const actionData = {
+            timestamp: new Date().toISOString(),
+            action: 'images_checked',
+            patientId: imagesDataForPDF.patient.uhid,
+            documentType: 'images',
+            data: imagesDataForPDF
+        };
+
+        setActionPayload(prev => [...prev, actionData]);
+
+        console.log('Images Action Payload:', actionData);
+
+        const file = await generateImagesPDF(imagesDataForPDF);
+        if (!file) {
+            throw new Error("Failed to generate images PDF");
+        }
+
+        setReportImagesFile(file);
+        console.log('✅ Images file set successfully');
+    };
+
+    // NEW: Generate Images PDF function
+    const generateImagesPDF = async (data) => {
+        try {
+            if (!data || !data.images || data.images.length === 0) {
+                console.warn("No images data found!");
+                return null;
+            }
+
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '-9999px';
+            tempDiv.style.width = '800px';
+            tempDiv.style.padding = '20px';
+            tempDiv.style.backgroundColor = 'white';
+            tempDiv.style.fontFamily = 'Arial, sans-serif';
+
+            tempDiv.innerHTML = `
+                <div class="images-container" style="max-width: 800px; margin: 0 auto; background: white; padding: 30px;">
+                    <!-- Header Section -->
+                    <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
+                        <div class="logo" style="width: 180px; height: 100px; margin-right: 20px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <img src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png" 
+                                alt="Clinic Logo"
+                                style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                    </div>
+
+                    <!-- Patient Information -->
+                    <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
+                        <div class="info-field" style="display: flex; align-items: center;">
+                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Patient Name:</label>
+                            <span style="color: #666;">${data.patient?.name || 'N/A'}</span>
+                        </div>
+                        <div class="info-field" style="display: flex; align-items: center;">
+                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">UHID:</label>
+                            <span style="color: #666;">${data.patient?.uhid || 'N/A'}</span>
+                        </div>
+                        <div class="info-field" style="display: flex; align-items: center;">
+                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Gender:</label>
+                            <span style="color: #666;">${data.patient?.gender || 'N/A'}</span>
+                        </div>
+                        <div class="info-field" style="display: flex; align-items: center;">
+                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">DOB:</label>
+                            <span style="color: #666;">${data.patient?.dob ? new Date(data.patient.dob).toLocaleDateString('en-GB').replace(/\//g, '-') : 'N/A'}</span>
+                        </div>
+                        <div class="info-field" style="display: flex; align-items: center;">
+                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Mobile:</label>
+                            <span style="color: #666;">${data.patient?.mobile || 'N/A'}</span>
+                        </div>
+                        <div class="info-field" style="display: flex; align-items: center;">
+                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">City:</label>
+                            <span style="color: #666;">${data.patient?.city || 'N/A'}</span>
+                        </div>
+                    </div>
+
+                    <!-- Images Section -->
+                    <div class="images-section">
+                        <h2 style="color: #333; margin-bottom: 15px; font-size: 18px;">Medical Reports & Images</h2>
+                        <p style="color: #666; margin-bottom: 20px;">Total Images: ${data.totalImages || data.images.length}</p>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                            ${data.images.map((imageUrl, index) => `
+                                <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; text-align: center;">
+                                    <div style="width: 100%; height: 150px; background: #f5f5f5; border-radius: 5px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                        <img src="${imageUrl}" 
+                                             alt="Medical Report ${index + 1}"
+                                             style="max-width: 100%; max-height: 100%; object-fit: contain;" 
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                                        <div style="display: none; color: #666; font-size: 12px;">Image ${index + 1}</div>
+                                    </div>
+                                    <p style="font-size: 12px; color: #666; margin: 0;">Report ${index + 1}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: end;">
+                        <div style="font-size: 12px; color: #666;">
+                            ${data.clinicInfo?.website || 'www.hfiles.in'}
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="width: 150px; height: 60px; border-bottom: 1px solid #333; margin-bottom: 10px; display: flex; align-items: end; justify-content: center; font-family: cursive; font-size: 18px; color: #333;">
+                               Priyanka
+                            </div>
+                            <div style="font-weight: bold; color: #333;">Doctor</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(tempDiv);
+
+            const canvas = await html2canvas(tempDiv, {
+                width: 800,
+                height: tempDiv.scrollHeight,
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff'
+            });
+
+            document.body.removeChild(tempDiv);
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pdfWidth - 20;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, pdfHeight - 20));
+
+            if (imgHeight > pdfHeight - 20) {
+                let remainingHeight = imgHeight - (pdfHeight - 20);
+                let yPosition = -(pdfHeight - 20);
+
+                while (remainingHeight > 0) {
+                    pdf.addPage();
+                    const pageHeight = Math.min(remainingHeight, pdfHeight - 20);
+                    pdf.addImage(imgData, 'PNG', 10, yPosition, imgWidth, imgHeight);
+                    remainingHeight -= pageHeight;
+                    yPosition -= pdfHeight;
+                }
+            }
+
+            const pdfBlob = pdf.output('blob');
+            const fileName = `medical_reports_${data.patient?.name?.replace(/\s+/g, '_') || 'patient'}_${Date.now()}.pdf`;
+            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+            console.log('✅ Images PDF generated successfully!', fileName);
+            return file;
+
+        } catch (error) {
+            console.error('❌ Error generating images PDF:', error);
+            return null;
         }
     };
 
@@ -579,7 +785,6 @@ const page = () => {
                         style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
             </div>
-
 
                 <!-- Patient Information Grid -->
                 <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
@@ -670,7 +875,7 @@ const page = () => {
             const canvas = await html2canvas(tempDiv, {
                 width: 800,
                 height: tempDiv.scrollHeight,
-                scale: 2,
+                scale: 1.5,
                 useCORS: true,
                 allowTaint: true,
                 backgroundColor: '#ffffff'
@@ -713,10 +918,6 @@ const page = () => {
 
             console.log('✅ Prescription PDF generated successfully!', fileName);
 
-            // Optional: Preview the PDF in a new tab
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
-
             return file;
 
         } catch (error) {
@@ -724,7 +925,7 @@ const page = () => {
             return null;
         }
     };
-    // UPDATED: Function to generate treatment plan PDF - now returns File object
+
     const generateTreatmentPlanPDF = async (data: any) => {
         try {
             const tempDiv = document.createElement('div');
@@ -746,8 +947,6 @@ const page = () => {
                         style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
             </div>
-
-
 
                 <!-- Patient Information -->
                  <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
@@ -869,9 +1068,6 @@ const page = () => {
 
             console.log('✅ Treatment Plan PDF generated successfully!', fileName);
 
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
-
             return file;
 
         } catch (error) {
@@ -902,7 +1098,6 @@ const page = () => {
                         style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
             </div>
-
 
                 <!-- Patient Information Grid -->
                 <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
@@ -1045,10 +1240,6 @@ const page = () => {
 
             console.log('✅ Invoice PDF generated successfully!', fileName);
 
-            // Optional: Preview the PDF in a new tab
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
-
             return file;
 
         } catch (error) {
@@ -1057,7 +1248,6 @@ const page = () => {
         }
     };
 
-    // UPDATED: Function to generate receipt PDF - now returns File object
     const generateReceiptPDF = async (data: any) => {
         try {
             // Create a temporary div for PDF content
@@ -1080,7 +1270,6 @@ const page = () => {
                         style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
             </div>
-
 
                 <!-- Patient Information Grid -->
                 <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
@@ -1220,10 +1409,6 @@ const page = () => {
 
             console.log('✅ Receipt PDF generated successfully!', fileName);
 
-            // Optional: Preview the PDF in a new tab
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            // window.open(pdfUrl, '_blank');
-
             return file;
 
         } catch (error) {
@@ -1232,138 +1417,220 @@ const page = () => {
         }
     };
 
-    // UPDATED: handleFinalSend function to send actual files
+    // UPDATED: Fixed async checkbox handling with loading states
+    const handleCheckboxChange = async (itemName: string) => {
+        console.log("Checkbox clicked:", itemName);
+
+        // First update the checkbox state
+        setCheckedItems((prev: Record<string, boolean>) => ({
+            ...prev,
+            [itemName]: !prev[itemName],
+        }));
+
+        // If unchecking, just return early
+        const wasChecked = checkedItems[itemName];
+        if (wasChecked) {
+            console.log(`Unchecking ${itemName}, no PDF generation needed`);
+            return;
+        }
+
+        // If checking, start PDF generation
+        const normalized = itemName.toLowerCase();
+
+        // Set loading state
+        setLoadingStates(prev => ({ ...prev, [itemName]: true }));
+
+        try {
+            console.log(`Starting PDF generation for ${itemName}...`);
+
+            switch (normalized) {
+                case "prescription":
+                    await handlePrescriptionCheck();
+                    break;
+                case "treatment":
+                    await handleTreatmentPlanCheck();
+                    break;
+                case "invoice":
+                    await handleInvoiceCheck();
+                    break;
+                case "receipt":
+                    await handleReceiptCheck();
+                    break;
+                case "images":
+                    await handleImagesCheck();
+                    break;
+                default:
+                    console.warn(`Unknown document type: ${itemName}`);
+            }
+
+            console.log(`✅ PDF generation completed for ${itemName}`);
+
+        } catch (error) {
+            console.error(`❌ Error generating PDF for ${itemName}:`, error);
+
+            // Uncheck the item if PDF generation failed
+            setCheckedItems(prev => ({
+                ...prev,
+                [itemName]: false
+            }));
+
+            alert(`Failed to generate ${itemName} PDF. Please try again.`);
+        } finally {
+            // Clear loading state
+            setLoadingStates(prev => ({ ...prev, [itemName]: false }));
+        }
+    };
+
+    // UPDATED: handleFinalSend with better validation
     const handleFinalSend = async () => {
+        // Check if any documents are still loading
+        const isAnyLoading = Object.values(loadingStates).some(loading => loading);
+        if (isAnyLoading) {
+            alert("Please wait for all documents to finish generating before sending.");
+            return;
+        }
+
         setIsSending(true);
         const extractedLastVisitId = searchParams.get("visitId");
         const extractedPatientId = searchParams.get("patientId");
 
-        // Build FormData
-        const formData = new FormData();
-        formData.append("ClinicId", String(currentUserId));
-        formData.append("PatientId", extractedPatientId || "");
-        formData.append("ClinicVisitId", extractedLastVisitId || "");
-        formData.append("PaymentMethod", paymentMethod || "CreditCard");
-
-        // Get checked documents and append files
-        const checkedDocuments = Object.keys(checkedItems).filter((key) => checkedItems[key]);
-
-        checkedDocuments.forEach((key, index) => {
-            formData.append(`Documents[${index}].Type`, key.charAt(0).toUpperCase() + key.slice(1));
-            formData.append(`Documents[${index}].SendToPatient`, "true");
-
-            // Append actual file based on document type using if/else
-            let file = null;
-
-            if (key === "prescription") {
-                file = prescriptionFile;
-            } else if (key === "Treatment") {
-                file = treatmentPlanFile;
-            } else if (key === "invoice") {
-                file = invoiceFile;
-            } else if (key === "Receipt") {
-                file = receiptFile;
-            } else if (key === "Images") {
-                file = reportImagesFile;
-            }
-
-            if (file) {
-                formData.append(`Documents[${index}].PdfFile`, file);
-                console.log(`📎 Added ${key} file:`, file.name, file.size, "bytes");
-            } else {
-                console.warn(`⚠️ No file found for ${key}`);
-            }
-        });
-
-        // Debug: Log FormData contents
-        console.log("🚀 Sending documents:", checkedDocuments);
-        console.log("📋 FormData entries:");
-        for (let [key, value] of formData.entries()) {
-            if (value instanceof File) {
-                console.log(`${key}: File(${value.name}, ${value.size} bytes)`);
-            } else {
-                console.log(`${key}: ${value}`);
-            }
-        }
-
         try {
-            await UploadeallData(formData);
-            console.log("✅ Documents successfully uploaded!");
-            setIsSendModalOpen(false);
+            const checkedDocuments = Object.keys(checkedItems).filter((key) => checkedItems[key]);
 
-            // Optional: Clear file states after successful upload
-            setPrescriptionFile(null);
-            setTreatmentPlanFile(null);
-            setInvoiceFile(null);
-            setReceiptFile(null);
-            setReportImagesFile(null);
+            if (checkedDocuments.length === 0) {
+                alert("Please select at least one document to send.");
+                return;
+            }
 
-            // Clear checked items
-            setCheckedItems({
-                prescription: false,
-                Images: false,
-                Receipt: false,
-                invoice: false,
-                Treatment: false,
-            });
-        } catch (error) {
-            console.error("❌ Error uploading documents:", error);
-        } finally {
-            setIsSending(false); // enable again after finish
-        }
-    };
+            let successfulUploads = 0;
+            let failedUploads = [];
 
+            // Send files one by one instead of all at once
+            for (const key of checkedDocuments) {
+                let file = null;
+                let documentType = "";
 
-    // Enhanced handleCheckboxChange function
-    const handleCheckboxChange = (itemName: string) => {
-        console.log("Checkbox clicked:", itemName);
+                switch (key.toLowerCase()) {
+                    case "prescription":
+                        file = prescriptionFile;
+                        documentType = "Prescription";
+                        break;
+                    case "treatment":
+                        file = treatmentPlanFile;
+                        documentType = "Treatment";
+                        break;
+                    case "invoice":
+                        file = invoiceFile;
+                        documentType = "Invoice";
+                        break;
+                    case "receipt":
+                        file = receiptFile;
+                        documentType = "Receipt";
+                        break;
+                    case "images":
+                        file = reportImagesFile;
+                        documentType = "Images";
+                        break;
+                    default:
+                        console.warn(`Unknown document type: ${key}`);
+                        continue;
+                }
 
-        setCheckedItems((prev: Record<string, boolean>) => {
-            const newCheckedState = {
-                ...prev,
-                [itemName]: !prev[itemName],
-            };
+                if (file && file instanceof File) {
+                    try {
+                        // Create new FormData for each document
+                        const formData = new FormData();
 
-            console.log("Previous state:", prev[itemName]);
-            console.log("New state:", newCheckedState[itemName]);
+                        // Add main request properties
+                        formData.append("ClinicId", String(currentUserId));
+                        formData.append("PatientId", extractedPatientId || "");
+                        formData.append("ClinicVisitId", extractedLastVisitId || "");
+                        formData.append("PaymentMethod", paymentMethod || "CreditCard");
 
-            // Normalize item name for comparison
-            const normalized = itemName.toLowerCase();
+                        // Add single document (always at index 0 since it's the only document in this request)
+                        formData.append(`Documents[0].Type`, documentType);
+                        formData.append(`Documents[0].SendToPatient`, "true");
+                        formData.append(`Documents[0].PdfFile`, file);
 
-            // Trigger PDF generation only when checked (not unchecked)
-            if (!prev[itemName]) {
-                console.log(`Triggering ${itemName} PDF generation...`);
+                        // Send individual document
+                        const response = await UploadeallData(formData);
+                        toast.success(response.data.message);
+                        successfulUploads++;
 
-                if (normalized === "prescription") {
-                    handlePrescriptionCheck();
-                } else if (normalized === "treatment") {
-                    handleTreatmentPlanCheck();
-                } else if (normalized === "invoice") {
-                    handleInvoiceCheck();
-                } else if (normalized === "receipt") {
-                    handleReceiptCheck();
+                    } catch (documentError) {
+                        console.error(` Failed to upload ${documentType}:`, documentError);
+                        failedUploads.push(documentType);
+                    }
+                } else {
+                    console.warn(`No file found for ${key}`);
+                    failedUploads.push(documentType);
                 }
             }
 
-            return newCheckedState;
-        });
+            // Show results
+            if (successfulUploads > 0) {
+                let message = `${successfulUploads} document(s) sent successfully!`;
+                if (failedUploads.length > 0) {
+                    message += `\n\nFailed to send: ${failedUploads.join(', ')}`;
+                }
+                console.log(message);
+            } else {
+                console.log("No documents were sent successfully. Please check the files and try again.");
+            }
+
+            // Only close modal and clear if at least one upload succeeded
+            if (successfulUploads > 0) {
+                setIsSendModalOpen(false);
+
+                // Clear everything after success
+                setPrescriptionFile(null);
+                setTreatmentPlanFile(null);
+                setInvoiceFile(null);
+                setReceiptFile(null);
+                setReportImagesFile(null);
+
+                setCheckedItems({
+                    prescription: false,
+                    Images: false,
+                    Receipt: false,
+                    invoice: false,
+                    Treatment: false,
+                });
+
+                setActionPayload([]);
+            }
+
+        } catch (error) {
+            console.error(" Upload process error:", error);
+        } finally {
+            setIsSending(false);
+        }
     };
 
 
-    const CheckboxItem = ({ itemName, label, checked, onChange }) => (
+    // UPDATED CheckboxItem component with loading state
+    const CheckboxItem = ({ itemName, label, checked, onChange, isLoading = false }) => (
         <div className="flex items-center gap-3">
             <button
                 onClick={() => onChange(itemName)}
-                className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${checked
-                    ? 'bg-yellow-400 border-yellow-400'
-                    : 'bg-gray-200 border-gray-300 hover:bg-gray-300'
+                disabled={isLoading}
+                className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${isLoading
+                    ? 'bg-gray-300 border-gray-300 cursor-not-allowed'
+                    : checked
+                        ? 'bg-yellow-400 border-yellow-400'
+                        : 'bg-gray-200 border-gray-300 hover:bg-gray-300'
                     }`}
             >
-                {checked && (
+                {isLoading ? (
+                    <span className="text-xs">⏳</span>
+                ) : checked ? (
                     <span className="text-xs text-black font-bold">✓</span>
-                )}
+                ) : null}
             </button>
-            <span className="text-sm font-medium text-gray-700">{label}</span>
+            <span className={`text-sm font-medium ${isLoading ? 'text-gray-400' : 'text-gray-700'}`}>
+                {label}
+                {isLoading && <span className="text-xs text-blue-600 ml-2">(Generating...)</span>}
+            </span>
         </div>
     );
 
@@ -1414,7 +1681,6 @@ const page = () => {
                                             const extractedHfid = searchParams.get("hfid");
 
                                             if (consentForm?.consentFormUrl) {
-                                                // Common route for both cases if pdf exists
                                                 router.push(
                                                     `/consentForm?ConsentId=${consentForm.clinicConsentFormId}&ConsentName=${encodeURIComponent(
                                                         consentForm.title
@@ -1436,8 +1702,6 @@ const page = () => {
                                                 );
                                             }
                                         }}
-
-
                                     >
                                         <div className="w-full h-20 rounded-lg flex items-center justify-center mb-3">
                                             <img
@@ -1490,7 +1754,6 @@ const page = () => {
                             <span className="text-sm font-medium">History</span>
                             <FontAwesomeIcon icon={faHistory} className="w-4 h-4" />
                         </button>
-
                     </div>
 
                     <div className="p-6">
@@ -1635,7 +1898,6 @@ const page = () => {
                                 </button>
                             </div>
 
-
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div>
                                     <div className="border border-black rounded-lg p-4 mb-6">
@@ -1649,18 +1911,21 @@ const page = () => {
                                                 label="Prescription"
                                                 checked={checkedItems.prescription}
                                                 onChange={handleCheckboxChange}
+                                                isLoading={loadingStates.prescription}
                                             />
                                             <CheckboxItem
                                                 itemName="Images"
                                                 label="Report Images"
                                                 checked={checkedItems.Images}
                                                 onChange={handleCheckboxChange}
+                                                isLoading={loadingStates.Images}
                                             />
                                             <CheckboxItem
                                                 itemName="Receipt"
                                                 label="Payment Receipt"
                                                 checked={checkedItems.Receipt}
                                                 onChange={handleCheckboxChange}
+                                                isLoading={loadingStates.Receipt}
                                             />
                                             <div className="mb-6">
                                                 <p className="text-sm font-semibold text-blue-800 mb-1">
@@ -1676,12 +1941,14 @@ const page = () => {
                                                         label="Invoice"
                                                         checked={checkedItems.invoice}
                                                         onChange={handleCheckboxChange}
+                                                        isLoading={loadingStates.invoice}
                                                     />
                                                     <CheckboxItem
                                                         itemName="Treatment"
                                                         label="Package Plan"
                                                         checked={checkedItems.Treatment}
                                                         onChange={handleCheckboxChange}
+                                                        isLoading={loadingStates.Treatment}
                                                     />
                                                 </div>
                                             </div>
@@ -1716,7 +1983,7 @@ const page = () => {
                                     <div className="flex justify-end mt-2 pt-2">
                                         <button
                                             onClick={handleFinalSend}
-                                            disabled={isSending} // <-- disable when true
+                                            disabled={isSending}
                                             className={`bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors
       ${isSending ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"}`}
                                         >
@@ -1792,6 +2059,7 @@ const page = () => {
                     </div>
                 )}
             </div>
+            <ToastContainer />
         </DefaultLayout>
     )
 }
