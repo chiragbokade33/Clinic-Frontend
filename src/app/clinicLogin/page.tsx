@@ -259,11 +259,11 @@ const ClinicLogin = () => {
         <div className=" overflow-hidden flex flex-col md:flex-row max-w-6xl mb-3 w-full relative border border-black rounded-lg">
           <div className="md:w-1/2 flex items-center justify-center  relative ">
             <img
-              src="/ba91fa3f487c3568d0707a1660ecaf8e94b71022 (1).png"
+               src="\3780dce7bfd6a3a8e90f2b884bdba4c673af4d8f.png"
               alt="Chemistry Lab Illustration"
               width={700}
               height={500}
-              className="max-h-96 md:max-h-full -mr-42 -mb-4"
+              className="max-h-96 md:max-h-full -mr-50 -mb-4"
             />
           </div>
 

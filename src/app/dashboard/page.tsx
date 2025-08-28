@@ -513,7 +513,7 @@ const HealthcareDashboard = () => {
                     {/* Profile Image */}
                     <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
                       <img
-                        src="/98c4113b37688d826fc939709728223539f249dd.jpg"
+                        src="/proffile.jpg"
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />
@@ -522,7 +522,11 @@ const HealthcareDashboard = () => {
                     {/* Patient Info */}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-800 truncate font-poppins-600">{appointment.visitorUsername}</h4>
-                      <p className="text-sm text-gray-600 truncate font-medium font-poppins-500">{appointment.visitorPhoneNumber}</p>
+                      <p className="text-sm text-gray-600 truncate font-medium font-poppins-500">
+                        {appointment?.hfid && appointment.hfid !== ""
+                          ? appointment.hfid
+                          : appointment?.visitorPhoneNumber}
+                      </p>
                     </div>
 
                     {/* Time Badge */}
@@ -547,7 +551,7 @@ const HealthcareDashboard = () => {
               <div className="text-center mb-6">
                 <div className="w-25 h-25 rounded-full mx-auto mb-4 overflow-hidden border">
                   <img
-                    src="/98c4113b37688d826fc939709728223539f249dd.jpg"
+                    src="/proffile.jpg"
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -597,12 +601,13 @@ const HealthcareDashboard = () => {
                 {/* Updated Treatment Field using separate state */}
                 <div className="flex items-center gap-4 py-2">
                   <label className="text-black font-semibold font-poppins-600 w-22">
-                    Treatment :
+
+                    Package :
                   </label>
                   {!isEditing ? (
                     // Display as text when not editing
                     <span className="font-medium text-gray-700 font-montserrat-500">
-                      {selectedPatient.treatment || "No treatment specified"}
+                      {selectedPatient.treatment || "No Package specified"}
                     </span>
                   ) : (
                     // Show input when editing with stable key and optimized handler
@@ -612,7 +617,7 @@ const HealthcareDashboard = () => {
                       name="treatment"
                       value={editingTreatment}
                       onChange={handleTreatmentChange}
-                      placeholder="Enter treatment"
+                      placeholder="Enter Package"
                       autoComplete="off"
                       autoFocus={true}
                       className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-gray-700 font-montserrat-500 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"

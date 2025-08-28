@@ -129,7 +129,7 @@ const ClinicSignUp = () => {
         <div className=" overflow-hidden flex flex-col md:flex-row max-w-6xl md:mx-3 mb-3 w-full relative border border-black rounded-lg">
           <div className="md:w-1/2 flex items-center justify-center  relative">
             <img
-              src="\ba91fa3f487c3568d0707a1660ecaf8e94b71022 (1).png"
+              src="\3780dce7bfd6a3a8e90f2b884bdba4c673af4d8f.png"
               alt="Chemistry Clinic Experiment"
               className="max-h-96 md:max-h-full lg:-mr-45 -mb-4 md:-mr-29"
             />
@@ -185,7 +185,7 @@ const ClinicSignUp = () => {
                   <input
                     type="text"
                     name="phone"
-                    placeholder="Your Number"
+                    placeholder="Enter Mobile Number"
                     className="w-full border border-black rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}

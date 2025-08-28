@@ -23,6 +23,8 @@ const page = () => {
     const [paymentMethod, setPaymentMethod] = useState('CreditCard');
     const router = useRouter();
     const searchParams = useSearchParams();
+    const [isSending, setIsSending] = useState(false);
+
 
     // Enhanced state for tracking actions and PDF data
     const [actionPayload, setActionPayload] = useState([]);
@@ -45,6 +47,7 @@ const page = () => {
     const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [reportImagesFile, setReportImagesFile] = useState<File | null>(null);
+    const [imgAttechData, setImgAttechData] = useState();
 
     useEffect(() => {
         const FetchDatajson = async () => {
@@ -57,8 +60,30 @@ const page = () => {
             setCurrentUserId(id);
 
             try {
-                const response = await ListJsondata(id, extractedPatientId, extractedLastVisitId);
+                const response = await ListJsondata(id, Number(extractedPatientId), Number(extractedLastVisitId));
                 const apiData = response.data.data;
+
+                const viewImgs = apiData.filter(
+                    (item: { type: string }) => item.type === "Images" || item.type === "Reports"
+                );
+
+                if (viewImgs.length > 0) {
+                    const allUrls = viewImgs.flatMap((entry: { jsonData: string }) => {
+                        const parsed = JSON.parse(entry.jsonData);
+
+                        if (Array.isArray(parsed)) {
+                            return parsed; // directly array of URLs
+                        } else if (parsed.images || parsed.reports) {
+                            return parsed.images || parsed.reports;
+                        }
+                        return [];
+                    });
+
+                    setImgAttechData(allUrls);
+                } else {
+                    setImgAttechData([]);
+                }
+
 
                 // ✅ Find Treatment data
                 const treatmentEntry = apiData.find((item: { type: string }) => item.type === "Treatment");
@@ -148,7 +173,7 @@ const page = () => {
                 const ReceiptEntry = apiData.find((item: { type: string }) => item.type === "Receipt");
                 if (ReceiptEntry) {
                     const parsed = JSON.parse(ReceiptEntry.jsonData);
-                    const normalizedReceiptData = {
+                    const normalizedReceiptData: any = {
                         patient: {
                             name: parsed.patient.name,
                             uhid: parsed.patient.uhid,
@@ -176,7 +201,7 @@ const page = () => {
                 const reportImagesEntry = apiData.find((item: { type: string }) => item.type === "Images" || item.type === "Images" || item.type === "Reports");
                 if (reportImagesEntry) {
                     const parsed = JSON.parse(reportImagesEntry.jsonData);
-                    const normalizedImagesData = {
+                    const normalizedImagesData: any = {
                         patient: {
                             name: parsed.patient.name,
                             uhid: parsed.patient.hfid,
@@ -200,6 +225,7 @@ const page = () => {
 
         FetchDatajson();
     }, [searchParams]);
+
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -374,45 +400,45 @@ const page = () => {
 
         let receiptDataForPDF;
 
-        const convertNumberToWords = (amount) => {
+        const convertNumberToWords = (amount: any) => {
             if (amount === 1000) return "One Thousand Only";
             if (amount === 1400) return "One Thousand Four Hundred Only";
             if (amount === 130000) return "One Lakh Thirty Thousand Only";
             return `${amount.toLocaleString('en-IN')} Only`;
         };
 
-          const formatReceiptDate = (inputDate = null) => {
-        const date = inputDate ? new Date(inputDate) : new Date();
-        
-        // Check if date is valid
-        if (isNaN(date.getTime())) {
-            console.warn('Invalid date provided, using current date');
-            return new Date().toLocaleDateString('en-GB', {
+        const formatReceiptDate = (inputDate = null) => {
+            const date = inputDate ? new Date(inputDate) : new Date();
+
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                console.warn('Invalid date provided, using current date');
+                return new Date().toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            }
+
+            return date.toLocaleDateString('en-GB', {
                 day: '2-digit',
                 month: 'short',
                 year: 'numeric'
             });
-        }
-        
-        return date.toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short', 
-            year: 'numeric'
-        });
-    };
+        };
 
 
         // Priority logic for receipt data
-          if (receiptApiData) {
-        console.log('Using Receipt API data');
-        receiptDataForPDF = {
-            ...receiptApiData,
-            receipt: {
-                ...receiptApiData.receipt,
-                // Ensure date is properly formatted
-                date: formatReceiptDate(receiptApiData.receipt.date)
-            }
-        };
+        if (receiptApiData) {
+            console.log('Using Receipt API data');
+            receiptDataForPDF = {
+                ...receiptApiData,
+                receipt: {
+                    ...receiptApiData.receipt,
+                    // Ensure date is properly formatted
+                    date: formatReceiptDate(receiptApiData.receipt.date)
+                }
+            };
         } else if (invoiceData) {
             console.log('Generating receipt from Invoice data');
             receiptDataForPDF = {
@@ -427,7 +453,7 @@ const page = () => {
                     city: invoiceData.patient.city
                 },
                 receipt: {
-                     date: formatReceiptDate(invoiceData.patient.date),
+                    date: formatReceiptDate(invoiceData.patient.date),
                     receiptNumber: `Rc.${Math.floor(Math.random() * 9999)}`,
                     modeOfPayment: paymentMethod,
                     chequeNo: paymentMethod === 'Cash' ? '-' : 'N/A',
@@ -531,7 +557,7 @@ const page = () => {
         }
     };
 
-    const generatePrescriptionPDF = async (data) => {
+    const generatePrescriptionPDF = async (data: any) => {
         try {
             // Create a temporary div for PDF content
             const tempDiv = document.createElement('div');
@@ -699,7 +725,7 @@ const page = () => {
         }
     };
     // UPDATED: Function to generate treatment plan PDF - now returns File object
-    const generateTreatmentPlanPDF = async (data) => {
+    const generateTreatmentPlanPDF = async (data: any) => {
         try {
             const tempDiv = document.createElement('div');
             tempDiv.style.position = 'absolute';
@@ -854,7 +880,7 @@ const page = () => {
         }
     };
 
-    const generateInvoicePDF = async (data) => {
+    const generateInvoicePDF = async (data: any) => {
         try {
             // Create a temporary div for PDF content
             const tempDiv = document.createElement('div');
@@ -1032,7 +1058,7 @@ const page = () => {
     };
 
     // UPDATED: Function to generate receipt PDF - now returns File object
-    const generateReceiptPDF = async (data) => {
+    const generateReceiptPDF = async (data: any) => {
         try {
             // Create a temporary div for PDF content
             const tempDiv = document.createElement('div');
@@ -1208,6 +1234,7 @@ const page = () => {
 
     // UPDATED: handleFinalSend function to send actual files
     const handleFinalSend = async () => {
+        setIsSending(true);
         const extractedLastVisitId = searchParams.get("visitId");
         const extractedPatientId = searchParams.get("patientId");
 
@@ -1281,6 +1308,8 @@ const page = () => {
             });
         } catch (error) {
             console.error("❌ Error uploading documents:", error);
+        } finally {
+            setIsSending(false); // enable again after finish
         }
     };
 
@@ -1635,10 +1664,10 @@ const page = () => {
                                             />
                                             <div className="mb-6">
                                                 <p className="text-sm font-semibold text-blue-800 mb-1">
-                                                    Invoice and Treatment Plan :
+                                                    Invoice and Package Plan :
                                                 </p>
                                                 <p className="text-xs text-gray-500 mb-4">
-                                                    (verify here. Invoice & Treatment)
+                                                    (verify here. Invoice & Package)
                                                 </p>
 
                                                 <div className="space-y-3">
@@ -1650,7 +1679,7 @@ const page = () => {
                                                     />
                                                     <CheckboxItem
                                                         itemName="Treatment"
-                                                        label="Treatment Plan"
+                                                        label="Package Plan"
                                                         checked={checkedItems.Treatment}
                                                         onChange={handleCheckboxChange}
                                                     />
@@ -1670,10 +1699,10 @@ const page = () => {
                                             onChange={(e) => setPaymentMethod(e.target.value)}
                                             className="flex-1 border border-black bg-white rounded-lg px-4 py-1 text-sm font-medium mx-2"
                                         >
-                                            <option>Credit Card</option>
-                                            <option>Debit Card</option>
-                                            <option>Cash</option>
-                                            <option>Bank Transfer</option>
+                                            <option value="CreditCard">Credit Card</option>
+                                            <option value="DebitCard">Debit Card</option>
+                                            <option value="Cash">Cash</option>
+                                            <option value="BankTransfer">Bank Transfer</option>
                                         </select>
                                     </div>
 
@@ -1687,9 +1716,11 @@ const page = () => {
                                     <div className="flex justify-end mt-2 pt-2">
                                         <button
                                             onClick={handleFinalSend}
-                                            className="bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors text-lg"
+                                            disabled={isSending} // <-- disable when true
+                                            className={`bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors
+      ${isSending ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"}`}
                                         >
-                                            Send
+                                            {isSending ? "Sending..." : "Send"}
                                         </button>
                                     </div>
                                 </div>

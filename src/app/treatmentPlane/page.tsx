@@ -19,12 +19,12 @@ interface TreatmentData {
     treatmentId: number;
     treatmentName: string;
     cost: number;
-    quantityPerDay?: number;
     status?: string;
     total?: number;
     sessions?: number;
     duration?: number;
     frequency?: number;
+    quantityPerDay?: any;
 }
 
 interface TreatmentDrawerProps {
@@ -131,12 +131,12 @@ const TreatmentDrawer: React.FC<TreatmentDrawerProps> = ({ isOpen, onClose, onSe
     const formatFrequency = (quantityPerDay: number | undefined): string => {
         if (!quantityPerDay) return "N/A";
         switch (quantityPerDay) {
+            case 1: return "1 Day/week";    // ✅ Added missing case
             case 2: return "2 Days/week";
             case 3: return "3 Days/week";
             default: return `${quantityPerDay} Days/week`;
         }
     };
-
     if (!isOpen) return null;
 
     return (
@@ -552,8 +552,6 @@ interface TreatmentData {
     treatmentName: string;
     quantityPerDay?: number;
     cost: number;
-    status: string;
-    total: number;
     sessions?: number;
     duration?: number;
     frequency?: number;
@@ -568,6 +566,7 @@ interface TreatmentFormValues {
     sessions: string;
     duration: string;
     frequency: string;
+    quantityPerDay: any;
 }
 
 const Page: React.FC = () => {
@@ -593,7 +592,7 @@ const Page: React.FC = () => {
             setCurrentUserId(id);
 
             try {
-                const response = await ListJsondata(id, extractedPatientId, extractedLastVisitId);
+                const response = await ListJsondata(id, Number(extractedPatientId), Number(extractedLastVisitId));
                 const apiData = response.data.data;
                 console.log("Full API Response:", apiData);
 
@@ -615,7 +614,7 @@ const Page: React.FC = () => {
                         duration: treatment.duration === "1 Month" ? 1 :
                             treatment.duration === "3 Months" ? 3 :
                                 treatment.duration === "6 Months" ? 6 : 1,
-                        frequency: treatment.frequency === "2 Days/week" ? 1 :
+                        frequency: treatment.frequency === "1 Days/week" ? 1 :
                             treatment.frequency === "2 Days/week" ? 2 :
                                 treatment.frequency === "3 Days/week" ? 3 : 2
                     }));
@@ -891,10 +890,8 @@ const Page: React.FC = () => {
 
     // Updated: selectTreatment function to handle API data structure with new fields
     const selectTreatment = (selectedTreatment: TreatmentData): void => {
-        // Check if this treatmentId already exists in current treatments
-        const existingTreatment = treatments.find(t => t.treatmentId === selectedTreatment.treatmentId);
+        // ... other code ...
 
-        // Set values in formik form using API data structure
         addTreatmentFormik.setValues({
             treatmentName: selectedTreatment.treatmentName,
             qty: selectedTreatment.quantityPerDay?.toString() || "1",
@@ -902,6 +899,7 @@ const Page: React.FC = () => {
             status: STATUS_API_TO_UI[selectedTreatment.status || ""] || selectedTreatment.status || "Not Started",
             sessions: selectedTreatment.sessions?.toString() || "",
             duration: selectedTreatment.duration?.toString() || "",
+            // ✅ Fixed frequency mapping
             quantityPerDay: selectedTreatment.quantityPerDay?.toString() || ""
         });
 
@@ -1113,8 +1111,8 @@ const Page: React.FC = () => {
                                                 <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <select
                                                         value={treatment.quantityPerDay || ''}
-                                                        // onChange={(e) => updateTreatment(treatment.treatmentId, 'quantityPerDay', e.target.value)}
-                                                        // onClick={(e) => e.stopPropagation()}
+                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'quantityPerDay', e.target.value)} // ✅ Uncommented
+                                                        onClick={(e) => e.stopPropagation()} // ✅ Uncommented
                                                         className="w-full border-none outline-none bg-transparent text-sm"
                                                     >
                                                         <option value="">Select Frequency</option>

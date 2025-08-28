@@ -300,7 +300,7 @@ const LabAllMemberPage: React.FC<PageProps> = ({ filteredData, CardList, adminsL
                           src={
                             member.profilePhoto && member.profilePhoto !== "No image preview available"
                               ? `${member.profilePhoto}`
-                              : "/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
+                              : "/proffile.jpg"
                           }
                           alt={member.name}
                           className={`w-full h-full object-cover rounded ${showCheckboxes || superCheckBox ? 'opacity-40' : ''}`}

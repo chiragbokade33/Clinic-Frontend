@@ -1529,7 +1529,7 @@ const ConsentForm: React.FC<ConsentFormProps> = () => {
             const response = await AddPdfPublic(consentId, payload);
 
             setUploadSuccess(true);
-            toast.success(`${response.data.messsage}`)
+            toast.success(`${response.data.message}`)
 
         } catch (err: any) {
             console.error("❌ Upload failed:", err.response?.data || err.message);

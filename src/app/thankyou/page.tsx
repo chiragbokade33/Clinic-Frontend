@@ -43,7 +43,7 @@ const ThankYouPage = () => {
 
           <div className="text-center mb-2 sm:mb-4">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
-              <span className="text-blue-800">Welcome</span> to the Future of Clinic Management
+              <span className="text-blue-800">Welcome</span> to the Future 
             </h2>
             <div className="border w-24 sm:w-32 mx-auto mt-1 sm:mt-2"></div>
           </div>
@@ -55,7 +55,7 @@ const ThankYouPage = () => {
           <div className='border border-gray-300 mb-1 sm:mb-2'> </div>
 
           <p className="text-black mb-3 sm:mb-8 text-sm sm:text-base">
-            Get a glimpse of your smarter lab journey
+            Get a glimpse of your smarter journey
           </p>
 
           <button

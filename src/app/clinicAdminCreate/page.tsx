@@ -104,15 +104,15 @@ const AdminCreates = () => {
           confirmPassword: values.confirmPassword,
         };
         const response = await CreateAdmin(payload);
-        
+
         // Store the new token
         const newToken = response.data.data.token;
         await localStorage.setItem("authToken", await encryptData(newToken));
         await localStorage.setItem("username", await encryptData(response.data.data.username));
-        
+
         // Update the token state to trigger JWT decoding
         setToken(newToken);
-        
+
         toast.success(`${response.data.message}`);
         router.push("/dashboard");
         resetForm();
@@ -186,7 +186,7 @@ const AdminCreates = () => {
                 <div className="bg-blue-50 rounded-lg p-2 sm:p-3 md:p-4 flex items-center border border-gray-300">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-#CAE5FF rounded-full border overflow-hidden mr-2 sm:mr-3 md:mr-4">
                     <img
-                      src="/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
+                      src="/proffile.jpg"
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />

@@ -1,24 +1,18 @@
 // pages/index.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
 import classNames from 'classnames';
 import 'animate.css';
 
 const puzzleImages = [
-  '/19ee8b51fcc935da37d2604ab0975cf19eff9263.jpg',
-  '/85e294ef76fe7d3df00bfe9ed9d8335ff4b1bdde.png',
-  '/f02ab4b2b4aeffe41f18ff4ece3c64bd20e9a0f4.png',
-  '/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg',
-  '/3f2d6accc75c110ef56133c925391f3490a2346f.jpg'
+  '\WhatsApp Image 2025-08-28 at 11.45.08 AM (1).jpeg',
+  '\WhatsApp Image 2025-08-28 at 11.45.08 AM (2).jpeg',
+  '\WhatsApp Image 2025-08-28 at 11.45.08 AM (3).jpeg',
+  '\WhatsApp Image 2025-08-28 at 11.45.08 AM (4).jpeg',
+  '\WhatsApp Image 2025-08-28 at 11.45.08 AM.jpeg'
 ];
 
 interface PuzzleShape {
-  type: 'square' | 'triangle';
-  topTab: boolean;
-  rightTab: boolean;
-  bottomTab: boolean;
-  leftTab: boolean;
-  tabSize: number;
+  type: 'square';
 }
 
 // Add the onVerify prop interface
@@ -38,12 +32,7 @@ export default function Captcha({ onVerify }: CaptchaProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [verified, setVerified] = useState(false);
   const [currentShape, setCurrentShape] = useState<PuzzleShape>({
-    type: 'square',
-    topTab: true,
-    rightTab: true,
-    bottomTab: false,
-    leftTab: false,
-    tabSize: 15
+    type: 'square'
   });
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -66,17 +55,10 @@ export default function Captcha({ onVerify }: CaptchaProps) {
     onVerify(); // Notify parent component
   };
 
-  // Generate random puzzle shape (square or triangle type)
+  // Generate simple square shape
   const generateRandomShape = (): PuzzleShape => {
-    const shapeType = Math.random() > 0.5 ? 'square' : 'triangle';
-    
     return {
-      type: shapeType,
-      topTab: Math.random() > 0.5,
-      rightTab: Math.random() > 0.5,
-      bottomTab: Math.random() > 0.5,
-      leftTab: Math.random() > 0.5,
-      tabSize: 12 + Math.random() * 8 // 12-20px
+      type: 'square'
     };
   };
 
@@ -130,135 +112,10 @@ export default function Captcha({ onVerify }: CaptchaProps) {
   }, [imageLoaded, showCaptcha, targetPosition, currentImage, currentShape]);
 
   const drawSquareShape = (ctx: CanvasRenderingContext2D, x: number, y: number, shape: PuzzleShape) => {
-    const { topTab, rightTab, bottomTab, leftTab, tabSize } = shape;
-    
+    // Draw a simple rectangle
     ctx.beginPath();
-    ctx.moveTo(x + 5, y); // Start with slight rounded corner
-    
-    // Top side with tabs
-    if (topTab) {
-      ctx.lineTo(x + puzzlePieceWidth * 0.35, y);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.4, y - tabSize, x + puzzlePieceWidth * 0.5, y - tabSize);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.6, y - tabSize, x + puzzlePieceWidth * 0.65, y);
-      ctx.lineTo(x + puzzlePieceWidth - 5, y);
-    } else {
-      ctx.lineTo(x + puzzlePieceWidth * 0.35, y);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.4, y + tabSize * 0.6, x + puzzlePieceWidth * 0.5, y + tabSize * 0.6);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.6, y + tabSize * 0.6, x + puzzlePieceWidth * 0.65, y);
-      ctx.lineTo(x + puzzlePieceWidth - 5, y);
-    }
-    
-    // Top-right corner (slightly rounded)
-    ctx.quadraticCurveTo(x + puzzlePieceWidth, y, x + puzzlePieceWidth, y + 5);
-    
-    // Right side with tabs
-    if (rightTab) {
-      ctx.lineTo(x + puzzlePieceWidth, y + puzzlePieceHeight * 0.35);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth + tabSize, y + puzzlePieceHeight * 0.4, x + puzzlePieceWidth + tabSize, y + puzzlePieceHeight * 0.5);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth + tabSize, y + puzzlePieceHeight * 0.6, x + puzzlePieceWidth, y + puzzlePieceHeight * 0.65);
-      ctx.lineTo(x + puzzlePieceWidth, y + puzzlePieceHeight - 5);
-    } else {
-      ctx.lineTo(x + puzzlePieceWidth, y + puzzlePieceHeight * 0.35);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth - tabSize * 0.6, y + puzzlePieceHeight * 0.4, x + puzzlePieceWidth - tabSize * 0.6, y + puzzlePieceHeight * 0.5);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth - tabSize * 0.6, y + puzzlePieceHeight * 0.6, x + puzzlePieceWidth, y + puzzlePieceHeight * 0.65);
-      ctx.lineTo(x + puzzlePieceWidth, y + puzzlePieceHeight - 5);
-    }
-    
-    // Bottom-right corner
-    ctx.quadraticCurveTo(x + puzzlePieceWidth, y + puzzlePieceHeight, x + puzzlePieceWidth - 5, y + puzzlePieceHeight);
-    
-    // Bottom side with tabs
-    if (bottomTab) {
-      ctx.lineTo(x + puzzlePieceWidth * 0.65, y + puzzlePieceHeight);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.6, y + puzzlePieceHeight + tabSize, x + puzzlePieceWidth * 0.5, y + puzzlePieceHeight + tabSize);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.4, y + puzzlePieceHeight + tabSize, x + puzzlePieceWidth * 0.35, y + puzzlePieceHeight);
-      ctx.lineTo(x + 5, y + puzzlePieceHeight);
-    } else {
-      ctx.lineTo(x + puzzlePieceWidth * 0.65, y + puzzlePieceHeight);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.6, y + puzzlePieceHeight - tabSize * 0.6, x + puzzlePieceWidth * 0.5, y + puzzlePieceHeight - tabSize * 0.6);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.4, y + puzzlePieceHeight - tabSize * 0.6, x + puzzlePieceWidth * 0.35, y + puzzlePieceHeight);
-      ctx.lineTo(x + 5, y + puzzlePieceHeight);
-    }
-    
-    // Bottom-left corner
-    ctx.quadraticCurveTo(x, y + puzzlePieceHeight, x, y + puzzlePieceHeight - 5);
-    
-    // Left side with tabs
-    if (leftTab) {
-      ctx.lineTo(x, y + puzzlePieceHeight * 0.65);
-      ctx.quadraticCurveTo(x - tabSize, y + puzzlePieceHeight * 0.6, x - tabSize, y + puzzlePieceHeight * 0.5);
-      ctx.quadraticCurveTo(x - tabSize, y + puzzlePieceHeight * 0.4, x, y + puzzlePieceHeight * 0.35);
-      ctx.lineTo(x, y + 5);
-    } else {
-      ctx.lineTo(x, y + puzzlePieceHeight * 0.65);
-      ctx.quadraticCurveTo(x + tabSize * 0.6, y + puzzlePieceHeight * 0.6, x + tabSize * 0.6, y + puzzlePieceHeight * 0.5);
-      ctx.quadraticCurveTo(x + tabSize * 0.6, y + puzzlePieceHeight * 0.4, x, y + puzzlePieceHeight * 0.35);
-      ctx.lineTo(x, y + 5);
-    }
-    
-    // Top-left corner
-    ctx.quadraticCurveTo(x, y, x + 5, y);
-    
+    ctx.rect(x, y, puzzlePieceWidth, puzzlePieceHeight);
     ctx.closePath();
-  };
-
-  const drawTriangleShape = (ctx: CanvasRenderingContext2D, x: number, y: number, shape: PuzzleShape) => {
-    const { topTab, rightTab, leftTab, tabSize } = shape;
-    const centerX = x + puzzlePieceWidth / 2;
-    const triangleHeight = puzzlePieceHeight * 0.85; // Make triangle slightly smaller to fit in bounds
-    
-    ctx.beginPath();
-    
-    // Start from bottom left
-    ctx.moveTo(x + puzzlePieceWidth * 0.1, y + puzzlePieceHeight);
-    
-    // Left side (going up)
-    if (leftTab) {
-      ctx.lineTo(x + puzzlePieceWidth * 0.15, y + puzzlePieceHeight * 0.6);
-      ctx.quadraticCurveTo(x - tabSize * 0.8, y + puzzlePieceHeight * 0.5, x - tabSize * 0.8, y + puzzlePieceHeight * 0.4);
-      ctx.quadraticCurveTo(x - tabSize * 0.8, y + puzzlePieceHeight * 0.3, x + puzzlePieceWidth * 0.25, y + puzzlePieceHeight * 0.3);
-      ctx.lineTo(centerX - 5, y + puzzlePieceHeight * 0.15);
-    } else {
-      ctx.lineTo(x + puzzlePieceWidth * 0.15, y + puzzlePieceHeight * 0.6);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.1, y + puzzlePieceHeight * 0.5, x + puzzlePieceWidth * 0.1, y + puzzlePieceHeight * 0.4);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.1, y + puzzlePieceHeight * 0.3, x + puzzlePieceWidth * 0.25, y + puzzlePieceHeight * 0.3);
-      ctx.lineTo(centerX - 5, y + puzzlePieceHeight * 0.15);
-    }
-    
-    // Top point
-    if (topTab) {
-      ctx.quadraticCurveTo(centerX - tabSize * 0.5, y - tabSize, centerX, y - tabSize);
-      ctx.quadraticCurveTo(centerX + tabSize * 0.5, y - tabSize, centerX + 5, y + puzzlePieceHeight * 0.15);
-    } else {
-      ctx.quadraticCurveTo(centerX - tabSize * 0.3, y + tabSize * 0.5, centerX, y + tabSize * 0.5);
-      ctx.quadraticCurveTo(centerX + tabSize * 0.3, y + tabSize * 0.5, centerX + 5, y + puzzlePieceHeight * 0.15);
-    }
-    
-    // Right side (going down)
-    if (rightTab) {
-      ctx.lineTo(x + puzzlePieceWidth * 0.75, y + puzzlePieceHeight * 0.3);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth + tabSize * 0.8, y + puzzlePieceHeight * 0.3, x + puzzlePieceWidth + tabSize * 0.8, y + puzzlePieceHeight * 0.4);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth + tabSize * 0.8, y + puzzlePieceHeight * 0.5, x + puzzlePieceWidth * 0.85, y + puzzlePieceHeight * 0.6);
-      ctx.lineTo(x + puzzlePieceWidth * 0.9, y + puzzlePieceHeight);
-    } else {
-      ctx.lineTo(x + puzzlePieceWidth * 0.75, y + puzzlePieceHeight * 0.3);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.9, y + puzzlePieceHeight * 0.3, x + puzzlePieceWidth * 0.9, y + puzzlePieceHeight * 0.4);
-      ctx.quadraticCurveTo(x + puzzlePieceWidth * 0.9, y + puzzlePieceHeight * 0.5, x + puzzlePieceWidth * 0.85, y + puzzlePieceHeight * 0.6);
-      ctx.lineTo(x + puzzlePieceWidth * 0.9, y + puzzlePieceHeight);
-    }
-    
-    // Bottom side
-    ctx.lineTo(x + puzzlePieceWidth * 0.1, y + puzzlePieceHeight);
-    
-    ctx.closePath();
-  };
-
-  const drawPuzzleShape = (ctx: CanvasRenderingContext2D, x: number, y: number, shape: PuzzleShape) => {
-    if (shape.type === 'square') {
-      drawSquareShape(ctx, x, y, shape);
-    } else {
-      drawTriangleShape(ctx, x, y, shape);
-    }
   };
 
   const createPuzzlePiece = () => {
@@ -285,6 +142,7 @@ export default function Captcha({ onVerify }: CaptchaProps) {
 
     // Create image element
     const img = new window.Image();
+    img.crossOrigin = 'anonymous'; // Handle CORS
     img.onload = () => {
       // Draw original image
       ctx.drawImage(img, 0, 0, containerWidth, containerHeight);
@@ -295,23 +153,22 @@ export default function Captcha({ onVerify }: CaptchaProps) {
       // Extract puzzle piece using the same method as original
       const imageData = ctx.getImageData(targetPosition, pieceY, puzzlePieceWidth, puzzlePieceHeight);
       
-      // Create puzzle piece with custom shape
+      // Create puzzle piece with simple square shape
       puzzleCtx.save();
-      drawPuzzleShape(puzzleCtx, 0, 0, currentShape);
+      drawSquareShape(puzzleCtx, 0, 0, currentShape);
       puzzleCtx.clip();
       puzzleCtx.putImageData(imageData, 0, 0);
       puzzleCtx.restore();
       
-      // Add border to puzzle piece with different colors for different shapes
-      const borderColor = currentShape.type === 'square' ? 'rgba(255,255,255,0.8)' : 'rgba(255,215,0,0.8)'; // Gold for triangle
-      puzzleCtx.strokeStyle = borderColor;
+      // Add border to puzzle piece
+      puzzleCtx.strokeStyle = 'rgba(255,255,255,0.9)';
       puzzleCtx.lineWidth = 2;
-      drawPuzzleShape(puzzleCtx, 0, 0, currentShape);
+      drawSquareShape(puzzleCtx, 0, 0, currentShape);
       puzzleCtx.stroke();
       
-      // Create hole in main image with the same custom shape
+      // Create hole in main image with the same simple square shape
       ctx.globalCompositeOperation = 'destination-out';
-      drawPuzzleShape(ctx, targetPosition, pieceY, currentShape);
+      drawSquareShape(ctx, targetPosition, pieceY, currentShape);
       ctx.fill();
       
       // Reset composite operation
@@ -325,9 +182,15 @@ export default function Captcha({ onVerify }: CaptchaProps) {
       ctx.shadowOffsetY = 2;
       ctx.strokeStyle = 'rgba(0,0,0,0.3)';
       ctx.lineWidth = 1;
-      drawPuzzleShape(ctx, targetPosition, pieceY, currentShape);
+      drawSquareShape(ctx, targetPosition, pieceY, currentShape);
       ctx.stroke();
       ctx.restore();
+    };
+    
+    img.onerror = () => {
+      console.log('Image failed to load, trying next image...');
+      // Try next image if current one fails
+      setCurrentImage((prev) => (prev + 1) % puzzleImages.length);
     };
     
     img.src = puzzleImages[currentImage];
@@ -536,7 +399,7 @@ export default function Captcha({ onVerify }: CaptchaProps) {
       {/* Modal Overlay */}
       {showCaptcha && !verified && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate__animated animate__fadeIn"
+          className="fixed inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center z-50 p-4 animate__animated animate__fadeIn"
           onClick={handleModalClick}
         >
           {/* Modal Content */}
@@ -562,20 +425,22 @@ export default function Captcha({ onVerify }: CaptchaProps) {
             <div className="text-center text-gray-700 font-medium mb-4">
               Drag the puzzle piece to complete the image
               <div className="text-xs text-gray-500 mt-1">
-                Shape: {currentShape.type === 'square' ? '⬜ Square' : '🔺 Triangle'}
+                Shape: ⬜ Square
               </div>
             </div>
 
             <div ref={imageContainerRef} className="relative w-full h-48 overflow-hidden rounded-lg bg-gray-200 mb-6">
               {/* Hidden image to detect loading */}
-              <Image
+              <img
                 src={puzzleImages[currentImage]}
                 alt="Puzzle"
-                layout="fill"
-                objectFit="cover"
-                className="opacity-0"
+                className="absolute top-0 left-0 w-full h-full object-cover opacity-0"
                 draggable={false}
                 onLoad={() => setImageLoaded(true)}
+                onError={() => {
+                  console.log('Image failed to load, trying next...');
+                  setCurrentImage((prev) => (prev + 1) % puzzleImages.length);
+                }}
               />
               
               {/* Canvas with hole */}
@@ -606,11 +471,15 @@ export default function Captcha({ onVerify }: CaptchaProps) {
                 />
               </div>
 
-              {/* Target indicator (subtle) */}
+              {/* Target indicator (simple rectangle) */}
               {!completed && (
                 <div
-                  className="absolute top-16 w-20 h-20 border-2 border-dashed border-blue-400/50 rounded pointer-events-none animate-pulse"
-                  style={{ left: `${targetPosition}px` }}
+                  className="absolute top-16 border-2 border-dashed border-blue-400/50 pointer-events-none animate-pulse"
+                  style={{ 
+                    left: `${targetPosition}px`,
+                    width: `${puzzlePieceWidth}px`,
+                    height: `${puzzlePieceHeight}px`
+                  }}
                 />
               )}
             </div>
