@@ -442,14 +442,14 @@ const RadioButton: React.FC<RadioButtonProps> = ({ checked, onChange }) => {
                                         <span className="mr-2 text-sm">Yes</span>
                                         <RadioButton
                                             checked={patientData.smoking}
-                                            onChange={() => setPatientData(prev => ({ ...prev, smoking: true }))}
+                                            // onChange={() => setPatientData(prev => ({ ...prev, smoking: true }))}
                                         />
                                     </label>
                                     <label className="flex items-center cursor-pointer">
                                         <span className="mr-2 text-sm">No</span>
                                         <RadioButton
                                             checked={!patientData.smoking}
-                                            onChange={() => setPatientData(prev => ({ ...prev, smoking: false }))}
+                                            // onChange={() => setPatientData(prev => ({ ...prev, smoking: false }))}
                                         />
                                     </label>
                                 </div>
@@ -463,7 +463,7 @@ const RadioButton: React.FC<RadioButtonProps> = ({ checked, onChange }) => {
                                         <span className="mr-2 text-sm">Yes</span>
                                         <RadioButton
                                             checked={patientData.alcohol}
-                                            onChange={() => setPatientData(prev => ({ ...prev, alcohol: true }))}
+                                            // onChange={() => setPatientData(prev => ({ ...prev, alcohol: true }))}
                                             color="yellow"
                                         />
                                     </label>
@@ -471,7 +471,7 @@ const RadioButton: React.FC<RadioButtonProps> = ({ checked, onChange }) => {
                                         <span className="mr-2 text-sm">No</span>
                                         <RadioButton
                                             checked={!patientData.alcohol}
-                                            onChange={() => setPatientData(prev => ({ ...prev, alcohol: false }))}
+                                            // onChange={() => setPatientData(prev => ({ ...prev, alcohol: false }))}
                                         />
                                     </label>
                                 </div>
@@ -485,7 +485,7 @@ const RadioButton: React.FC<RadioButtonProps> = ({ checked, onChange }) => {
                                         <span className="mr-2 text-sm">Yes</span>
                                         <RadioButton
                                             checked={patientData.exercise}
-                                            onChange={() => setPatientData(prev => ({ ...prev, exercise: true }))}
+                                            // onChange={() => setPatientData(prev => ({ ...prev, exercise: true }))}
                                             color="yellow"
                                         />
                                     </label>
@@ -493,7 +493,7 @@ const RadioButton: React.FC<RadioButtonProps> = ({ checked, onChange }) => {
                                         <span className="mr-2 text-sm">No</span>
                                         <RadioButton
                                             checked={!patientData.exercise}
-                                            onChange={() => setPatientData(prev => ({ ...prev, exercise: false }))}
+                                            // onChange={() => setPatientData(prev => ({ ...prev, exercise: false }))}
                                         />
                                     </label>
                                 </div>
@@ -507,7 +507,7 @@ const RadioButton: React.FC<RadioButtonProps> = ({ checked, onChange }) => {
                                         <span className="mr-2 text-sm">Yes</span>
                                         <RadioButton
                                             checked={patientData.caffeine}
-                                            onChange={() => setPatientData(prev => ({ ...prev, caffeine: true }))}
+                                            // onChange={() => setPatientData(prev => ({ ...prev, caffeine: true }))}
                                             color="yellow"
                                         />
                                     </label>
@@ -515,7 +515,7 @@ const RadioButton: React.FC<RadioButtonProps> = ({ checked, onChange }) => {
                                         <span className="mr-2 text-sm">No</span>
                                         <RadioButton
                                             checked={!patientData.caffeine}
-                                            onChange={() => setPatientData(prev => ({ ...prev, caffeine: false }))}
+                                            // onChange={() => setPatientData(prev => ({ ...prev, caffeine: false }))}
                                         />
                                     </label>
                                 </div>
