@@ -345,7 +345,7 @@ const PatientListInterface = () => {
             </div>
 
             {/* Table Header */}
-            
+
             <div className="bg-white px-6 py-3 border-b border-gray-700 mx-auto">
               <div className="grid grid-cols-6 gap-4">
                 <div className="text-sm font-medium text-gray-700">Name</div>
@@ -395,9 +395,15 @@ const PatientListInterface = () => {
                     <div className="grid grid-cols-6 gap-4 items-center">
                       {/* Name with Avatar */}
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                          <User className="h-4 w-4 text-gray-600" />
+                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                          <img
+                            src={patient?.profilePhoto || "/proffile.jpg"}
+                            alt="Profile"
+                            className="h-full w-full object-cover"
+                            onError={(e) => (e.currentTarget.src = "/proffile.jpg")}
+                          />
                         </div>
+
                         <span className="text-sm font-medium text-gray-900">{patient.patientName || 'N/A'}</span>
                       </div>
 
