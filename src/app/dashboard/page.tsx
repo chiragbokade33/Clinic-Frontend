@@ -32,6 +32,7 @@ const HealthcareDashboard = () => {
   const [currentUserId, setCurrentUserId] = useState<number>() as any;
   const [appointments, setAppointments] = useState() as any;
   const [todayAppoinment, SetTodayAppoinmnet] = useState() as any;
+  const [lastDate , setLastDate] = useState() as any;
   const [miss, SetMiss] = useState() as any;
 
   // New state variables for HF ID verification
@@ -351,6 +352,7 @@ const HealthcareDashboard = () => {
     setAppointments(response.data.data.appointments);
     SetMiss(response.data.data.missedAppointmentsToday)
     SetTodayAppoinmnet(response.data.data.totalAppointmentsToday)
+    setLastDate(response.data.data.dailyCounts)
   }
 
   useEffect(() => {
