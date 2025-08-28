@@ -958,34 +958,34 @@ const Page: React.FC = () => {
 
     return (
         <DefaultLayout>
-            <div className="min-w-full max-w-7xl mx-auto p-2 sm:p-4 lg:p-6">
+            <div className="min-w-full max-w-7xl mx-auto p-2 sm:p-4">
                 {/* Header */}
-                <div className="bg-white p-3 sm:p-4 lg:p-6">
+                <div className="bg-white p-3 sm:p-4">
                     <div className="flex items-center justify-between">
                         {/* Back Button */}
                         <div className="flex items-center cursor-pointer">
                             <button
-                                className="mr-1 sm:mr-2 p-1.5 sm:p-2 lg:p-3 rounded-lg transition-colors flex items-center hover:bg-gray-100"
+                                className="mr-1 sm:mr-2 p-1.5 sm:p-2 rounded-lg transition-colors flex items-center"
                                 onClick={() => router.push("/clinicpatient")}
                             >
-                                <FontAwesomeIcon icon={faChevronLeft} className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                                <span className="text-sm sm:text-md lg:text-lg font-bold text-[#333333]">Back</span>
+                                <FontAwesomeIcon icon={faChevronLeft} className="w-2 h-2 mr-2" />
+                                <span className="text-md sm:text-md font-bold text-[#333333]">Back</span>
                             </button>
                         </div>
 
                         <div className="flex flex-col items-center">
-                            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-blue-800">Package plan</h1>
-                            <div className="w-16 sm:w-20 md:w-24 lg:w-32 border border-blue-500 mx-auto mt-1"></div>
+                            <h1 className="text-xl sm:text-2xl font-bold text-blue-800">Package plan</h1>
+                            <div className="w-20 sm:w-24 border border-blue-500 mx-auto mt-1"></div>
                         </div>
 
                         {/* Info Button */}
                         <div className="flex items-start mt-3">
-                            <div className="ml-2 bg-green-700 text-white rounded-sm w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 flex items-center justify-center cursor-pointer hover:bg-green-800 transition-colors">
+                            <div className="ml-2 bg-green-700 text-white rounded-sm w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center cursor-pointer">
                                 <Tooltip content="Information about this page" position="bottom right-2">
                                     <FontAwesomeIcon
                                         icon={faInfoCircle}
                                         onClick={() => setIsDrawerOpen(true)}
-                                        className="text-xs sm:text-sm lg:text-base"
+                                        className="text-xs sm:text-sm"
                                     />
                                 </Tooltip>
                             </div>
@@ -999,96 +999,96 @@ const Page: React.FC = () => {
 
                 <div className='border'>
                     {/* Clinic Header */}
-                    <div className="p-3 sm:p-6 lg:p-8">
+                    <div className="p-3 sm:p-6">
                         <div className="flex justify-center">
                             <img
                                 src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png"
                                 alt="High% Logo"
-                                className="w-40 sm:w-60 md:w-80 lg:w-96 object-contain"
+                                className="w-60 sm:w-80 object-contain"
                             />
                         </div>
                     </div>
 
                     {/* Patient Information */}
-                    <div className="p-3 sm:p-6 lg:p-8 border-b bg-white mx-1 sm:mx-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 text-xs sm:text-sm lg:text-base">
-                            <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center">
-                                    <span className="font-medium w-full sm:w-32 md:w-36 lg:w-40 mb-1 sm:mb-0">Client Name:</span>
-                                    <span className="text-gray-700">{profileData?.fullName}</span>
+                    <div className="p-3 sm:p-6 border-b bg-white mx-1 sm:mx-3">
+                        <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 text-xs sm:text-sm">
+                            <div className="space-y-2">
+                                <div className="flex flex-col sm:flex-row">
+                                    <span className="font-medium w-full sm:w-32">Client Name:</span>
+                                    <span>{profileData?.fullName}</span>
                                 </div>
-                                <div className="flex flex-col sm:flex-row sm:items-center">
-                                    <span className="font-medium w-full sm:w-32 md:w-36 lg:w-40 mb-1 sm:mb-0">Gender:</span>
-                                    <span className="text-gray-700">{profileData?.gender}</span>
+                                <div className="flex flex-col sm:flex-row">
+                                    <span className="font-medium w-full sm:w-32">Gender:</span>
+                                    <span>{profileData?.gender}</span>
                                 </div>
-                                <div className="flex flex-col sm:flex-row sm:items-center">
-                                    <span className="font-medium w-full sm:w-32 md:w-36 lg:w-40 mb-1 sm:mb-0">DOB:</span>
-                                    <span className="text-gray-700">{profileData?.dob}</span>
+                                <div className="flex flex-col sm:flex-row">
+                                    <span className="font-medium w-full sm:w-32">DOB:</span>
+                                    <span>{profileData?.dob}</span>
                                 </div>
-                                <div className="flex flex-col sm:flex-row sm:items-center">
-                                    <span className="font-medium w-full sm:w-32 md:w-36 lg:w-40 mb-1 sm:mb-0">Consultant Coach:</span>
-                                    <span className="text-gray-700">Priyanka</span>
+                                <div className="flex flex-col sm:flex-row">
+                                    <span className="font-medium w-full sm:w-32">Consultant Coach:</span>
+                                    <span>Priyanka</span>
                                 </div>
                             </div>
-                            <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center">
-                                    <span className="font-medium w-full sm:w-20 md:w-24 lg:w-28 mb-1 sm:mb-0">HFID:</span>
-                                    <span className="text-gray-700">{profileData?.hfId}</span>
+                            <div className="space-y-2">
+                                <div className="flex flex-col sm:flex-row">
+                                    <span className="font-medium w-full sm:w-20">HFID:</span>
+                                    <span>{profileData?.hfId}</span>
                                 </div>
-                                <div className="flex flex-col sm:flex-row sm:items-center">
-                                    <span className="font-medium w-full sm:w-20 md:w-24 lg:w-28 mb-1 sm:mb-0">TID:</span>
-                                    <span className="text-gray-700">T5QAHYBM6</span>
+                                <div className="flex flex-col sm:flex-row">
+                                    <span className="font-medium w-full sm:w-20">TID:</span>
+                                    <span>T5QAHYBM6</span>
                                 </div>
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                                    <span className="font-medium w-full sm:w-20 md:w-24 lg:w-28">Mobile:</span>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+                                    <span className="font-medium w-full sm:w-20">Mobile:</span>
                                     <input
                                         type="text"
                                         placeholder="Enter mobile number"
                                         value={profileData?.phoneNumber || ""}
-                                        readOnly
-                                        className="px-2 py-1 sm:px-3 sm:py-2 rounded text-xs sm:text-sm border border-gray-700 focus:outline-none focus:border-blue-500 w-[120px]"
+                                        readOnly   // if you only want to display
+                                        className="px-2 py-1 rounded text-xs border border-gray-700 focus:outline-none w-full sm:w-auto"
                                     />
-                                </div>
 
-                                <div className="flex flex-col sm:flex-row sm:items-center">
-                                    <span className="font-medium w-full sm:w-20 md:w-24 lg:w-28 mb-1 sm:mb-0">City:</span>
-                                    <span className="text-gray-700">{profileData?.city}</span>
+                                </div>
+                                <div className="flex flex-col sm:flex-row">
+                                    <span className="font-medium w-full sm:w-20">City:</span>
+                                    <span>{profileData?.city}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Treatment Table Section */}
-                    <div className="p-3 sm:p-6 lg:p-8">
+                    {/* Treatment Table - Updated with new columns */}
+                    <div className="p-3 sm:p-6 min-w-7xl mx-auto">
                         <div className="bg-white">
-                            <div className="flex justify-between items-center mb-4 sm:mb-6">
-                                <h3 className="text-base sm:text-lg lg:text-xl font-bold">Package</h3>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-base sm:text-lg font-bold">Package</h3>
                             </div>
 
-                            {/* Desktop Table View - Hidden on mobile */}
-                            <div className="hidden lg:block overflow-x-auto">
+                            {/* Treatment Table - Updated to include new fields */}
+                            <div className="overflow-x-auto">
                                 <table className="w-full border-t border-gray-700">
                                     <thead>
                                         <tr className="border-b border-gray-700">
-                                            <th className="px-2 py-3 text-left text-sm font-medium w-12 border-gray-700">S.No.</th>
-                                            <th className="border-l border-gray-700 px-2 py-3 text-left text-sm font-medium">Package Name</th>
-                                            <th className="border-l border-gray-700 px-2 py-3 text-left text-sm font-medium w-20">Sessions</th>
-                                            <th className="border-l border-gray-700 px-2 py-3 text-left text-sm font-medium w-24">Frequency</th>
-                                            <th className="border-l border-gray-700 px-2 py-3 text-left text-sm font-medium w-20">Duration</th>
-                                            <th className="border-l border-gray-700 px-2 py-3 text-left text-sm font-medium w-24">Cost (₹)</th>
-                                            <th className="border-l border-gray-700 px-2 py-3 text-left text-sm font-medium w-24">Status</th>
-                                            <th className="border-l border-gray-700 px-2 py-3 text-left text-sm font-medium w-24">Total (₹)</th>
+                                            <th className="px-2 py-2 text-left text-sm font-medium w-12 border-gray-700">S.No.</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium">Package Name</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-20">Sessions</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Frequency</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-20">Duration</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Cost (₹)</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Status</th>
+                                            <th className="border-l border-gray-700 px-2 py-2 text-left text-sm font-medium w-24">Total (₹)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {treatments.map((treatment, index) => (
+                                        {treatments.map((treatment: TreatmentData, index: number) => (
                                             <tr
                                                 key={treatment.treatmentId}
-                                                className="hover:bg-gray-50 cursor-pointer transition-colors"
+                                                className="hover:bg-gray-50 cursor-pointer"
                                                 onClick={() => populateFormWithTreatment(treatment)}
                                             >
-                                                <td className="px-2 py-3 text-sm text-center border-gray-700">{index + 1}</td>
-                                                <td className="border-l border-gray-700 px-2 py-3 text-sm">
+                                                <td className="px-2 py-2 text-sm text-center border-gray-700">{index + 1}</td>
+                                                <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <input
                                                         type="text"
                                                         value={treatment.treatmentName}
@@ -1098,7 +1098,7 @@ const Page: React.FC = () => {
                                                         placeholder="Enter treatment name"
                                                     />
                                                 </td>
-                                                <td className="border-l border-gray-700 px-2 py-3 text-sm">
+                                                <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <input
                                                         type="number"
                                                         value={treatment.sessions || 0}
@@ -1108,11 +1108,11 @@ const Page: React.FC = () => {
                                                         min="1"
                                                     />
                                                 </td>
-                                                <td className="border-l border-gray-700 px-2 py-3 text-sm">
+                                                <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <select
                                                         value={treatment.quantityPerDay || ''}
-                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'quantityPerDay', e.target.value)}
-                                                        onClick={(e) => e.stopPropagation()}
+                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'quantityPerDay', e.target.value)} // ✅ Uncommented
+                                                        onClick={(e) => e.stopPropagation()} // ✅ Uncommented
                                                         className="w-full border-none outline-none bg-transparent text-sm"
                                                     >
                                                         <option value="">Select Frequency</option>
@@ -1121,7 +1121,7 @@ const Page: React.FC = () => {
                                                         <option value="3">3 Days/week</option>
                                                     </select>
                                                 </td>
-                                                <td className="border-l border-gray-700 px-2 py-3 text-sm">
+                                                <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <select
                                                         value={treatment.duration || ''}
                                                         onChange={(e) => updateTreatment(treatment.treatmentId, 'duration', e.target.value)}
@@ -1134,7 +1134,7 @@ const Page: React.FC = () => {
                                                         <option value="6">6 Months</option>
                                                     </select>
                                                 </td>
-                                                <td className="border-l border-gray-700 px-2 py-3 text-sm">
+                                                <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <input
                                                         type="number"
                                                         value={treatment.cost}
@@ -1145,7 +1145,7 @@ const Page: React.FC = () => {
                                                         min="0"
                                                     />
                                                 </td>
-                                                <td className="border-l border-gray-700 px-2 py-3 text-sm">
+                                                <td className="border-l border-gray-700 px-2 py-2 text-sm">
                                                     <select
                                                         value={STATUS_API_TO_UI[treatment.status || ""] || treatment.status || 'Not Started'}
                                                         onChange={(e) => updateTreatment(treatment.treatmentId, 'status', e.target.value)}
@@ -1158,7 +1158,7 @@ const Page: React.FC = () => {
                                                         <option value="Cancelled">Cancelled</option>
                                                     </select>
                                                 </td>
-                                                <td className="border-l border-gray-700 px-2 py-3 text-sm text-right font-medium">
+                                                <td className="border-l border-gray-700 px-2 py-2 text-sm text-right">
                                                     ₹{treatment.cost.toFixed(2)}
                                                 </td>
                                             </tr>
@@ -1167,7 +1167,7 @@ const Page: React.FC = () => {
                                         {/* Empty rows for spacing */}
                                         {treatments.length < 5 && (
                                             <>
-                                                {Array.from({ length: 5 - treatments.length }).map((_, index) => (
+                                                {Array.from({ length: 5 - treatments.length }).map((_, index: number) => (
                                                     <tr key={`empty-${index}`} className="">
                                                         <td className="px-2 py-4 text-sm border-gray-700">&nbsp;</td>
                                                         <td className="border-l border-gray-700 px-2 py-4 text-sm">&nbsp;</td>
@@ -1182,275 +1182,142 @@ const Page: React.FC = () => {
                                             </>
                                         )}
 
-                                        {/* Total Row */}
+                                        {/* Total Row as part of table */}
                                         <tr className="border-t border-b border-gray-700 bg-gray-50">
                                             <td className="px-2 py-3 text-sm border-gray-700" colSpan={4}></td>
-                                            <td className="border-l border-gray-700 px-2 py-3 text-sm font-bold" colSpan={2}>
-                                                Total Cost: ₹{totalCost.toFixed(2)}
+                                            <td className="border-l border-gray-700 px-2 py-3 text-sm font-medium" colSpan={2}>
+                                                <strong>Total Cost: ₹{totalCost.toFixed(2)}</strong>
                                             </td>
-                                            <td className="border-l border-gray-700 px-2 py-3 text-sm font-bold" colSpan={2}>
-                                                Grand Total: ₹{grandTotal.toFixed(2)}
+                                            <td className="border-l border-gray-700 px-2 py-3 text-sm font-medium" colSpan={3}>
+                                                <strong>Grand Total: ₹{grandTotal.toFixed(2)}</strong>
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
-
-                            {/* Mobile/Tablet Card View - Visible on smaller screens */}
-                            <div className="lg:hidden space-y-4">
-                                {treatments.map((treatment, index) => (
-                                    <div
-                                        key={treatment.treatmentId}
-                                        className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                                        onClick={() => populateFormWithTreatment(treatment)}
-                                    >
-                                        <div className="flex justify-between items-start mb-3">
-                                            <span className="text-sm font-medium text-gray-600">#{index + 1}</span>
-                                            <span className="text-lg font-bold text-green-600">₹{treatment.cost.toFixed(2)}</span>
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-600 mb-1">Package Name</label>
-                                                <input
-                                                    type="text"
-                                                    value={treatment.treatmentName}
-                                                    onChange={(e) => updateTreatment(treatment.treatmentId, 'name', e.target.value)}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                                                    placeholder="Enter treatment name"
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-600 mb-1">Sessions</label>
-                                                    <input
-                                                        type="number"
-                                                        value={treatment.sessions || 0}
-                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'sessions', e.target.value)}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                                                        min="1"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-600 mb-1">Cost (₹)</label>
-                                                    <input
-                                                        type="number"
-                                                        value={treatment.cost}
-                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'cost', e.target.value)}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                                                        step="0.01"
-                                                        min="0"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-600 mb-1">Frequency</label>
-                                                    <select
-                                                        value={treatment.quantityPerDay || ''}
-                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'quantityPerDay', e.target.value)}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                                                    >
-                                                        <option value="">Select Frequency</option>
-                                                        <option value="1">1 Day/week</option>
-                                                        <option value="2">2 Days/week</option>
-                                                        <option value="3">3 Days/week</option>
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-600 mb-1">Duration</label>
-                                                    <select
-                                                        value={treatment.duration || ''}
-                                                        onChange={(e) => updateTreatment(treatment.treatmentId, 'duration', e.target.value)}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                                                    >
-                                                        <option value="">Select Duration</option>
-                                                        <option value="1">1 Month</option>
-                                                        <option value="3">3 Months</option>
-                                                        <option value="6">6 Months</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
-                                                <select
-                                                    value={STATUS_API_TO_UI[treatment.status || ""] || treatment.status || 'Not Started'}
-                                                    onChange={(e) => updateTreatment(treatment.treatmentId, 'status', e.target.value)}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                                                >
-                                                    <option value="Not Started">Not Started</option>
-                                                    <option value="In Progress">In Progress</option>
-                                                    <option value="Completed">Completed</option>
-                                                    <option value="Cancelled">Cancelled</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Mobile Total Summary */}
-                                {treatments.length > 0 && (
-                                    <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-sm font-medium">Total Cost:</span>
-                                            <span className="text-lg font-bold text-blue-600">₹{totalCost.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm font-medium">Grand Total:</span>
-                                            <span className="text-xl font-bold text-green-600">₹{grandTotal.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
                         </div>
 
-                        {/* Treatment Form - Responsive Layout */}
-                        <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mt-6 lg:mt-8">
+                        {/* Updated Add Treatment Form with new fields */}
+                        <div className="flex justify-end items-start gap-4 mt-4">
                             {/* Treatment Form */}
                             {showMedicationForm && (
-                                <form onSubmit={addTreatmentFormik.handleSubmit} className="w-full lg:flex-1 space-y-4">
-                                    {/* Mobile/Tablet: Stack all fields vertically */}
-                                    <div className="space-y-4 lg:space-y-0">
-                                        {/* Package Name - Full width on mobile */}
-                                        <div className="w-full lg:flex lg:gap-4 lg:mb-4">
-                                            <div className="flex-1 mb-4 lg:mb-0">
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 lg:hidden">
-                                                    Package Name
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    name="treatmentName"
-                                                    placeholder="Package Name..."
-                                                    value={addTreatmentFormik.values.treatmentName}
-                                                    onChange={addTreatmentFormik.handleChange}
-                                                    onBlur={addTreatmentFormik.handleBlur}
-                                                    className={`w-full border px-3 py-2 sm:py-3 focus:outline-none focus:border-blue-500 text-sm rounded-md transition-colors ${addTreatmentFormik.touched.treatmentName && addTreatmentFormik.errors.treatmentName
-                                                        ? 'border-red-500' : 'border-gray-300 hover:border-gray-400'
-                                                        }`}
-                                                />
-                                                {addTreatmentFormik.touched.treatmentName && addTreatmentFormik.errors.treatmentName && (
-                                                    <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.treatmentName}</p>
-                                                )}
-                                            </div>
-
-                                            <div className="w-full lg:w-1/5">
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 lg:hidden">
-                                                    Sessions
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    name="sessions"
-                                                    placeholder="Sessions"
-                                                    value={addTreatmentFormik.values.sessions}
-                                                    onChange={addTreatmentFormik.handleChange}
-                                                    onBlur={addTreatmentFormik.handleBlur}
-                                                    min="1"
-                                                    className={`w-full border px-3 py-2 sm:py-3 focus:outline-none focus:border-blue-500 text-sm rounded-md transition-colors ${addTreatmentFormik.touched.sessions && addTreatmentFormik.errors.sessions
-                                                        ? 'border-red-500' : 'border-gray-300 hover:border-gray-400'
-                                                        }`}
-                                                />
-                                            </div>
+                                <form onSubmit={addTreatmentFormik.handleSubmit} className="flex-1 space-y-4">
+                                    {/* First row */}
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <input
+                                                type="text"
+                                                name="treatmentName"
+                                                placeholder="Package Name..."
+                                                value={addTreatmentFormik.values.treatmentName}
+                                                onChange={addTreatmentFormik.handleChange}
+                                                onBlur={addTreatmentFormik.handleBlur}
+                                                className={`w-full border px-3 py-2 focus:outline-none focus:border-blue-500 text-sm rounded ${addTreatmentFormik.touched.treatmentName && addTreatmentFormik.errors.treatmentName
+                                                    ? 'border-red-500' : 'border-gray-500'
+                                                    }`}
+                                            />
+                                            {addTreatmentFormik.touched.treatmentName && addTreatmentFormik.errors.treatmentName && (
+                                                <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.treatmentName}</p>
+                                            )}
                                         </div>
-
-                                        {/* Second row - Grid layout for smaller fields */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                            <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 lg:hidden">
-                                                    Frequency
-                                                </label>
-                                                <select
-                                                    name="quantityPerDay"
-                                                    value={addTreatmentFormik.values.quantityPerDay}
-                                                    onChange={addTreatmentFormik.handleChange}
-                                                    onBlur={addTreatmentFormik.handleBlur}
-                                                    className={`w-full border px-3 py-2 sm:py-3 text-sm rounded-md focus:outline-none focus:border-blue-500 transition-colors ${addTreatmentFormik.touched.quantityPerDay && addTreatmentFormik.errors.quantityPerDay
-                                                        ? 'border-red-500' : 'border-gray-300 hover:border-gray-400'
-                                                        }`}
-                                                >
-                                                    <option value="">Select Frequency</option>
-                                                    <option value="1">1 Day/week</option>
-                                                    <option value="2">2 Days/week</option>
-                                                    <option value="3">3 Days/week</option>
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 lg:hidden">
-                                                    Duration
-                                                </label>
-                                                <select
-                                                    name="duration"
-                                                    value={addTreatmentFormik.values.duration}
-                                                    onChange={addTreatmentFormik.handleChange}
-                                                    onBlur={addTreatmentFormik.handleBlur}
-                                                    className={`w-full border px-3 py-2 sm:py-3 text-sm rounded-md focus:outline-none focus:border-blue-500 transition-colors ${addTreatmentFormik.touched.duration && addTreatmentFormik.errors.duration
-                                                        ? 'border-red-500' : 'border-gray-300 hover:border-gray-400'
-                                                        }`}
-                                                >
-                                                    <option value="">Select Duration</option>
-                                                    <option value="1">1 Month</option>
-                                                    <option value="3">3 Months</option>
-                                                    <option value="6">6 Months</option>
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 lg:hidden">
-                                                    Cost (₹)
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    name="cost"
-                                                    placeholder="Cost..."
-                                                    value={addTreatmentFormik.values.cost}
-                                                    onChange={addTreatmentFormik.handleChange}
-                                                    onBlur={addTreatmentFormik.handleBlur}
-                                                    step="0.01"
-                                                    min="0"
-                                                    className={`w-full border px-3 py-2 sm:py-3 focus:outline-none focus:border-blue-500 text-sm rounded-md transition-colors ${addTreatmentFormik.touched.cost && addTreatmentFormik.errors.cost
-                                                        ? 'border-red-500' : 'border-gray-300 hover:border-gray-400'
-                                                        }`}
-                                                />
-                                                {addTreatmentFormik.touched.cost && addTreatmentFormik.errors.cost && (
-                                                    <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.cost}</p>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 lg:hidden">
-                                                    Status
-                                                </label>
-                                                <select
-                                                    name="status"
-                                                    value={addTreatmentFormik.values.status}
-                                                    onChange={addTreatmentFormik.handleChange}
-                                                    onBlur={addTreatmentFormik.handleBlur}
-                                                    className="w-full border border-gray-300 hover:border-gray-400 px-3 py-2 sm:py-3 text-sm rounded-md focus:outline-none focus:border-blue-500 transition-colors"
-                                                >
-                                                    <option value="Not Started">Not Started</option>
-                                                    <option value="In Progress">In Progress</option>
-                                                    <option value="Completed">Completed</option>
-                                                    <option value="Cancelled">Cancelled</option>
-                                                </select>
-                                            </div>
+                                        <div className="w-1/5">
+                                            <input
+                                                type="number"
+                                                name="sessions"
+                                                placeholder="Sessions"
+                                                value={addTreatmentFormik.values.sessions}
+                                                onChange={addTreatmentFormik.handleChange}
+                                                onBlur={addTreatmentFormik.handleBlur}
+                                                min="1"
+                                                className={`w-full border px-3 py-2 focus:outline-none focus:border-blue-500 text-sm rounded ${addTreatmentFormik.touched.sessions && addTreatmentFormik.errors.sessions
+                                                    ? 'border-red-500' : 'border-gray-500'
+                                                    }`}
+                                            />
+                                            {/* {addTreatmentFormik.touched.sessions && addTreatmentFormik.errors.sessions && (
+                                                <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.sessions}</p>
+                                            )} */}
                                         </div>
                                     </div>
 
-                                    {/* Form Buttons */}
-                                    <div className="flex flex-col sm:flex-row justify-center gap-3 pt-4">
+                                    {/* Second row */}
+                                    <div className="flex items-end gap-4">
+                                        <div className="w-1/5">
+                                            <select
+                                                name="quantityPerDay"
+                                                value={addTreatmentFormik.values.quantityPerDay}
+                                                onChange={addTreatmentFormik.handleChange}
+                                                onBlur={addTreatmentFormik.handleBlur}
+                                                className={`w-full border px-3 py-2 text-sm rounded focus:outline-none focus:border-blue-500 ${addTreatmentFormik.touched.quantityPerDay && addTreatmentFormik.errors.quantityPerDay
+                                                    ? 'border-red-500' : 'border-gray-500'
+                                                    }`}
+                                            >
+                                                <option value="">Select Frequency</option>
+                                                <option value="1">1 Day/week</option>
+                                                <option value="2">2 Days/week</option>
+                                                <option value="3">3 Days/week</option>
+                                            </select>
+                                            {/* {addTreatmentFormik.touched.frequency && addTreatmentFormik.errors.frequency && (
+                                                <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.frequency}</p>
+                                            )} */}
+                                        </div>
+                                        <div className="w-1/5">
+                                            <select
+                                                name="duration"
+                                                value={addTreatmentFormik.values.duration}
+                                                onChange={addTreatmentFormik.handleChange}
+                                                onBlur={addTreatmentFormik.handleBlur}
+                                                className={`w-full border px-3 py-2 text-sm rounded focus:outline-none focus:border-blue-500 ${addTreatmentFormik.touched.duration && addTreatmentFormik.errors.duration
+                                                    ? 'border-red-500' : 'border-gray-500'
+                                                    }`}
+                                            >
+                                                <option value="">Select Duration</option>
+                                                <option value="1">1 Month</option>
+                                                <option value="3">3 Months</option>
+                                                <option value="6">6 Months</option>
+                                            </select>
+                                            {/* {addTreatmentFormik.touched.duration && addTreatmentFormik.errors.duration && (
+                                                <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.duration}</p>
+                                            )} */}
+                                        </div>
+                                        <div className="w-1/5">
+                                            <input
+                                                type="number"
+                                                name="cost"
+                                                placeholder="Cost..."
+                                                value={addTreatmentFormik.values.cost}
+                                                onChange={addTreatmentFormik.handleChange}
+                                                onBlur={addTreatmentFormik.handleBlur}
+                                                step="0.01"
+                                                min="0"
+                                                className={`w-full border px-3 py-2 focus:outline-none focus:border-blue-500 text-sm rounded ${addTreatmentFormik.touched.cost && addTreatmentFormik.errors.cost
+                                                    ? 'border-red-500' : 'border-gray-500'
+                                                    }`}
+                                            />
+                                            {addTreatmentFormik.touched.cost && addTreatmentFormik.errors.cost && (
+                                                <p className="text-red-500 text-xs mt-1">{addTreatmentFormik.errors.cost}</p>
+                                            )}
+                                        </div>
+                                        <div className="w-1/5">
+                                            <select
+                                                name="status"
+                                                value={addTreatmentFormik.values.status}
+                                                onChange={addTreatmentFormik.handleChange}
+                                                onBlur={addTreatmentFormik.handleBlur}
+                                                className="w-full border border-gray-500 px-3 py-2 text-sm rounded focus:outline-none focus:border-blue-500"
+                                            >
+                                                <option value="Not Started">Not Started</option>
+                                                <option value="In Progress">In Progress</option>
+                                                <option value="Completed">Completed</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-center gap-2">
                                         <button
                                             type="submit"
                                             disabled={addTreatmentFormik.isSubmitting}
-                                            className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 px-6 sm:px-8 py-2 sm:py-3 border border-yellow-500 rounded-lg font-medium text-sm disabled:opacity-50 transition-colors"
+                                            className="bg-yellow-400 hover:bg-yellow-500 px-6 sm:px-8 py-2 border border-yellow-500 rounded-lg font-medium text-sm disabled:opacity-50"
                                         >
                                             {addTreatmentFormik.isSubmitting
                                                 ? (editingTreatmentId !== null ? 'Updating...' : 'Adding...')
@@ -1464,7 +1331,7 @@ const Page: React.FC = () => {
                                                 setEditingTreatmentId(null);
                                                 addTreatmentFormik.resetForm();
                                             }}
-                                            className="w-full sm:w-auto bg-gray-300 hover:bg-gray-400 px-6 sm:px-8 py-2 sm:py-3 border border-gray-400 rounded-lg font-medium text-sm transition-colors"
+                                            className="bg-gray-300 hover:bg-gray-400 px-6 sm:px-8 py-2 border border-gray-400 rounded-lg font-medium text-sm"
                                         >
                                             Cancel
                                         </button>
@@ -1472,35 +1339,32 @@ const Page: React.FC = () => {
                                 </form>
                             )}
 
-                            {/* Add Treatment Buttons - Responsive */}
-                            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 w-full">
+                            {/* Add Treatment Buttons */}
+                            <div className="flex gap-2">
                                 <button
                                     onClick={addManualTreatment}
-                                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 sm:py-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors"
+                                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 self-start"
                                 >
                                     <FontAwesomeIcon icon={faPlus} className="w-3 h-3" />
                                     New Package
                                 </button>
-
                                 <button
                                     onClick={openSavedPrescriptions}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 sm:py-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 self-start"
                                 >
                                     <FontAwesomeIcon icon={faPlus} className="w-3 h-3" />
                                     From Saved
                                 </button>
                             </div>
-
-
                         </div>
 
                         {/* Doctor Signature */}
-                        <div className="mt-8 sm:mt-12 lg:mt-16 flex justify-center lg:justify-end">
+                        <div className="mt-8 sm:mt-12 flex justify-end">
                             <div className="text-center">
-                                <div className="w-24 sm:w-32 lg:w-40 h-12 sm:h-16 lg:h-20 border-b border-gray-300 mb-2 flex items-end justify-center">
-                                    <span className="text-blue-600 font-script text-sm sm:text-lg lg:text-xl mb-2">Priyanka</span>
+                                <div className="w-24 sm:w-32 h-12 sm:h-16 border-b border-gray-300 mb-2 flex items-end justify-center">
+                                    <span className="text-blue-600 font-script text-sm sm:text-lg mb-2">Priyanka</span>
                                 </div>
-                                <p className="text-xs sm:text-sm lg:text-base font-medium">Priyanka</p>
+                                <p className="text-xs sm:text-sm font-medium">Priyanka</p>
                             </div>
                         </div>
                     </div>
@@ -1508,17 +1372,17 @@ const Page: React.FC = () => {
                     <div className='border border-black mx-1 sm:mx-3'></div>
 
                     {/* Footer */}
-                    <div className="p-3 sm:p-4 lg:p-6 flex flex-col sm:flex-row justify-between text-xs sm:text-sm lg:text-base text-gray-600 gap-2">
+                    <div className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between text-xs sm:text-sm text-gray-600 gap-2">
                         <span>www.high5performance.in</span>
                         <span>www.hfiles.in</span>
                     </div>
                 </div>
 
                 {/* Save Button */}
-                <div className="p-3 sm:p-4 lg:p-6 flex justify-center lg:justify-end">
+                <div className="p-3 sm:p-4 flex justify-end">
                     <button
                         disabled={isSaving || treatments.length === 0}
-                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 lg:px-12 py-3 sm:py-4 rounded-lg font-medium text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md hover:shadow-lg"
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={async () => {
                             setIsSaving(true);
                             try {
@@ -1597,10 +1461,10 @@ const Page: React.FC = () => {
                         }}
                     >
                         {isSaving ? (
-                            <div className="flex items-center justify-center">
+                            <>
                                 <span className="mr-2">⏳</span>
                                 Saving...
-                            </div>
+                            </>
                         ) : (
                             "Save Package Plan"
                         )}
