@@ -13,7 +13,7 @@ import {
   faChevronDown
 } from '@fortawesome/free-solid-svg-icons';
 import DefaultLayout from '../components/DefaultLayout';
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useFormik } from 'formik';
@@ -49,6 +49,12 @@ const HealthcareDashboard = () => {
   const [editingTreatment, setEditingTreatment] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [userName, setUserName] = useState() as any;
+  const [appliedStartDate, setAppliedStartDate] = useState<Date | null>(null); // For API calls
+  const [appliedEndDate, setAppliedEndDate] = useState<Date | null>(null); // For API calls
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [endDate, setEndDate] = useState<Date | null>(null); // For date picker display
+  const [startDate, setStartDate] = useState<Date | null>(null); // For date picker display
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -57,6 +63,22 @@ const HealthcareDashboard = () => {
     };
     fetchUserId();
   }, []);
+
+  const handleDatePickerDone = () => {
+    setAppliedStartDate(startDate);
+    setAppliedEndDate(endDate);
+    setShowDatePicker(false);
+    // API will be called automatically due to useEffect dependency on appliedStartDate/appliedEndDate
+  };
+
+  // Clear date filter
+  const clearDateFilter = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setAppliedStartDate(null);
+    setAppliedEndDate(null);
+    // API will be called automatically due to applied dates changing
+  };
 
   // HF ID Verification Handler
   const handleHFIDVerification = async () => {
@@ -312,10 +334,20 @@ const HealthcareDashboard = () => {
     return formik.touched[fieldName] && formik.errors[fieldName];
   };
 
+  // Format date to dd-MM-yyyy
+  const formatDateForAPI = (date: Date): string => {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   const appoinmentData = async () => {
     const id = await getUserId();
     setCurrentUserId(id);
-    const response = await ListAppointment(id);
+    const formattedStartDate = appliedStartDate ? formatDateForAPI(appliedStartDate) : undefined;
+    const formattedEndDate = appliedEndDate ? formatDateForAPI(appliedEndDate) : undefined;
+    const response = await ListAppointment(id, formattedStartDate, formattedEndDate);
     setAppointments(response.data.data.appointments);
     SetMiss(response.data.data.missedAppointmentsToday)
     SetTodayAppoinmnet(response.data.data.totalAppointmentsToday)
@@ -323,7 +355,7 @@ const HealthcareDashboard = () => {
 
   useEffect(() => {
     appoinmentData();
-  }, [])
+  }, [appliedStartDate, appliedEndDate])
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -477,20 +509,78 @@ const HealthcareDashboard = () => {
     setEditingTreatment("");
   };
 
+  // Handle date range selection (no API call)
+  const handleDateRangeChange = (dates: [Date | null, Date | null]) => {
+    const [start, end] = dates;
+    setStartDate(start);
+    setEndDate(end);
+    // Don't call API here - only when Done is clicked
+  };
+
   // Combined Appointment List & Patient Details Component
   const CombinedAppointmentPatient = () => (
     <div className="bg-white rounded-2xl p-4 shadow-sm border">
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left Side - Appointment List */}
         <div className="w-full lg:w-[60%] lg:border-r lg:border-black lg:pr-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-blue-800 font-poppins-600">Appointment List :</h3>
-            <select className=" px-3 py-2 text-md font-montserrat-600 font-semibold">
-              <option>All</option>
-              <option>Today</option>
-              <option>This Week</option>
-            </select>
+          <div className="flex items-center justify-between mb-4 relative">
+            <h3 className="text-xl font-semibold text-blue-800 font-poppins-600">
+              Appointment List :
+            </h3>
+            <div className="relative">
+              <button
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className={`flex items-center justify-center w-10 h-10 border rounded-lg transition-colors ${appliedStartDate || appliedEndDate
+                    ? 'border-blue-500 bg-blue-50 text-blue-600'
+                    : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+              >
+                <Calendar className="h-5 w-5" />
+              </button>
+
+              {showDatePicker && (
+                <div className="absolute right-0 top-12 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[300px]">
+                  <div className="mb-3">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Select Date Range
+                    </h3>
+                    <DatePicker
+                      selected={startDate}
+                      onChange={handleDateRangeChange}
+                      startDate={startDate}
+                      endDate={endDate}
+                      selectsRange
+                      inline
+                      calendarClassName="border-0"
+                    />
+                  </div>
+
+                  {(startDate || endDate) && (
+                    <div className="text-xs text-gray-600 mb-2">
+                      {startDate ? startDate.toLocaleDateString() : 'Start'} -{' '}
+                      {endDate ? endDate.toLocaleDateString() : 'End'}
+                    </div>
+                  )}
+
+                  <div className="flex justify-between">
+                    <button
+                      onClick={clearDateFilter}
+                      className="text-xs text-gray-500 hover:text-gray-700"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={handleDatePickerDone}
+                      className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+
           <div className='border border-black '></div>
           <div className="flex-1 overflow-y-auto mt-3 max-h-[calc(50vh-50px)] custom-scrollbar">
             <div className="space-y-3 mt-3">
@@ -1578,6 +1668,13 @@ const HealthcareDashboard = () => {
               </form>
             </div>
           </div>
+        )}
+
+        {showDatePicker && (
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowDatePicker(false)}
+          ></div>
         )}
       </div>
     </DefaultLayout>
