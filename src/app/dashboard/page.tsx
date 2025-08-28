@@ -81,6 +81,18 @@ const HealthcareDashboard = () => {
     // API will be called automatically due to applied dates changing
   };
 
+  // Helper function to get appointment count for a specific date
+  const getAppointmentCount = (day: number | null) => {
+    if (!day || !lastDate || !Array.isArray(lastDate)) return null;
+    
+    // Format the date to match API format (DD-MM-YYYY)
+    const formattedDate = `${day.toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
+    
+    // Find matching date in dailyCounts
+    const dayData = lastDate.find((item: any) => item.date === formattedDate);
+    return dayData ? dayData.totalAppointments : null;
+  };
+
   // HF ID Verification Handler
   const handleHFIDVerification = async () => {
     if (!patientFormik.values.patientId) {
@@ -446,6 +458,30 @@ const HealthcareDashboard = () => {
     ? appointments.find((appointment: any) => appointment.id === selectedAppointment)
     : null;
 
+  // Helper function to check if appointment time has passed
+  const isAppointmentPassed = (appointmentDate: string, appointmentTime: string) => {
+    if (!appointmentDate || !appointmentTime) return false;
+    
+    try {
+      // Parse the appointment date (DD-MM-YYYY format)
+      const [day, month, year] = appointmentDate.split('-').map(Number);
+      
+      // Parse the appointment time (HH:MM format)
+      const [hours, minutes] = appointmentTime.split(':').map(Number);
+      
+      // Create appointment datetime
+      const appointmentDateTime = new Date(year, month - 1, day, hours, minutes);
+      
+      // Compare with current datetime
+      const currentDateTime = new Date();
+      
+      return currentDateTime > appointmentDateTime;
+    } catch (error) {
+      console.error('Error parsing appointment datetime:', error);
+      return false;
+    }
+  };
+
   // Add optimized handlers to prevent re-renders and cursor jumping
   const handleTreatmentChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setEditingTreatment(e.target.value);
@@ -741,9 +777,17 @@ const HealthcareDashboard = () => {
                 {!isEditing ? (
                   <button
                     onClick={handleEditSave}
-                    className="w-full text-white font-semibold py-3 px-4 rounded-lg transition-colors bg-blue-600 hover:bg-blue-700"
+                    disabled={isAppointmentPassed(selectedPatient?.appointmentDate, selectedPatient?.appointmentTime)}
+                    className={`w-full font-semibold py-3 px-4 rounded-lg transition-colors ${
+                      isAppointmentPassed(selectedPatient?.appointmentDate, selectedPatient?.appointmentTime)
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
                   >
-                    Edit
+                    {isAppointmentPassed(selectedPatient?.appointmentDate, selectedPatient?.appointmentTime) 
+                      ? 'Appointment Passed' 
+                      : 'Edit'
+                    }
                   </button>
                 ) : (
                   <div className="flex gap-2">
@@ -868,25 +912,38 @@ const HealthcareDashboard = () => {
                     ))}
                   </div>
 
-                  {/* Calendar Grid */}
+                  {/* Calendar Grid - UPDATED with appointment counts */}
                   <div className="grid grid-cols-7 gap-1">
-                    {getDaysInMonth(currentDate).map((day, index) => (
-                      <div
-                        key={index}
-                        className={`
-        h-12 w-full flex items-center justify-center text-sm cursor-pointer border border-gray-200 rounded-lg transition-colors
-        ${day ? 'hover:bg-gray-50 text-gray-700 bg-white' : 'cursor-default border-transparent'}
-        ${isToday(day) ? 'bg-blue-100 text-blue-600 font-bold border-blue-300' : ''}
-      `}
-                        onClick={() => handleDateClick(day)}
-                      >
-                        {day && (
-                          <span className={`text-lg font-montserrat-500 ${isToday(day) ? 'text-red-600 font-bold' : 'text-gray-700'}`}>
-                            {day}
-                          </span>
-                        )}
-                      </div>
-                    ))}
+                    {getDaysInMonth(currentDate).map((day, index) => {
+                      const appointmentCount = getAppointmentCount(day);
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`
+                            h-12 w-full flex items-center justify-center text-sm cursor-pointer border border-gray-200 rounded-lg transition-colors relative
+                            ${day ? 'hover:bg-gray-50 text-gray-700 bg-white' : 'cursor-default border-transparent'}
+                            ${isToday(day) ? 'bg-blue-100 text-blue-600 font-bold border-blue-300' : ''}
+                          `}
+                          onClick={() => handleDateClick(day)}
+                        >
+                          {day && (
+                            <>
+                              <span className={`text-lg font-montserrat-500 ${isToday(day) ? 'text-red-600 font-bold' : 'text-gray-700'}`}>
+                                {day}
+                              </span>
+                              
+                              {/* Appointment Count Display - Bottom Right Corner */}
+                              {appointmentCount && (
+                                <span className="absolute bottom-1 right-1 text-[13px] text-black w-4 h-4 flex items-center justify-center">
+                                  {appointmentCount}
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
