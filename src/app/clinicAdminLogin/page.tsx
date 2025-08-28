@@ -235,7 +235,7 @@ const AdminLogins = () => {
                       />
                     ) : (
                       <img
-                        src="/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
+                        src="/proffile.jpg"
                         alt="Fallback"
                         className="w-full h-full object-cover"
                       />
@@ -328,7 +328,7 @@ const AdminLogins = () => {
                           />
                         ) : (
                           <img
-                            src="/3d77b13a07b3de61003c22d15543e99c9e08b69b.jpg"
+                        src="/proffile.jpg"
                             alt="Fallback"
                             className="w-full h-full object-cover"
                           />

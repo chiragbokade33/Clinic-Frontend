@@ -531,8 +531,8 @@ const HealthcareDashboard = () => {
               <button
                 onClick={() => setShowDatePicker(!showDatePicker)}
                 className={`flex items-center justify-center w-10 h-10 border rounded-lg transition-colors ${appliedStartDate || appliedEndDate
-                    ? 'border-blue-500 bg-blue-50 text-blue-600'
-                    : 'border-gray-300 hover:bg-gray-50'
+                  ? 'border-blue-500 bg-blue-50 text-blue-600'
+                  : 'border-gray-300 hover:bg-gray-50'
                   }`}
               >
                 <Calendar className="h-5 w-5" />
@@ -603,11 +603,16 @@ const HealthcareDashboard = () => {
                     {/* Profile Image */}
                     <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border shadow">
                       <img
-                        src="/proffile.jpg"
+                        src={
+                          appointment.profilePhoto && appointment.profilePhoto !== "Not a registered user"
+                            ? appointment.profilePhoto
+                            : "/proffile.jpg"
+                        }
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />
                     </div>
+
 
                     {/* Patient Info */}
                     <div className="flex-1 min-w-0">
@@ -641,7 +646,11 @@ const HealthcareDashboard = () => {
               <div className="text-center mb-6">
                 <div className="w-25 h-25 rounded-full mx-auto mb-4 overflow-hidden border">
                   <img
-                    src="/proffile.jpg"
+                    src={
+                      selectedPatient.profilePhoto && selectedPatient.profilePhoto !== "Not a registered user"
+                        ? selectedPatient.profilePhoto
+                        : "/proffile.jpg"
+                    }
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -960,7 +969,7 @@ const HealthcareDashboard = () => {
               {/* Close Button */}
               <h2 className="text-2xl font-bold mb-4 flex justify-center text-center space-x-2">
                 <FontAwesomeIcon icon={faPlus} className="text-white bg-blue-800 w-4 h-4 rounded-sm" />
-                <span className='text-blue-800 font-poppins-600 font-semibold'>Add a New Patient</span>
+                <span className='text-blue-800 font-poppins-600 font-semibold'>Add a New Client</span>
               </h2>
               <div className='border border-blue-800 mx-auto w-40'></div>
               <button
@@ -1142,7 +1151,7 @@ const HealthcareDashboard = () => {
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
                     >
-                      {patientFormik.isSubmitting ? 'Saving...' : 'Save Patient'}
+                      {patientFormik.isSubmitting ? 'Saving...' : 'Save Client'}
                     </button>
 
                     {/* Form Status */}
@@ -1628,7 +1637,7 @@ const HealthcareDashboard = () => {
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
                     >
-                      {patientFormik.isSubmitting ? 'Saving...' : 'Save Patient'}
+                      {patientFormik.isSubmitting ? 'Saving...' : 'Save Client'}
                     </button>
 
                     {/* Form Status */}

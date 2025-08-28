@@ -345,6 +345,7 @@ const PatientListInterface = () => {
             </div>
 
             {/* Table Header */}
+            
             <div className="bg-white px-6 py-3 border-b border-gray-700 mx-auto">
               <div className="grid grid-cols-6 gap-4">
                 <div className="text-sm font-medium text-gray-700">Name</div>
