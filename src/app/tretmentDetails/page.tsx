@@ -1898,6 +1898,15 @@ const page = () => {
                                 </button>
                             </div>
 
+                            {/* Patient Information Display */}
+                            {profileData && (
+                                <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+                                    <p className="text-sm text-blue-800 font-medium">
+                                        Reports PDF will be sent to <span className="font-bold">{profileData.fullName || 'N/A'}</span> in their HFID: <span className="font-bold">{profileData.hfId || 'N/A'} account.</span>
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div>
                                     <div className="border border-black rounded-lg p-4 mb-6">

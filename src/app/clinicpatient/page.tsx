@@ -299,7 +299,6 @@ const PatientListInterface = () => {
                       <Calendar className="h-5 w-5" />
                     </button>
 
-                    {/* Date Range Picker Modal */}
                     {showDatePicker && (
                       <div className="absolute right-0 top-12 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[300px]">
                         <div className="mb-3">
@@ -315,14 +314,12 @@ const PatientListInterface = () => {
                           />
                         </div>
 
-                        {/* Display selected range */}
                         {(startDate || endDate) && (
                           <div className="text-xs text-gray-600 mb-2">
                             {startDate ? startDate.toLocaleDateString() : 'Start'} - {endDate ? endDate.toLocaleDateString() : 'End'}
                           </div>
                         )}
 
-                        {/* Action buttons */}
                         <div className="flex justify-between">
                           <button
                             onClick={clearDateFilter}

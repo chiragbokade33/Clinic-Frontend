@@ -60,6 +60,7 @@ export const endPoints = {
 
     Appointments :{
         Addappointments : API_CLINIC_DATA + "appointments",
+        DeleteAppointment : (appointmentId:number) => API_CLINIC_DATA + `appointments/${appointmentId}`,
         AppointmentList : API_CLINIC_DATA + "appointments/clinic",
         FollowUp : (clinicId:number) => `${API_CLINIC_DATA}appointments/clinics/${clinicId}/follow-up`,
         VerifyHFID : API_CLINIC_DATA + "users/hfid",

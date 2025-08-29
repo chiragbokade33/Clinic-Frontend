@@ -10,7 +10,8 @@ import {
   faXmark,
   faUserPlus,
   faPlus,
-  faChevronDown
+  faChevronDown,
+  faTrash
 } from '@fortawesome/free-solid-svg-icons';
 import DefaultLayout from '../components/DefaultLayout';
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -18,7 +19,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { CreateAppointments, ListAppointment, HFID, AddFolllowUp, AppoinmentUpdate, BookFolllowUp } from '../services/ClinicServiceApi';
+import { CreateAppointments, ListAppointment, HFID, AddFolllowUp, AppoinmentUpdate, BookFolllowUp, DeleteAppointment } from '../services/ClinicServiceApi';
 import { getUserId } from '../hooks/GetitemsLocal';
 import CustomTimePicker from '../components/CustomTimePicker';
 import { toast } from 'react-toastify';
@@ -28,7 +29,7 @@ const HealthcareDashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState(1);
+  const [selectedAppointment, setSelectedAppointment] = useState<number | null>(1);
   const [currentUserId, setCurrentUserId] = useState<number>() as any;
   const [appointments, setAppointments] = useState() as any;
   const [todayAppoinment, SetTodayAppoinmnet] = useState() as any;
@@ -56,6 +57,10 @@ const HealthcareDashboard = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [endDate, setEndDate] = useState<Date | null>(null); // For date picker display
   const [startDate, setStartDate] = useState<Date | null>(null); // For date picker display
+
+  // Delete functionality state variables
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -137,6 +142,44 @@ const HealthcareDashboard = () => {
     setIsModalOpen(false);
     setHfidVerified(false);
     setHfidError('');
+  };
+
+  // Delete handler function
+  const handleDeleteAppointment = async () => {
+    if (!selectedPatient) return;
+
+    try {
+      setIsDeleting(true);
+      
+      const response = await DeleteAppointment(selectedPatient.id, {});
+      
+      if (response.status === 200 || response.data.success) {
+        toast.success('Appointment deleted successfully!');
+        
+        // Refresh appointments list
+        appoinmentData();
+        
+        // Reset selected appointment if the deleted one was selected
+        if (appointments.length <= 1) {
+          setSelectedAppointment(null);
+        } else {
+          // Select the first available appointment
+          const remainingAppointments = appointments.filter((apt: any) => apt.id !== selectedPatient.id);
+          if (remainingAppointments.length > 0) {
+            setSelectedAppointment(remainingAppointments[0].id);
+          }
+        }
+        
+        setShowDeleteConfirm(false);
+      } else {
+        toast.error('Failed to delete appointment');
+      }
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      toast.error('Error deleting appointment. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Validation Schema for Appointment Form
@@ -772,23 +815,32 @@ const HealthcareDashboard = () => {
                 </div>
               </div>
 
-              {/* Updated Edit/Save/Cancel Buttons */}
+              {/* Updated Edit/Delete Buttons */}
               <div className="mt-6 space-y-2">
                 {!isEditing ? (
-                  <button
-                    onClick={handleEditSave}
-                    disabled={isAppointmentPassed(selectedPatient?.appointmentDate, selectedPatient?.appointmentTime)}
-                    className={`w-full font-semibold py-3 px-4 rounded-lg transition-colors ${
-                      isAppointmentPassed(selectedPatient?.appointmentDate, selectedPatient?.appointmentTime)
-                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
-                  >
-                    {isAppointmentPassed(selectedPatient?.appointmentDate, selectedPatient?.appointmentTime) 
-                      ? 'Appointment Passed' 
-                      : 'Edit'
-                    }
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleEditSave}
+                      disabled={isAppointmentPassed(selectedPatient?.appointmentDate, selectedPatient?.appointmentTime)}
+                      className={`flex-1 font-semibold py-3 px-4 rounded-lg transition-colors ${
+                        isAppointmentPassed(selectedPatient?.appointmentDate, selectedPatient?.appointmentTime)
+                          ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
+                    >
+                      {isAppointmentPassed(selectedPatient?.appointmentDate, selectedPatient?.appointmentTime) 
+                        ? 'Appointment Passed' 
+                        : 'Edit'
+                      }
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="px-4 py-3 rounded-lg transition-colors bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
+                    </button>
+                  </div>
                 ) : (
                   <div className="flex gap-2">
                     <button
@@ -814,7 +866,7 @@ const HealthcareDashboard = () => {
             </>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <p>Select an appointment to view patient details</p>
+              <p>Select an appointment to view client details</p>
             </div>
           )}
         </div>
@@ -1021,6 +1073,53 @@ const HealthcareDashboard = () => {
           <CombinedAppointmentPatient />
         </div>
 
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && selectedPatient && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FontAwesomeIcon icon={faTrash} className="w-8 h-8 text-red-600" />
+                </div>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Delete Appointment
+                </h3>
+                
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete the appointment for{' '}
+                  <span className="font-semibold text-gray-800">
+                    {selectedPatient.visitorUsername}
+                  </span>
+                  ? This action cannot be undone.
+                </p>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  
+                  <button
+                    onClick={handleDeleteAppointment}
+                    disabled={isDeleting}
+                    className={`flex-1 font-semibold py-3 px-4 rounded-lg transition-colors ${
+                      isDeleting
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add Patient Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -1196,7 +1295,7 @@ const HealthcareDashboard = () => {
                     {!hfidVerified && patientFormik.values.patientId && (
                       <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
                         <p className="text-yellow-700 text-sm font-medium">
-                          Please verify the Patient ID by clicking the HF button before saving.
+                          Please verify the Client ID by clicking the HF button before saving.
                         </p>
                       </div>
                     )}
@@ -1543,7 +1642,7 @@ const HealthcareDashboard = () => {
                             : 'bg-blue-800 text-white hover:bg-blue-900'
                           }`}
                       >
-                        {isVerifyingHFID ? 'Verifying...' : hfidVerified ? '✓ HF' : 'HF'}
+                        {isVerifyingHFID ? 'Verifying..' : hfidVerified ? '✓ HF' : 'HF'}
                       </button>
                       <div className="flex-1">
                         <input
@@ -1682,7 +1781,7 @@ const HealthcareDashboard = () => {
                     {!hfidVerified && patientFormik.values.patientId && (
                       <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
                         <p className="text-yellow-700 text-sm font-medium">
-                          Please verify the Patient ID by clicking the HF button before saving.
+                          Please verify the Client ID by clicking the HF button before saving.
                         </p>
                       </div>
                     )}

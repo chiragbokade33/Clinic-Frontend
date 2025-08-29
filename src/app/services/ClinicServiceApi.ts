@@ -201,6 +201,9 @@ export const BookFolllowUp = async (clinicId: number, payloade: any) => {
     return axiosInstance.post(`${endPoints.Appointments.BookAppoinment(clinicId)}`, payloade)
 }
 
+export const DeleteAppointment = async (appointmentId: number, payloade: any) => {
+    return axiosInstance.delete(`${endPoints.Appointments.DeleteAppointment(appointmentId)}`, payloade)
+}
 
 // Consent forms details 
 

@@ -418,7 +418,7 @@ const BranchData: React.FC<BranchDataProps> = ({
                         value={formik.values.email}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        placeholder="Enter Lab Email"
+                        placeholder="Enter Email"
                         className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 ${formik.touched.email && formik.errors.email
                           ? "focus:ring-red-500 border-red-500"
                           : "focus:ring-blue-500 border-gray-300"
@@ -442,7 +442,7 @@ const BranchData: React.FC<BranchDataProps> = ({
                         value={formik.values.phoneNumber}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        placeholder="Lab Number"
+                        placeholder="Enter Phone Number"
                         className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 ${formik.touched.phoneNumber && formik.errors.phoneNumber
                           ? "focus:ring-red-500 border-red-500"
                           : "focus:ring-blue-500 border-gray-300"

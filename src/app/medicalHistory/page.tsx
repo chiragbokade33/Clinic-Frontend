@@ -349,7 +349,7 @@ const RadioButton: React.FC<RadioButtonProps> = ({ checked, onChange }) => {
             <DefaultLayout>
                 <div className="w-full mx-auto p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
                     <div className="flex items-center justify-center h-64">
-                        <div className="text-lg">Loading patient data...</div>
+                        <div className="text-lg">Loading client data...</div>
                     </div>
                 </div>
             </DefaultLayout>
