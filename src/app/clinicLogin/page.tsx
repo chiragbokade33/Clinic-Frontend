@@ -164,24 +164,34 @@ const ClinicLogin = () => {
     },
   });
 
-  const handleGetOTP = async () => {
-    const errors = await emailFormik.validateForm();
+const loginWithOTP = async () => {
+  setShowOtp(true);             // show OTP immediately
+  setShowPasswordLogin(false);
+  setTimers(60);
 
-    if (Object.keys(errors).length === 0) {
-      try {
-        const res = await emailFormik.submitForm();
-        setShowOtp(true);
-        setTimers(300);
-        setShowPasswordLogin(false);
-        setIsResendDisabled(true);
-      } catch (error) {
-        const err = error as any;
-        console.error(`${err.res.data.message}`);
-      }
-    } else {
-      emailFormik.setTouched({ emailOrPhone: true });
+  try {
+    await emailFormik.submitForm();  // then try submitting
+  } catch (error: any) {
+    console.error(error?.response?.data?.message || error.message || error);
+  }
+};
+
+
+const handleGetOTP = async () => {
+  const errors = await emailFormik.validateForm();
+
+  if (Object.keys(errors).length === 0) {
+    try {
+      await loginWithOTP();
+    } catch (error) {
+      console.error(error);
     }
-  };
+  } else {
+    emailFormik.setTouched({ emailOrPhone: true });
+  }
+};
+
+
 
   const handlePasswordLogin = () => {
     emailFormik.validateForm().then((errors) => {
