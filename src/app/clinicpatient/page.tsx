@@ -43,7 +43,7 @@ const PatientListInterface = () => {
   const [filteredPatients, setFilteredPatients] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [itemsPerPage] = useState(10); // You can make this configurable
+  const [itemsPerPage] = useState(6); // You can make this configurable
 
   const router = useRouter();
 
