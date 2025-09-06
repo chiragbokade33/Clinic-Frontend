@@ -18,7 +18,6 @@ const ClinicLogin = () => {
   const inputRefs = useRef<HTMLInputElement[]>([]);
   const [timers, setTimers] = useState(300);
 
-
   const formatTimes = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -59,7 +58,6 @@ const ClinicLogin = () => {
       }),
   });
 
-
   const otpValidationSchema = Yup.object({
     otp: Yup.string()
       .matches(/^\d+$/, "OTP must contain only digits")
@@ -72,32 +70,15 @@ const ClinicLogin = () => {
     password: Yup.string().required("Password is required").min(8, "Min 8 chars").matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).+$/, "Must include upper, lower, number & special char"),
   });
 
+  // Updated emailFormik - only for validation, not for API calls
   const emailFormik = useFormik({
     initialValues: {
       emailOrPhone: "",
     },
     validationSchema: emailValidationSchema,
     onSubmit: async (values) => {
-      setIsSubmittingOTP(true);
-      try {
-        const payload: { email?: string; phoneNumber?: string } = {};
-
-        if (isEmail(values.emailOrPhone)) {
-          payload.email = values.emailOrPhone;
-        } else {
-          payload.phoneNumber = values.emailOrPhone;
-        }
-        const res = await LoginWithOtp(payload);
-        toast.success(`${res.data.message}`);
-        localStorage.setItem("emailId", await encryptData(res.data.data.email));
-      } catch (error) {
-        const err = error as any;
-        toast.error(`${err.res.data.message}`);
-        console.error("Failed to send OTP:", error);
-      } finally {
-        setIsSubmittingOTP(false);
-      }
-      console.log("Form submitted with:", values);
+      // This should not be called anymore
+      console.log("emailFormik.onSubmit called - this should not happen");
     },
   });
 
@@ -109,9 +90,9 @@ const ClinicLogin = () => {
     validationSchema: otpValidationSchema,
     onSubmit: async (values) => {
       try {
-        const isEmail = emailFormik.values.emailOrPhone.includes('@');
+        const isEmailCheck = emailFormik.values.emailOrPhone.includes('@');
         const response = await PhoneLoginEmail({
-          ...(isEmail
+          ...(isEmailCheck
             ? { email: emailFormik.values.emailOrPhone }
             : { phoneNumber: emailFormik.values.emailOrPhone }),
           otp: values.otp,
@@ -124,13 +105,11 @@ const ClinicLogin = () => {
         } else {
           router.push("/clinicAdminCreate");
         }
-
       } catch (error) {
         const err = error as any;
-        toast.error(`${err.response.data.message}`);
+        toast.error(`${err.response?.data?.message || 'Login failed'}`);
         console.error("Login failed:", error);
       }
-      console.log("OTP submitted:", values.otp);
     },
   });
 
@@ -154,44 +133,83 @@ const ClinicLogin = () => {
         } else {
           router.push("/clinicAdminCreate");
         }
-
       } catch (error) {
         const err = error as any;
-        toast.error(`${err.response.data.message}`);
+        toast.error(`${err.response?.data?.message || 'Login failed'}`);
         console.error("Login failed:", error);
       }
-      console.log("Password login submitted:", values);
     },
   });
 
-const loginWithOTP = async () => {
-  setShowOtp(true);             // show OTP immediately
-  setShowPasswordLogin(false);
-  setTimers(60);
+  // Fixed handleGetOTP function - handles all the logic
+  const handleGetOTP = async () => {
+    const errors = await emailFormik.validateForm();
 
-  try {
-    await emailFormik.submitForm();  // then try submitting
-  } catch (error: any) {
-    console.error(error?.response?.data?.message || error.message || error);
-  }
-};
+    if (Object.keys(errors).length === 0) {
+      setIsSubmittingOTP(true);
+      try {
+        const payload: { email?: string; phoneNumber?: string } = {};
 
-
-const handleGetOTP = async () => {
-  const errors = await emailFormik.validateForm();
-
-  if (Object.keys(errors).length === 0) {
-    try {
-      await loginWithOTP();
-    } catch (error) {
-      console.error(error);
+        if (isEmail(emailFormik.values.emailOrPhone)) {
+          payload.email = emailFormik.values.emailOrPhone;
+        } else {
+          payload.phoneNumber = emailFormik.values.emailOrPhone;
+        }
+        
+        console.log("Sending OTP request with payload:", payload);
+        const res = await LoginWithOtp(payload);
+        console.log("OTP response:", res);
+        
+        // Check if response is successful
+        if (res && res.data) {
+          toast.success(`${res.data.message || 'OTP sent successfully'}`);
+          
+          // Store email if available in response
+          if (res.data.data && res.data.data.email) {
+            localStorage.setItem("emailId", await encryptData(res.data.data.email));
+          } else {
+            // Use input email as fallback
+            const emailToStore = isEmail(emailFormik.values.emailOrPhone) 
+              ? emailFormik.values.emailOrPhone 
+              : '';
+            if (emailToStore) {
+              localStorage.setItem("emailId", await encryptData(emailToStore));
+            }
+          }
+          
+          // Redirect to OTP section
+          setShowOtp(true);
+          setTimers(300);
+          setShowPasswordLogin(false);
+          setIsResendDisabled(true);
+        } else {
+          toast.error('Unexpected response format');
+          setShowOtp(false);
+        }
+        
+      } catch (error) {
+        const err = error as any;
+        console.error("Failed to send OTP:", error);
+        
+        // Extract error message from different possible structures
+        let errorMessage = 'Failed to send OTP';
+        if (err.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.data?.message) {
+          errorMessage = err.data.message;
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+        
+        toast.error(errorMessage);
+        setShowOtp(false);
+      } finally {
+        setIsSubmittingOTP(false);
+      }
+    } else {
+      emailFormik.setTouched({ emailOrPhone: true });
     }
-  } else {
-    emailFormik.setTouched({ emailOrPhone: true });
-  }
-};
-
-
+  };
 
   const handlePasswordLogin = () => {
     emailFormik.validateForm().then((errors) => {
@@ -205,15 +223,44 @@ const handleGetOTP = async () => {
     });
   };
 
+  // Fixed handleResendOTP function
   const handleResendOTP = async () => {
     try {
-      const res = await emailFormik.submitForm();
-      toast.success(`${res.data.message}`);
-      setTimers(300);
-      setIsResendDisabled(true);
+      const payload: { email?: string; phoneNumber?: string } = {};
+
+      if (isEmail(emailFormik.values.emailOrPhone)) {
+        payload.email = emailFormik.values.emailOrPhone;
+      } else {
+        payload.phoneNumber = emailFormik.values.emailOrPhone;
+      }
+      
+      console.log("Resending OTP with payload:", payload);
+      const res = await LoginWithOtp(payload);
+      console.log("Resend OTP response:", res);
+      
+      if (res && res.data) {
+        toast.success(`${res.data.message || 'OTP resent successfully'}`);
+        setTimers(300);
+        setIsResendDisabled(true);
+      } else {
+        toast.error('Unexpected response format');
+      }
+      
     } catch (error) {
       const err = error as any;
-      console.error(`${err.res.data.message}`);
+      console.error("Failed to resend OTP:", error);
+      
+      // Extract error message from different possible structures
+      let errorMessage = 'Failed to resend OTP';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -221,8 +268,7 @@ const handleGetOTP = async () => {
     setShowPassword(!showPassword);
   };
 
-
-  // Handle Forgot Password
+  // Handle Forgot Password - fixed error handling
   const handleForgotPassword = async () => {
     let email = showPasswordLogin
       ? passwordLoginFormik.values.email
@@ -247,12 +293,11 @@ const handleGetOTP = async () => {
       toast.error(
         error instanceof Yup.ValidationError
           ? error.message
-          : `${err.res.data.message}`
+          : `${err.response?.data?.message || 'Failed to process request'}`
       );
       console.error("Forgot password error:", error);
     }
   };
-
 
   return (
     <ClinicHome>
@@ -261,10 +306,8 @@ const handleGetOTP = async () => {
       }}>
         <h1 className="text-xl md:text-lg font-semibold text-red-600  text-center">
           Streamline <span className="text-gray-800">your Clinic services with ease and efficiency</span>
-
         </h1>
         <div className="w-70 mx-auto my-3 border-b border-black"></div>
-
 
         <div className=" overflow-hidden flex flex-col md:flex-row max-w-6xl mb-3 w-full relative border border-black rounded-lg">
           <div className="md:w-1/2 flex items-center justify-center  relative ">
@@ -288,12 +331,12 @@ const handleGetOTP = async () => {
               />
             </div>
             <h2 className="text-center text-xl font-bold text-blue-800 mb-6">
-              {showOtp || showPasswordLogin ? "Welcome Back!" : "Welcome Back!"}
+              Welcome Back!
               <div className="w-24 border-t border-blue-800 mx-auto"></div>
             </h2>
 
             {!showOtp && !showPasswordLogin && (
-              <form onSubmit={emailFormik.handleSubmit} className="w-full px-6">
+              <div className="w-full px-6">
                 <div className="w-full mb-2">
                   <input
                     type="text"
@@ -332,14 +375,17 @@ const handleGetOTP = async () => {
                 <p className="text-sm text-center">
                   <a
                     href="#"
-                    onClick={handlePasswordLogin}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePasswordLogin();
+                    }}
                     className="text-blue-600 hover:text-blue-700 font-semibold underline underline-offset-4"
                   >
                     Click here
                   </a>{" "}
                   to log in with Password
                 </p>
-              </form>
+              </div>
             )}
 
             {showOtp && (
@@ -351,7 +397,6 @@ const handleGetOTP = async () => {
                 <div className="w-full mb-2">
                   <div className="md:col-span-2 flex flex-col items-center mt-1 border rounded-md px-4 py-3 w-full">
                     <div className="flex flex-wrap justify-center gap-3 mb-2">
-
                       {[0, 1, 2, 3, 4, 5].map((index) => (
                         <input
                           key={index}
@@ -379,7 +424,6 @@ const handleGetOTP = async () => {
                       ))}
                     </div>
                   </div>
-
                 </div>
                 {otpFormik.touched.otp && otpFormik.errors.otp && (
                   <div className="text-red-500 text-xs mb-2">
@@ -395,7 +439,8 @@ const handleGetOTP = async () => {
                   <button
                     type="button"
                     onClick={handleResendOTP}
-                    className={`text-blue-800 text-sm font-medium mt-2 mb-3 md:col-span-2 flex justify-end md:self-end cursor-pointer`}
+                    disabled={isResendDisabled}
+                    className={`text-blue-800 text-sm font-medium mt-2 mb-3 md:col-span-2 flex justify-end md:self-end ${isResendDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     Resend OTP
                   </button>
@@ -530,12 +575,10 @@ const handleGetOTP = async () => {
                   <p className="text-sm">
                     <a
                       href="#"
-                      onClick={async (e) => {
+                      onClick={(e) => {
                         e.preventDefault();
-                        setShowOtp(true);
+                        setShowOtp(false);
                         setShowPasswordLogin(false);
-                        await emailFormik.submitForm();
-                        setTimers(60);
                       }}
                       className="text-blue-600 hover:text-blue-700 font-semibold underline underline-offset-4"
                     >
@@ -544,7 +587,6 @@ const handleGetOTP = async () => {
                     to log in with OTP
                   </p>
                 </div>
-
               </form>
             )}
           </div>
