@@ -259,7 +259,7 @@ const ClinicLogin = () => {
         <div className=" overflow-hidden flex flex-col md:flex-row max-w-6xl mb-3 w-full relative border border-black rounded-lg">
           <div className="md:w-1/2 flex items-center justify-center  relative ">
             <img
-               src="\3780dce7bfd6a3a8e90f2b884bdba4c673af4d8f.png"
+               src="\Clinic.png"
               alt="Chemistry Lab Illustration"
               width={700}
               height={500}

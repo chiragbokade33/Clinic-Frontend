@@ -129,7 +129,7 @@ const ClinicSignUp = () => {
         <div className=" overflow-hidden flex flex-col md:flex-row max-w-6xl md:mx-3 mb-3 w-full relative border border-black rounded-lg">
           <div className="md:w-1/2 flex items-center justify-center  relative">
             <img
-              src="\3780dce7bfd6a3a8e90f2b884bdba4c673af4d8f.png"
+              src="\Clinic.png"
               alt="Chemistry Clinic Experiment"
               className="max-h-96 md:max-h-full lg:-mr-45 -mb-4 md:-mr-29"
             />
