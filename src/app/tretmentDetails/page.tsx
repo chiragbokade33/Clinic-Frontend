@@ -568,12 +568,12 @@ const page = () => {
             throw new Error("No images data available");
         }
 
-        let imagesDataForPDF;
+        let imagesDataForPayload;
 
         if (reportImagesData) {
-            imagesDataForPDF = reportImagesData;
+            imagesDataForPayload = reportImagesData;
         } else if (imgAttechData && imgAttechData.length > 0) {
-            imagesDataForPDF = {
+            imagesDataForPayload = {
                 patient: profileData ? {
                     name: profileData.firstName + ' ' + profileData.lastName,
                     uhid: profileData.hfid,
@@ -597,170 +597,28 @@ const page = () => {
                 uploadDate: new Date().toISOString()
             };
         } else {
-            console.warn("No images available for PDF generation!");
-            throw new Error("No images available for PDF generation");
+            console.warn("No images available!");
+            throw new Error("No images available");
         }
 
         const actionData = {
             timestamp: new Date().toISOString(),
             action: 'images_checked',
-            patientId: imagesDataForPDF.patient.uhid,
+            patientId: imagesDataForPayload.patient.uhid,
             documentType: 'images',
-            data: imagesDataForPDF
+            data: imagesDataForPayload
         };
 
         setActionPayload(prev => [...prev, actionData]);
 
+        // Store images data for sending (NO PDF generation)
+        setReportImagesData(imagesDataForPayload);
+
         console.log('Images Action Payload:', actionData);
+        console.log('✅ Images payload prepared - NO PDF generated');
 
-        const file = await generateImagesPDF(imagesDataForPDF);
-        if (!file) {
-            throw new Error("Failed to generate images PDF");
-        }
-
-        setReportImagesFile(file);
-        console.log('✅ Images file set successfully');
-    };
-
-    // NEW: Generate Images PDF function
-    const generateImagesPDF = async (data) => {
-        try {
-            if (!data || !data.images || data.images.length === 0) {
-                console.warn("No images data found!");
-                return null;
-            }
-
-            const tempDiv = document.createElement('div');
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.left = '-9999px';
-            tempDiv.style.top = '-9999px';
-            tempDiv.style.width = '800px';
-            tempDiv.style.padding = '20px';
-            tempDiv.style.backgroundColor = 'white';
-            tempDiv.style.fontFamily = 'Arial, sans-serif';
-
-            tempDiv.innerHTML = `
-                <div class="images-container" style="max-width: 800px; margin: 0 auto; background: white; padding: 30px;">
-                    <!-- Header Section -->
-                    <div class="header" style="display: flex; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 20px;">
-                        <div class="logo" style="width: 180px; height: 100px; margin-right: 20px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                            <img src="/3baffcaa27d289975ae5cb09f5eefe58b1e8d129.png" 
-                                alt="Clinic Logo"
-                                style="width: 100%; height: 100%; object-fit: cover;" />
-                        </div>
-                    </div>
-
-                    <!-- Patient Information -->
-                    <div class="patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 5px;">
-                        <div class="info-field" style="display: flex; align-items: center;">
-                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Patient Name:</label>
-                            <span style="color: #666;">${data.patient?.name || 'N/A'}</span>
-                        </div>
-                        <div class="info-field" style="display: flex; align-items: center;">
-                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">UHID:</label>
-                            <span style="color: #666;">${data.patient?.uhid || 'N/A'}</span>
-                        </div>
-                        <div class="info-field" style="display: flex; align-items: center;">
-                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Gender:</label>
-                            <span style="color: #666;">${data.patient?.gender || 'N/A'}</span>
-                        </div>
-                        <div class="info-field" style="display: flex; align-items: center;">
-                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">DOB:</label>
-                            <span style="color: #666;">${data.patient?.dob ? new Date(data.patient.dob).toLocaleDateString('en-GB').replace(/\//g, '-') : 'N/A'}</span>
-                        </div>
-                        <div class="info-field" style="display: flex; align-items: center;">
-                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">Mobile:</label>
-                            <span style="color: #666;">${data.patient?.mobile || 'N/A'}</span>
-                        </div>
-                        <div class="info-field" style="display: flex; align-items: center;">
-                            <label style="font-weight: bold; margin-right: 10px; min-width: 120px; color: #333;">City:</label>
-                            <span style="color: #666;">${data.patient?.city || 'N/A'}</span>
-                        </div>
-                    </div>
-
-                    <!-- Images Section -->
-                    <div class="images-section">
-                        <h2 style="color: #333; margin-bottom: 15px; font-size: 18px;">Medical Reports & Images</h2>
-                        <p style="color: #666; margin-bottom: 20px;">Total Images: ${data.totalImages || data.images.length}</p>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
-                            ${data.images.map((imageUrl, index) => `
-                                <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; text-align: center;">
-                                    <div style="width: 100%; height: 150px; background: #f5f5f5; border-radius: 5px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                                        <img src="${imageUrl}" 
-                                             alt="Medical Report ${index + 1}"
-                                             style="max-width: 100%; max-height: 100%; object-fit: contain;" 
-                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                                        <div style="display: none; color: #666; font-size: 12px;">Image ${index + 1}</div>
-                                    </div>
-                                    <p style="font-size: 12px; color: #666; margin: 0;">Report ${index + 1}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: end;">
-                        <div style="font-size: 12px; color: #666;">
-                            ${data.clinicInfo?.website || 'www.hfiles.in'}
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="width: 150px; height: 60px; border-bottom: 1px solid #333; margin-bottom: 10px; display: flex; align-items: end; justify-content: center; font-family: cursive; font-size: 18px; color: #333;">
-                               Priyanka
-                            </div>
-                            <div style="font-weight: bold; color: #333;">Doctor</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(tempDiv);
-
-            const canvas = await html2canvas(tempDiv, {
-                width: 800,
-                height: tempDiv.scrollHeight,
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#ffffff'
-            });
-
-            document.body.removeChild(tempDiv);
-
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const imgWidth = pdfWidth - 20;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, pdfHeight - 20));
-
-            if (imgHeight > pdfHeight - 20) {
-                let remainingHeight = imgHeight - (pdfHeight - 20);
-                let yPosition = -(pdfHeight - 20);
-
-                while (remainingHeight > 0) {
-                    pdf.addPage();
-                    const pageHeight = Math.min(remainingHeight, pdfHeight - 20);
-                    pdf.addImage(imgData, 'PNG', 10, yPosition, imgWidth, imgHeight);
-                    remainingHeight -= pageHeight;
-                    yPosition -= pdfHeight;
-                }
-            }
-
-            const pdfBlob = pdf.output('blob');
-            const fileName = `medical_reports_${data.patient?.name?.replace(/\s+/g, '_') || 'patient'}_${Date.now()}.pdf`;
-            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-
-            console.log('✅ Images PDF generated successfully!', fileName);
-            return file;
-
-        } catch (error) {
-            console.error('❌ Error generating images PDF:', error);
-            return null;
-        }
+        // Important: Do NOT set any file for images
+        // setReportImagesFile(null); // Keep this null for images
     };
 
     const generatePrescriptionPDF = async (data: any) => {
@@ -1483,7 +1341,6 @@ const page = () => {
 
     // UPDATED: handleFinalSend with better validation
     const handleFinalSend = async () => {
-        // Check if any documents are still loading
         const isAnyLoading = Object.values(loadingStates).some(loading => loading);
         if (isAnyLoading) {
             alert("Please wait for all documents to finish generating before sending.");
@@ -1499,13 +1356,13 @@ const page = () => {
 
             if (checkedDocuments.length === 0) {
                 alert("Please select at least one document to send.");
+                setIsSending(false);
                 return;
             }
 
             let successfulUploads = 0;
             let failedUploads = [];
 
-            // Send files one by one instead of all at once
             for (const key of checkedDocuments) {
                 let file = null;
                 let documentType = "";
@@ -1528,41 +1385,52 @@ const page = () => {
                         documentType = "Receipt";
                         break;
                     case "images":
-                        file = reportImagesFile;
+                        // Images: NO PDF file, just payload
+                        file = null;
                         documentType = "Images";
+                        console.log("Processing Images - NO PDF file will be sent");
                         break;
                     default:
                         console.warn(`Unknown document type: ${key}`);
                         continue;
                 }
 
-                if (file && file instanceof File) {
-                    try {
-                        // Create new FormData for each document
-                        const formData = new FormData();
+                try {
+                    const formData = new FormData();
 
-                        // Add main request properties
-                        formData.append("ClinicId", String(currentUserId));
-                        formData.append("PatientId", extractedPatientId || "");
-                        formData.append("ClinicVisitId", extractedLastVisitId || "");
-                        formData.append("PaymentMethod", paymentMethod || "CreditCard");
+                    // Add main request properties
+                    formData.append("ClinicId", String(currentUserId));
+                    formData.append("PatientId", extractedPatientId || "");
+                    formData.append("ClinicVisitId", extractedLastVisitId || "");
+                    formData.append("PaymentMethod", paymentMethod || "CreditCard");
 
-                        // Add single document (always at index 0 since it's the only document in this request)
-                        formData.append(`Documents[0].Type`, documentType);
-                        formData.append(`Documents[0].SendToPatient`, "true");
-                        formData.append(`Documents[0].PdfFile`, file);
+                    // Add document type and SendToPatient flag
+                    formData.append(`Documents[0].Type`, documentType);
+                    formData.append(`Documents[0].SendToPatient`, "true");
 
-                        // Send individual document
-                        const response = await UploadeallData(formData);
-                        toast.success(response.data.message);
-                        successfulUploads++;
-
-                    } catch (documentError) {
-                        console.error(` Failed to upload ${documentType}:`, documentError);
-                        failedUploads.push(documentType);
+                    // Only add PDF for non-image documents
+                    if (key.toLowerCase() !== "images") {
+                        if (file && file instanceof File) {
+                            formData.append(`Documents[0].PdfFile`, file);
+                            console.log(`Adding PDF file for ${documentType}:`, file.name);
+                        } else {
+                            console.warn(`No PDF file found for ${documentType}`);
+                            failedUploads.push(documentType);
+                            continue;
+                        }
+                    } else {
+                        // Images: Send only the payload, NO PDF file
+                        console.log(`Sending ${documentType} - payload only, NO PDF`);
                     }
-                } else {
-                    console.warn(`No file found for ${key}`);
+
+                    // Send the document
+                    const response = await UploadeallData(formData);
+                    toast.success(response.data.message);
+                    successfulUploads++;
+                    console.log(`✅ ${documentType} sent successfully`);
+
+                } catch (documentError) {
+                    console.error(`❌ Failed to upload ${documentType}:`, documentError);
                     failedUploads.push(documentType);
                 }
             }
@@ -1574,20 +1442,17 @@ const page = () => {
                     message += `\n\nFailed to send: ${failedUploads.join(', ')}`;
                 }
                 console.log(message);
-            } else {
-                console.log("No documents were sent successfully. Please check the files and try again.");
-            }
 
-            // Only close modal and clear if at least one upload succeeded
-            if (successfulUploads > 0) {
+                // Close modal and clear data after success
                 setIsSendModalOpen(false);
 
-                // Clear everything after success
+                // Clear all files and data
                 setPrescriptionFile(null);
                 setTreatmentPlanFile(null);
                 setInvoiceFile(null);
                 setReceiptFile(null);
                 setReportImagesFile(null);
+                setReportImagesData(null);
 
                 setCheckedItems({
                     prescription: false,
@@ -1598,15 +1463,17 @@ const page = () => {
                 });
 
                 setActionPayload([]);
+            } else {
+                alert("No documents were sent successfully. Please check and try again.");
             }
 
         } catch (error) {
-            console.error(" Upload process error:", error);
+            console.error("Upload process error:", error);
+            alert("An error occurred during the upload process.");
         } finally {
             setIsSending(false);
         }
     };
-
 
     // UPDATED CheckboxItem component with loading state
     const CheckboxItem = ({ itemName, label, checked, onChange, isLoading = false }) => (
