@@ -1,8 +1,8 @@
 // Api EndPoints
 
-export const API_CLINIC_DATA = "https://localhost:7227/api/";
+// export const API_CLINIC_DATA = "https://localhost:7227/api/";
 // export const API_CLINIC_DATA = "https://hfileslabnetcorenextjsbackend-production.up.railway.app/api/";
-
+export const API_CLINIC_DATA = "https://testlab.hfiles.co.in/api/";
 
 
 export const endPoints = {
